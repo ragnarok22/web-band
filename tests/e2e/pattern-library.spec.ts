@@ -79,3 +79,32 @@ test("queues a playing pattern change until the next measure", async ({
   ).toBeVisible({ timeout: 5_000 });
   expect(browserErrors).toEqual([]);
 });
+
+test("resets playback after navigating from an active practice to another pattern", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.goto("/practice");
+  await page.getByRole("button", { exact: true, name: "Play" }).click();
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+    { timeout: 8_000 },
+  );
+
+  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await page.getByRole("searchbox").fill("One Drop");
+  const card = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: "One Drop" }) });
+  await card.getByRole("button", { name: "Practice" }).click();
+
+  await expect(page).toHaveURL(/\/practice$/);
+  await expect(page.getByRole("heading", { name: "One Drop" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { exact: true, name: "Play" }),
+  ).toBeEnabled();
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Audio waits for your first press",
+  );
+  expect(browserErrors).toEqual([]);
+});

@@ -187,6 +187,10 @@ export function getAudioEngine(): AudioEngine {
 }
 
 export function disposeAudioEngine(): void {
-  audioEngine?.dispose();
-  audioEngine = null;
+  if (audioEngine) {
+    audioEngine.dispose();
+    audioEngine = null;
+  } else {
+    useAudioStore.getState().setStatus("not-initialized");
+  }
 }

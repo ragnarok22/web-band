@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AudioEngine, type ManagedInstruments } from "@/audio/audio-engine";
+import {
+  AudioEngine,
+  disposeAudioEngine,
+  type ManagedInstruments,
+} from "@/audio/audio-engine";
 import type {
   AudioRuntime,
   RuntimeCallback,
@@ -149,5 +153,14 @@ describe("audio engine", () => {
       errorMessage: "Audio permission denied",
       status: "error",
     });
+  });
+
+  it("clears stale playing state when no engine singleton remains", () => {
+    disposeAudioEngine();
+    useAudioStore.getState().setStatus("playing");
+
+    disposeAudioEngine();
+
+    expect(useAudioStore.getState().status).toBe("not-initialized");
   });
 });
