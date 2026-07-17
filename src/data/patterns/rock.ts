@@ -1,53 +1,133 @@
-import type { DrumHit, DrumPattern } from "@/types/pattern";
+import { createPattern, hit, pulse } from "@/data/patterns/pattern-builder";
 
-function createHit(
-  instrument: DrumHit["instrument"],
-  step: number,
-  velocity: number,
-): DrumHit {
-  return {
-    id: `basic-rock-${instrument}-${step}`,
-    instrument,
-    step,
-    velocity,
-  };
-}
-
-export const basicRockPattern: DrumPattern = {
+export const basicRockPattern = createPattern({
   bars: 1,
   category: "rock",
   defaultBpm: 90,
   description:
     "Steady eighth-note hats with a clear backbeat for everyday practice.",
   difficulty: "beginner",
-  hits: [
-    ...[0, 1, 2, 3, 4, 5, 6, 7].map((step) =>
-      createHit("closedHat", step, step % 2 === 0 ? 0.72 : 0.48),
-    ),
-    createHit("kick", 0, 1),
-    createHit("kick", 4, 0.9),
-    createHit("snare", 2, 0.88),
-    createHit("snare", 6, 0.96),
-  ],
   id: "basic-rock",
-  isBuiltIn: true,
   name: "Basic Rock",
-  recommendedBpmRange: {
-    min: 70,
-    max: 130,
-  },
+  recommendedBpmRange: { min: 70, max: 130 },
   subdivision: 8,
-  timeSignature: {
-    denominator: 4,
-    numerator: 4,
+  timeSignature: { denominator: 4, numerator: 4 },
+  tracks: {
+    closedHat: pulse(8),
+    kick: [hit(0, 1), hit(4, 0.9)],
+    snare: [hit(2, 0.88), hit(6, 0.96)],
   },
-};
+});
 
-export const builtInPatterns = [basicRockPattern] as const;
-
-export function getBuiltInPattern(patternId: string): DrumPattern {
-  return (
-    builtInPatterns.find((pattern) => pattern.id === patternId) ??
-    basicRockPattern
-  );
-}
+export const rockPatterns = [
+  basicRockPattern,
+  createPattern({
+    bars: 1,
+    category: "rock",
+    defaultBpm: 118,
+    description:
+      "Forward-moving eighth notes with an extra kick before beat three.",
+    difficulty: "beginner",
+    id: "driving-eighths",
+    name: "Driving Eighths",
+    recommendedBpmRange: { min: 90, max: 155 },
+    subdivision: 8,
+    timeSignature: { denominator: 4, numerator: 4 },
+    tracks: {
+      closedHat: pulse(8),
+      kick: [hit(0, 1), hit(3, 0.68), hit(4, 0.92), hit(7, 0.62)],
+      snare: [hit(2, 0.9), hit(6, 0.96)],
+    },
+  }),
+  createPattern({
+    bars: 1,
+    category: "rock",
+    defaultBpm: 124,
+    description: "Kick on every quarter note under a simple rock backbeat.",
+    difficulty: "beginner",
+    id: "four-on-the-floor",
+    name: "Four on the Floor",
+    recommendedBpmRange: { min: 90, max: 160 },
+    subdivision: 8,
+    timeSignature: { denominator: 4, numerator: 4 },
+    tracks: {
+      closedHat: pulse(8),
+      kick: [0, 2, 4, 6].map((step) => hit(step, step === 0 ? 1 : 0.83)),
+      snare: [hit(2, 0.86), hit(6, 0.94)],
+    },
+  }),
+  createPattern({
+    bars: 1,
+    category: "rock",
+    defaultBpm: 82,
+    description: "A broad half-time pocket with the backbeat on beat three.",
+    difficulty: "beginner",
+    id: "half-time-rock",
+    name: "Half-Time Rock",
+    recommendedBpmRange: { min: 60, max: 110 },
+    subdivision: 8,
+    timeSignature: { denominator: 4, numerator: 4 },
+    tracks: {
+      closedHat: pulse(8),
+      kick: [hit(0, 1), hit(3, 0.64), hit(6, 0.74)],
+      snare: [hit(4, 1)],
+    },
+  }),
+  createPattern({
+    bars: 1,
+    category: "rock",
+    defaultBpm: 106,
+    description:
+      "Classic backbeat with an open hi-hat lifting the end of the bar.",
+    difficulty: "intermediate",
+    id: "rock-open-hi-hat",
+    name: "Rock with Open Hi-Hat",
+    recommendedBpmRange: { min: 80, max: 145 },
+    subdivision: 8,
+    timeSignature: { denominator: 4, numerator: 4 },
+    tracks: {
+      closedHat: pulse(7),
+      kick: [hit(0, 1), hit(3, 0.68), hit(4, 0.9)],
+      openHat: [hit(7, 0.72)],
+      snare: [hit(2, 0.88), hit(6, 0.96)],
+    },
+  }),
+  createPattern({
+    bars: 2,
+    category: "rock",
+    defaultBpm: 88,
+    description: "One bar of groove followed by a simple descending tom fill.",
+    difficulty: "intermediate",
+    id: "beginner-rock-fill",
+    name: "Beginner Rock Fill",
+    recommendedBpmRange: { min: 65, max: 115 },
+    subdivision: 16,
+    timeSignature: { denominator: 4, numerator: 4 },
+    tracks: {
+      closedHat: pulse(12, 2),
+      crash: [hit(0, 0.82)],
+      highTom: [hit(24, 0.75), hit(25, 0.65)],
+      kick: [hit(0, 1), hit(8, 0.88), hit(16, 0.94), hit(31, 0.86)],
+      lowTom: [hit(28, 0.84), hit(29, 0.76), hit(30, 0.92)],
+      midTom: [hit(26, 0.78), hit(27, 0.7)],
+      snare: [hit(4, 0.9), hit(12, 0.95), hit(20, 0.9)],
+    },
+  }),
+  createPattern({
+    bars: 1,
+    category: "ballad",
+    defaultBpm: 68,
+    description: "A spacious six-eight rock pulse for slow chord changes.",
+    difficulty: "beginner",
+    id: "six-eight-rock-ballad",
+    name: "6/8 Rock Ballad",
+    recommendedBpmRange: { min: 48, max: 92 },
+    subdivision: 8,
+    timeSignature: { denominator: 8, numerator: 6 },
+    tracks: {
+      closedHat: pulse(6, 1, 0, 3),
+      kick: [hit(0, 1), hit(4, 0.68)],
+      snare: [hit(3, 0.92)],
+    },
+  }),
+] as const;

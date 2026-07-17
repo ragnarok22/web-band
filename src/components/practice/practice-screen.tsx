@@ -1,6 +1,15 @@
 "use client";
 
-import { AudioLines, CircleDot, Clock3, Drum, Info, X } from "lucide-react";
+import {
+  AudioLines,
+  CircleDot,
+  Clock3,
+  Drum,
+  Info,
+  LibraryBig,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
@@ -8,9 +17,11 @@ import { BpmControls } from "@/components/practice/bpm-controls";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
 import { MasterVolume } from "@/components/practice/master-volume";
 import { TransportControls } from "@/components/practice/transport-controls";
-import { getBuiltInPattern } from "@/data/patterns/rock";
+import { builtInPatterns, getPatternById } from "@/data/patterns";
 import { clampBpm } from "@/lib/musical-time";
+import { formatPatternCategory } from "@/lib/pattern-filters";
 import { useAudioStore } from "@/stores/audio-store";
+import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import type { AudioEngineStatus } from "@/types/audio";
 
@@ -50,8 +61,16 @@ export function PracticeScreen() {
   );
   const setBpm = usePracticeStore((state) => state.setBpm);
   const setMasterVolume = usePracticeStore((state) => state.setMasterVolume);
+  const setSelectedPatternId = usePracticeStore(
+    (state) => state.setSelectedPatternId,
+  );
+  const customPatterns = usePatternStore((state) => state.customPatterns);
+  const markRecent = usePatternStore((state) => state.markRecent);
   const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
-  const pattern = getBuiltInPattern(selectedPatternId);
+  const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
+  const [patternAnnouncement, setPatternAnnouncement] = useState("");
+  const patterns = [...builtInPatterns, ...customPatterns];
+  const pattern = getPatternById(selectedPatternId, customPatterns);
 
   useEffect(() => {
     return () => disposeAudioEngine();
@@ -80,11 +99,40 @@ export function PracticeScreen() {
   }
 
   async function play(): Promise<void> {
+    markRecent(pattern.id);
     try {
       await getAudioEngine().play({ bpm, masterVolume, pattern });
     } catch {
       // The engine records and exposes a user-facing error through the audio store.
     }
+  }
+
+  function changePattern(patternId: string): void {
+    const nextPattern = patterns.find(
+      (candidate) => candidate.id === patternId,
+    );
+    if (!nextPattern || nextPattern.id === pattern.id) return;
+
+    const commitPattern = (changedPattern: typeof nextPattern) => {
+      setSelectedPatternId(changedPattern.id);
+      markRecent(changedPattern.id);
+      setPendingPatternId(null);
+      setPatternAnnouncement(`Pattern changed to ${changedPattern.name}.`);
+    };
+
+    if (getAudioEngine().changePattern(nextPattern, commitPattern)) {
+      setPendingPatternId(nextPattern.id);
+      setPatternAnnouncement(
+        `${nextPattern.name} queued for the next measure.`,
+      );
+    } else {
+      commitPattern(nextPattern);
+    }
+  }
+
+  function stop(): void {
+    setPendingPatternId(null);
+    getAudioEngine().stop();
   }
 
   return (
@@ -123,7 +171,7 @@ export function PracticeScreen() {
             <div className="relative">
               <div className="mb-6 flex items-center justify-between">
                 <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
-                  Rock
+                  {formatPatternCategory(pattern.category)}
                 </span>
                 <AudioLines aria-hidden="true" className="text-muted size-5" />
               </div>
@@ -133,6 +181,29 @@ export function PracticeScreen() {
               <h1 className="text-foreground mt-2 text-3xl font-black tracking-[-0.045em]">
                 {pattern.name}
               </h1>
+              <label className="mt-4 block">
+                <span className="text-muted mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
+                  Quick select
+                </span>
+                <select
+                  aria-label="Current pattern"
+                  className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-xl border px-3 text-sm font-bold"
+                  onChange={(event) => changePattern(event.target.value)}
+                  value={pendingPatternId ?? pattern.id}
+                >
+                  {patterns.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.name} - {candidate.timeSignature.numerator}/
+                      {candidate.timeSignature.denominator}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {pendingPatternId ? (
+                <p className="text-secondary-accent mt-2 text-xs font-bold">
+                  Queued for the next measure
+                </p>
+              ) : null}
               <p className="text-muted mt-3 text-sm leading-6">
                 {pattern.description}
               </p>
@@ -151,7 +222,8 @@ export function PracticeScreen() {
                     Feel
                   </dt>
                   <dd className="text-foreground mt-1 font-extrabold">
-                    Straight 8ths
+                    {pattern.swing ? "Swing" : "Straight"} {pattern.subdivision}
+                    ths
                   </dd>
                 </div>
               </dl>
@@ -168,7 +240,7 @@ export function PracticeScreen() {
             <TransportControls
               onPause={() => getAudioEngine().pause()}
               onPlay={() => void play()}
-              onStop={() => getAudioEngine().stop()}
+              onStop={stop}
               status={status}
             />
             <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
@@ -229,16 +301,25 @@ export function PracticeScreen() {
                   One-measure count-in
                 </p>
                 <p className="text-muted mt-1 text-sm leading-5">
-                  Four synthesized clicks. The first is accented.
+                  {pattern.timeSignature.numerator} synthesized clicks. The
+                  first is accented.
                 </p>
               </div>
             </div>
           </section>
+
+          <Link
+            className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 lg:col-span-1"
+            href="/patterns"
+          >
+            <LibraryBig aria-hidden="true" className="size-4" />
+            Browse all patterns
+          </Link>
         </aside>
       </div>
 
       <p aria-live="polite" className="sr-only" role="status">
-        {statusCopy[status]}
+        {patternAnnouncement || statusCopy[status]}
       </p>
     </main>
   );

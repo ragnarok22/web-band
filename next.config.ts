@@ -14,7 +14,10 @@ function getRevision() {
 }
 
 const withSerwist = withSerwistInit({
-  additionalPrecacheEntries: [{ url: "/practice", revision: getRevision() }],
+  additionalPrecacheEntries: [
+    { url: "/practice", revision: getRevision() },
+    { url: "/patterns", revision: getRevision() },
+  ],
   disable: process.env.NODE_ENV === "development",
   swDest: "public/sw.js",
   swSrc: "src/app/service-worker.ts",

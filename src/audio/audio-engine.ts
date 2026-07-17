@@ -118,6 +118,22 @@ export class AudioEngine {
     this.instruments?.setMasterVolume(volume);
   }
 
+  changePattern(
+    pattern: DrumPattern,
+    onPatternChanged: (pattern: DrumPattern) => void,
+    immediate = false,
+  ): boolean {
+    if (
+      !this.patternScheduler ||
+      this.runtime.getTransportState() === "stopped"
+    ) {
+      return false;
+    }
+
+    this.patternScheduler.changePattern(pattern, onPatternChanged, immediate);
+    return true;
+  }
+
   dispose(): void {
     this.stop();
     this.removeContextListener?.();

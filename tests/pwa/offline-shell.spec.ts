@@ -25,5 +25,11 @@ test("loads the practice shell offline after the first visit", async ({
   await expect(
     page.getByRole("button", { exact: true, name: "Play" }),
   ).toBeEnabled();
+
+  await page.goto("/patterns", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Find your pocket" }),
+  ).toBeVisible();
+  await expect(page.getByText("44 of 44 patterns")).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

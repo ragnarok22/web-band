@@ -4,9 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PracticeScreen } from "@/components/practice/practice-screen";
 import { useAudioStore } from "@/stores/audio-store";
+import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
 
 const engine = vi.hoisted(() => ({
+  changePattern: vi.fn(() => false),
   pause: vi.fn(),
   play: vi.fn(() => Promise.resolve()),
   setBpm: vi.fn(),
@@ -30,6 +32,26 @@ describe("practice screen", () => {
       masterVolume: 0.8,
       selectedPatternId: "basic-rock",
     });
+    usePatternStore.setState({
+      customPatterns: [],
+      favoritePatternIds: [],
+      isHydrated: true,
+      recentPatternIds: [],
+    });
+  });
+
+  it("changes a stopped pattern immediately", async () => {
+    const user = userEvent.setup();
+    render(<PracticeScreen />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+      "one-drop",
+    );
+    expect(
+      screen.getByRole("heading", { name: "One Drop" }),
+    ).toBeInTheDocument();
+    expect(usePracticeStore.getState().selectedPatternId).toBe("one-drop");
   });
 
   it("shows Basic Rock and starts only after Play is pressed", async () => {

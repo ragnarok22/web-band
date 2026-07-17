@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { basicRockPattern } from "@/data/patterns/rock";
+import { basicRockPattern, builtInPatterns } from "@/data/patterns";
 import { isDrumPattern, validatePattern } from "@/lib/pattern-validation";
 
 describe("pattern validation", () => {
@@ -31,5 +31,11 @@ describe("pattern validation", () => {
       success: false,
       errors: ["Pattern must be an object."],
     });
+  });
+
+  it("keeps every built-in pattern valid and uniquely identified", () => {
+    expect(builtInPatterns).toHaveLength(44);
+    expect(new Set(builtInPatterns.map((pattern) => pattern.id)).size).toBe(44);
+    expect(builtInPatterns.every(isDrumPattern)).toBe(true);
   });
 });

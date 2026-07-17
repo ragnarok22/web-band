@@ -117,6 +117,20 @@ describe("audio engine", () => {
     expect(runtime.setBpmCalls).toEqual([{ bpm: 220, smooth: true }]);
   });
 
+  it("queues pattern changes while the transport is active", async () => {
+    const runtime = new FakeAudioRuntime();
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    const onPatternChanged = vi.fn();
+
+    await engine.play({
+      bpm: 90,
+      masterVolume: 0.8,
+      pattern: basicRockPattern,
+    });
+
+    expect(engine.changePattern(basicRockPattern, onPatternChanged)).toBe(true);
+  });
+
   it("exposes audio initialization failures without creating instruments", async () => {
     const runtime = new FakeAudioRuntime();
     runtime.startError = new Error("Audio permission denied");

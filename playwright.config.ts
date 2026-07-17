@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3100",
+    baseURL: "http://localhost:3002",
     trace: "on-first-retry",
   },
   projects: [
@@ -15,9 +15,9 @@ export default defineConfig({
     { name: "mobile-chromium", use: { ...devices["Pixel 5"] } },
   ],
   webServer: {
-    command: "pnpm exec next dev --webpack --port 3100",
+    command: "pnpm exec next dev --webpack --port 3002",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    url: "http://localhost:3100/practice",
+    url: "http://localhost:3002/practice",
   },
 });

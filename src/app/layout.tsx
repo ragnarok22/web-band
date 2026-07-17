@@ -3,6 +3,7 @@ import { Geist_Mono, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { SiteNavigation } from "@/components/navigation/site-navigation";
 
 import "./globals.css";
 
@@ -48,7 +49,10 @@ export default function RootLayout({
   return (
     <html className={`${manrope.variable} ${geistMono.variable}`} lang="en">
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <SiteNavigation />
+          <div className="pb-20 lg:pb-0 lg:pl-20">{children}</div>
+        </AppProviders>
       </body>
     </html>
   );

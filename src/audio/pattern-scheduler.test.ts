@@ -92,7 +92,7 @@ describe("pattern scheduler", () => {
       startTime: 0,
     });
     expect(runtime.repeats[1]).toMatchObject({
-      interval: "8n",
+      interval: "16n",
       startTime: "1m",
     });
 
@@ -127,5 +127,41 @@ describe("pattern scheduler", () => {
     scheduler.schedule(basicRockPattern, { onPatternStarted: vi.fn() });
 
     expect(runtime.cleared).toEqual([1, 2]);
+  });
+
+  it("applies a queued pattern at the next measure boundary", () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments: PatternInstrumentPlayer = {
+      trigger: vi.fn(),
+      triggerCountIn: vi.fn(),
+    };
+    const scheduler = new PatternScheduler(
+      runtime,
+      instruments,
+      new VisualTimeline(),
+    );
+    const nextPattern = {
+      ...basicRockPattern,
+      hits: basicRockPattern.hits.map((hit) => ({
+        ...hit,
+        id: `next-${hit.id}`,
+      })),
+      id: "next-rock",
+      name: "Next Rock",
+    };
+    const onPatternChanged = vi.fn();
+
+    scheduler.schedule(basicRockPattern, { onPatternStarted: vi.fn() });
+    const patternCallback = runtime.repeats[1]?.callback;
+    patternCallback?.(1);
+    scheduler.changePattern(nextPattern, onPatternChanged);
+
+    for (let step = 1; step < 16; step += 1) {
+      patternCallback?.(1 + step / 10);
+      expect(onPatternChanged).not.toHaveBeenCalled();
+    }
+
+    patternCallback?.(3);
+    expect(onPatternChanged).toHaveBeenCalledWith(nextPattern);
   });
 });
