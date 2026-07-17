@@ -1712,15 +1712,19 @@ The README must explain that the drum sounds are synthesized in real time and th
 
 Start by implementing a solid, working vertical slice containing:
 
-1. Synthesized kick, snare, and hi-hat.
-2. Tone.js transport.
-3. Basic Rock pattern.
-4. BPM controls.
-5. Play, Pause, and Stop.
-6. One-measure count-in.
-7. Beat visualization.
-8. Master volume.
-9. IndexedDB initialization.
-10. Persistence of the last selected BPM and pattern.
+- [x] Synthesized kick, snare, and hi-hat.
+- [x] Tone.js transport.
+- [x] Basic Rock pattern.
+- [x] BPM controls.
+- [x] Play, Pause, and Stop.
+- [x] One-measure count-in.
+- [x] Beat visualization.
+- [x] Master volume.
+- [x] IndexedDB initialization.
+- [x] Persistence of the last selected BPM and pattern.
 
 Verify that this vertical slice works correctly before implementing the remaining features.
+
+**Vertical slice status:** Done and verified on 2026-07-17.
+
+Verification passed with `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage`, `pnpm test:e2e`, `pnpm test:pwa`, and `pnpm build`.
