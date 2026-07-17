@@ -34,15 +34,15 @@ export function TransportControls({
         aria-label="Playback controls"
         className="flex items-center justify-center gap-3 sm:gap-5"
       >
-      <button
-        aria-label="Stop playback"
-        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-14 items-center justify-center rounded-xl border transition-colors disabled:opacity-35"
-        disabled={!canStop}
-        onClick={onStop}
-        type="button"
-      >
-        <Square aria-hidden="true" className="size-5 fill-current" />
-      </button>
+        <button
+          aria-label="Stop playback"
+          className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-14 items-center justify-center rounded-xl border transition-colors disabled:opacity-35"
+          disabled={!canStop}
+          onClick={onStop}
+          type="button"
+        >
+          <Square aria-hidden="true" className="size-5 fill-current" />
+        </button>
 
         <m.button
           aria-label={playLabel}
