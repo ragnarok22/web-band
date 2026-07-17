@@ -173,7 +173,7 @@ export function PracticeScreen() {
             />
             <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
               <CircleDot aria-hidden="true" className="text-accent size-3" />
-              <span>{statusCopy[status]}</span>
+              <span data-testid="transport-status">{statusCopy[status]}</span>
             </div>
           </div>
 
