@@ -1,9 +1,11 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [react()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     coverage: {
       include: ["src/**/*.{ts,tsx}"],
@@ -11,7 +13,7 @@ export default defineConfig({
       reporter: ["text", "html"],
     },
     environment: "jsdom",
-    exclude: ["tests/e2e/**"],
+    include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./src/test/test-setup.ts"],
   },
 });
