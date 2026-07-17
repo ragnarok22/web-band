@@ -19,6 +19,7 @@ class FakeAudioRuntime implements AudioRuntime {
   contextState: AudioContextState = "running";
   state: RuntimeTransportState = "stopped";
   startError: Error | null = null;
+  startPromise: Promise<void> | null = null;
 
   addContextStateListener(): () => void {
     return () => undefined;
@@ -50,6 +51,7 @@ class FakeAudioRuntime implements AudioRuntime {
   }
   setTimeSignature(): void {}
   async startAudio(): Promise<void> {
+    await this.startPromise;
     if (this.startError) throw this.startError;
     this.contextState = "running";
   }
@@ -161,6 +163,29 @@ describe("audio engine", () => {
 
     disposeAudioEngine();
 
+    expect(useAudioStore.getState().status).toBe("not-initialized");
+  });
+
+  it("does not finish initialization after disposal", async () => {
+    const runtime = new FakeAudioRuntime();
+    let resolveStart: () => void = () => undefined;
+    runtime.startPromise = new Promise<void>((resolve) => {
+      resolveStart = resolve;
+    });
+    const factory = vi.fn(() => createInstruments());
+    const engine = new AudioEngine(runtime, factory);
+
+    const playPromise = engine.play({
+      bpm: 90,
+      masterVolume: 0.8,
+      pattern: basicRockPattern,
+    });
+    engine.dispose();
+    resolveStart();
+    await playPromise;
+
+    expect(factory).not.toHaveBeenCalled();
+    expect(runtime.state).toBe("stopped");
     expect(useAudioStore.getState().status).toBe("not-initialized");
   });
 });

@@ -21,8 +21,10 @@ interface ScheduledRepeat {
 
 class FakeAudioRuntime implements AudioRuntime {
   readonly cleared: number[] = [];
+  readonly drawCallbacks: Array<() => void> = [];
   readonly repeats: ScheduledRepeat[] = [];
   bpm = 90;
+  deferDraws = false;
   state: RuntimeTransportState = "stopped";
 
   addContextStateListener(): () => void {
@@ -46,7 +48,11 @@ class FakeAudioRuntime implements AudioRuntime {
   }
   resetTransport(): void {}
   scheduleDraw(callback: () => void): void {
-    callback();
+    if (this.deferDraws) {
+      this.drawCallbacks.push(callback);
+    } else {
+      callback();
+    }
   }
   scheduleRepeat(
     callback: RuntimeCallback,
@@ -163,5 +169,33 @@ describe("pattern scheduler", () => {
 
     patternCallback?.(3);
     expect(onPatternChanged).toHaveBeenCalledWith(nextPattern);
+  });
+
+  it("ignores transport and draw callbacks after clear", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const instruments: PatternInstrumentPlayer = {
+      trigger: vi.fn(),
+      triggerCountIn: vi.fn(),
+    };
+    const timeline = new VisualTimeline();
+    const visuals = vi.fn();
+    timeline.subscribe(visuals);
+    const onPatternStarted = vi.fn();
+    const scheduler = new PatternScheduler(runtime, instruments, timeline);
+
+    scheduler.schedule(basicRockPattern, { onPatternStarted });
+    const countInCallback = runtime.repeats[0]?.callback;
+    const patternCallback = runtime.repeats[1]?.callback;
+    patternCallback?.(1);
+    scheduler.clear();
+    countInCallback?.(2);
+    patternCallback?.(3);
+    runtime.drawCallbacks.forEach((callback) => callback());
+
+    expect(instruments.triggerCountIn).not.toHaveBeenCalled();
+    expect(instruments.trigger).toHaveBeenCalledTimes(2);
+    expect(onPatternStarted).not.toHaveBeenCalled();
+    expect(visuals).not.toHaveBeenCalled();
   });
 });

@@ -29,6 +29,7 @@ export type InstrumentFactory = (
 export class AudioEngine {
   private currentPhase: "count-in" | "pattern" | null = null;
   private instruments: ManagedInstruments | null = null;
+  private lifecycleGeneration = 0;
   private patternScheduler: PatternScheduler | null = null;
   private removeContextListener: (() => void) | null = null;
 
@@ -39,11 +40,22 @@ export class AudioEngine {
   ) {}
 
   async play(configuration: PlaybackConfiguration): Promise<void> {
+    const transportState = this.runtime.getTransportState();
+    const generation =
+      transportState === "stopped"
+        ? ++this.lifecycleGeneration
+        : this.lifecycleGeneration;
+
     try {
-      await this.ensureInitialized(configuration.masterVolume);
+      const initialized = await this.ensureInitialized(
+        configuration.masterVolume,
+        generation,
+      );
+      if (!initialized) return;
 
       if (this.runtime.getContextState() === "suspended") {
         await this.runtime.startAudio();
+        if (!this.isLifecycleCurrent(generation)) return;
       }
 
       if (this.runtime.getTransportState() === "paused") {
@@ -71,6 +83,12 @@ export class AudioEngine {
       this.runtime.resetTransport();
       this.patternScheduler?.schedule(configuration.pattern, {
         onPatternStarted: () => {
+          if (
+            !this.isLifecycleCurrent(generation) ||
+            this.runtime.getTransportState() !== "started"
+          ) {
+            return;
+          }
           this.currentPhase = "pattern";
           useAudioStore.getState().setStatus("playing");
         },
@@ -79,6 +97,7 @@ export class AudioEngine {
       useAudioStore.getState().setStatus("counting-in");
       this.runtime.startTransport();
     } catch (error) {
+      if (!this.isLifecycleCurrent(generation)) return;
       const message =
         error instanceof Error
           ? error.message
@@ -94,11 +113,13 @@ export class AudioEngine {
     }
 
     this.runtime.pauseTransport();
+    this.patternScheduler?.cancelPendingVisuals();
     this.instruments?.stop();
     useAudioStore.getState().setStatus("paused");
   }
 
   stop(): void {
+    this.lifecycleGeneration += 1;
     this.runtime.stopTransport();
     this.runtime.resetTransport();
     this.patternScheduler?.clear();
@@ -145,9 +166,12 @@ export class AudioEngine {
     useAudioStore.getState().setStatus("not-initialized");
   }
 
-  private async ensureInitialized(masterVolume: number): Promise<void> {
+  private async ensureInitialized(
+    masterVolume: number,
+    generation: number,
+  ): Promise<boolean> {
     if (this.instruments) {
-      return;
+      return this.isLifecycleCurrent(generation);
     }
 
     if (
@@ -159,6 +183,7 @@ export class AudioEngine {
 
     useAudioStore.getState().setStatus("initializing");
     await this.runtime.startAudio();
+    if (!this.isLifecycleCurrent(generation)) return false;
     const context = this.runtime.getContext();
     this.instruments = this.createInstruments(context, masterVolume);
     this.patternScheduler = new PatternScheduler(
@@ -176,6 +201,11 @@ export class AudioEngine {
       }
     });
     useAudioStore.getState().setStatus("ready");
+    return true;
+  }
+
+  private isLifecycleCurrent(generation: number): boolean {
+    return generation === this.lifecycleGeneration;
   }
 }
 

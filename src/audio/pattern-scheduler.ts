@@ -25,8 +25,10 @@ export interface PatternInstrumentPlayer {
 export class PatternScheduler {
   private absoluteSixteenthStep = 0;
   private activePattern: DrumPattern | null = null;
+  private drawGeneration = 0;
   private hasStarted = false;
   private pendingPattern: PendingPattern | null = null;
+  private scheduleGeneration = 0;
   private readonly scheduleIds = new Set<number>();
 
   constructor(
@@ -44,8 +46,9 @@ export class PatternScheduler {
       pattern.timeSignature.numerator,
       pattern.timeSignature.denominator,
     );
-    this.scheduleCountIn(pattern);
-    this.schedulePattern(pattern, options);
+    const generation = this.scheduleGeneration;
+    this.scheduleCountIn(pattern, generation);
+    this.schedulePattern(pattern, options, generation);
   }
 
   changePattern(
@@ -65,6 +68,8 @@ export class PatternScheduler {
   }
 
   clear(): void {
+    this.scheduleGeneration += 1;
+    this.drawGeneration += 1;
     for (const scheduleId of this.scheduleIds) {
       this.runtime.clearSchedule(scheduleId);
     }
@@ -76,16 +81,24 @@ export class PatternScheduler {
     this.pendingPattern = null;
   }
 
-  private scheduleCountIn(pattern: DrumPattern): void {
+  cancelPendingVisuals(): void {
+    this.drawGeneration += 1;
+    this.runtime.cancelDraw();
+  }
+
+  private scheduleCountIn(pattern: DrumPattern, generation: number): void {
     let beatIndex = 0;
     const beatCount = pattern.timeSignature.numerator;
     const beatNotation = `${pattern.timeSignature.denominator}n`;
 
     const scheduleId = this.runtime.scheduleRepeat(
       (time) => {
+        if (!this.isScheduleCurrent(generation)) return;
         const currentBeat = beatIndex % beatCount;
         this.instruments.triggerCountIn(time, currentBeat === 0);
+        const drawGeneration = this.drawGeneration;
         this.runtime.scheduleDraw(() => {
+          if (!this.isDrawCurrent(generation, drawGeneration)) return;
           this.timeline.emit({
             isAccent: currentBeat === 0,
             measure: 0,
@@ -106,9 +119,11 @@ export class PatternScheduler {
   private schedulePattern(
     initialPattern: DrumPattern,
     options: PatternSchedulerOptions,
+    generation: number,
   ): void {
     const scheduleId = this.runtime.scheduleRepeat(
       (time) => {
+        if (!this.isScheduleCurrent(generation)) return;
         const patternBeforeBoundary = this.activePattern ?? initialPattern;
         const measureLength = getStepsPerBar(
           patternBeforeBoundary.timeSignature,
@@ -122,10 +137,11 @@ export class PatternScheduler {
           const pending = this.pendingPattern;
           this.applyPattern(pending.pattern);
           this.pendingPattern = null;
-          this.runtime.scheduleDraw(
-            () => pending.onPatternChanged(pending.pattern),
-            time,
-          );
+          const drawGeneration = this.drawGeneration;
+          this.runtime.scheduleDraw(() => {
+            if (!this.isDrawCurrent(generation, drawGeneration)) return;
+            pending.onPatternChanged(pending.pattern);
+          }, time);
         }
 
         const pattern = this.activePattern ?? initialPattern;
@@ -159,7 +175,9 @@ export class PatternScheduler {
           }
         }
 
+        const drawGeneration = this.drawGeneration;
         this.runtime.scheduleDraw(() => {
+          if (!this.isDrawCurrent(generation, drawGeneration)) return;
           if (!this.hasStarted) {
             this.hasStarted = true;
             options.onPatternStarted();
@@ -199,5 +217,19 @@ export class PatternScheduler {
     if (!validation.success) {
       throw new Error(`Pattern is invalid: ${validation.errors.join(" ")}`);
     }
+  }
+
+  private isScheduleCurrent(generation: number): boolean {
+    return generation === this.scheduleGeneration;
+  }
+
+  private isDrawCurrent(
+    scheduleGeneration: number,
+    drawGeneration: number,
+  ): boolean {
+    return (
+      this.isScheduleCurrent(scheduleGeneration) &&
+      drawGeneration === this.drawGeneration
+    );
   }
 }
