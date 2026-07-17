@@ -14,9 +14,12 @@ test("starts, changes tempo, pauses, resumes, and stops the groove", async ({
   await expect(page.getByTestId("transport-status")).toHaveText(
     "Count in: listen for the downbeat",
   );
-  await expect(page.getByTestId("transport-status")).toHaveText("Groove playing", {
-    timeout: 8_000,
-  });
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+    {
+      timeout: 8_000,
+    },
+  );
 
   await page.getByRole("button", { name: "Increase BPM by 5" }).click();
   await expect(
@@ -24,12 +27,18 @@ test("starts, changes tempo, pauses, resumes, and stops the groove", async ({
   ).toHaveValue("95");
 
   await page.getByRole("button", { name: "Pause playback" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText("Groove paused");
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove paused",
+  );
   await page.getByRole("button", { name: "Resume" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText("Groove playing");
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
 
   await page.getByRole("button", { name: "Stop playback" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText("Groove stopped");
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove stopped",
+  );
 });
 
 test("persists the last BPM after a reload", async ({ page }) => {
