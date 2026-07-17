@@ -1,6 +1,9 @@
 import { ToneAudioRuntime, type AudioRuntime } from "@/audio/audio-runtime";
 import { InstrumentManager } from "@/audio/instrument-manager";
-import { PatternScheduler } from "@/audio/pattern-scheduler";
+import {
+  PatternScheduler,
+  type PatternInstrumentPlayer,
+} from "@/audio/pattern-scheduler";
 import { visualTimeline } from "@/audio/visual-timeline";
 import { clampBpm } from "@/lib/musical-time";
 import { useAudioStore } from "@/stores/audio-store";
@@ -12,13 +15,28 @@ export interface PlaybackConfiguration {
   pattern: DrumPattern;
 }
 
+export interface ManagedInstruments extends PatternInstrumentPlayer {
+  dispose: () => void;
+  setMasterVolume: (volume: number) => void;
+  stop: () => void;
+}
+
+export type InstrumentFactory = (
+  context: BaseAudioContext,
+  initialVolume: number,
+) => ManagedInstruments;
+
 export class AudioEngine {
   private currentPhase: "count-in" | "pattern" | null = null;
-  private instruments: InstrumentManager | null = null;
+  private instruments: ManagedInstruments | null = null;
   private patternScheduler: PatternScheduler | null = null;
   private removeContextListener: (() => void) | null = null;
 
-  constructor(private readonly runtime: AudioRuntime) {}
+  constructor(
+    private readonly runtime: AudioRuntime,
+    private readonly createInstruments: InstrumentFactory = (context, volume) =>
+      new InstrumentManager(context, volume),
+  ) {}
 
   async play(configuration: PlaybackConfiguration): Promise<void> {
     try {
@@ -126,7 +144,7 @@ export class AudioEngine {
     useAudioStore.getState().setStatus("initializing");
     await this.runtime.startAudio();
     const context = this.runtime.getContext();
-    this.instruments = new InstrumentManager(context, masterVolume);
+    this.instruments = this.createInstruments(context, masterVolume);
     this.patternScheduler = new PatternScheduler(
       this.runtime,
       this.instruments,
