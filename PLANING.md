@@ -1568,7 +1568,7 @@ Persist the selected theme locally.
 
 Implement the application in this order.
 
-## Phase 1: Foundation
+## ✅ Phase 1: Foundation
 
 - Configure Next.js, TypeScript, Tailwind, linting, tests, and PWA.
 - Add application layout and responsive navigation.
@@ -1577,7 +1577,7 @@ Implement the application in this order.
 - Create IndexedDB schema.
 - Add basic settings persistence.
 
-## Phase 2: Audio engine
+## ✅ Phase 2: Audio engine
 
 - Initialize Tone.js safely.
 - Create synthesized kick, snare, and hi-hat.

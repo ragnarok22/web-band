@@ -22,6 +22,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  allowedDevOrigins: ["localhost", "127.0.0.1", "192.168.100.*"],
 };
 
 export default withSerwist(nextConfig);
