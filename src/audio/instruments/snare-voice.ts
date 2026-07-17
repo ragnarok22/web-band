@@ -42,8 +42,15 @@ export class SnareVoice implements DrumVoice {
     noise.connect(noiseFilter).connect(noiseEnvelope).connect(this.output);
     body.connect(bodyEnvelope).connect(this.output);
 
-    this.resources.track(noise);
-    this.resources.track(body);
+    this.resources.track(noise, () => {
+      noise.disconnect();
+      noiseFilter.disconnect();
+      noiseEnvelope.disconnect();
+    });
+    this.resources.track(body, () => {
+      body.disconnect();
+      bodyEnvelope.disconnect();
+    });
     noise.start(start);
     noise.stop(start + 0.18);
     body.start(start);

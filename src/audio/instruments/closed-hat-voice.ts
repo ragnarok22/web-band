@@ -39,7 +39,12 @@ export class ClosedHatVoice implements DrumVoice {
       .connect(bandPass)
       .connect(envelope)
       .connect(this.output);
-    this.resources.track(noise);
+    this.resources.track(noise, () => {
+      noise.disconnect();
+      highPass.disconnect();
+      bandPass.disconnect();
+      envelope.disconnect();
+    });
     noise.start(start);
     noise.stop(start + 0.065);
   }

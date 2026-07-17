@@ -1,11 +1,15 @@
 export class VoiceResources {
-  private readonly sources = new Set<AudioScheduledSourceNode>();
+  private readonly sources = new Map<AudioScheduledSourceNode, () => void>();
 
-  track(source: AudioScheduledSourceNode): void {
-    this.sources.add(source);
+  track(
+    source: AudioScheduledSourceNode,
+    cleanup = () => source.disconnect(),
+  ): void {
+    this.sources.set(source, cleanup);
     source.addEventListener(
       "ended",
       () => {
+        this.sources.get(source)?.();
         this.sources.delete(source);
       },
       { once: true },
@@ -13,7 +17,7 @@ export class VoiceResources {
   }
 
   stop(): void {
-    for (const source of this.sources) {
+    for (const source of this.sources.keys()) {
       try {
         source.stop();
       } catch {

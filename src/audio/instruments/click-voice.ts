@@ -25,7 +25,10 @@ export class ClickVoice implements DrumVoice {
     envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.035);
 
     oscillator.connect(envelope).connect(this.output);
-    this.resources.track(oscillator);
+    this.resources.track(oscillator, () => {
+      oscillator.disconnect();
+      envelope.disconnect();
+    });
     oscillator.start(start);
     oscillator.stop(start + 0.04);
   }

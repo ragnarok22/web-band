@@ -39,8 +39,14 @@ export class KickVoice implements DrumVoice {
     oscillator.connect(envelope).connect(this.output);
     click.connect(clickEnvelope).connect(this.output);
 
-    this.resources.track(oscillator);
-    this.resources.track(click);
+    this.resources.track(oscillator, () => {
+      oscillator.disconnect();
+      envelope.disconnect();
+    });
+    this.resources.track(click, () => {
+      click.disconnect();
+      clickEnvelope.disconnect();
+    });
     oscillator.start(start);
     oscillator.stop(start + 0.36);
     click.start(start);
