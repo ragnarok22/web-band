@@ -1,3 +1,6 @@
 pnpm-lock.yaml
 public/sw.js
 public/swe-worker-*.js
+test-results
+playwright-report
+coverage

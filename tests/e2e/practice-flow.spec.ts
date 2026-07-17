@@ -1,8 +1,18 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+function trackBrowserErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  page.on("pageerror", (error) => errors.push(error.message));
+  return errors;
+}
 
 test("starts, changes tempo, pauses, resumes, and stops the groove", async ({
   page,
 }) => {
+  const browserErrors = trackBrowserErrors(page);
   await page.goto("/");
   await expect(page).toHaveURL(/\/practice$/);
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
@@ -39,9 +49,11 @@ test("starts, changes tempo, pauses, resumes, and stops the groove", async ({
   await expect(page.getByTestId("transport-status")).toHaveText(
     "Groove stopped",
   );
+  expect(browserErrors).toEqual([]);
 });
 
 test("persists the last BPM after a reload", async ({ page }) => {
+  const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
   await page.getByRole("button", { name: "Increase BPM by 1" }).click();
   await expect(
@@ -52,4 +64,5 @@ test("persists the last BPM after a reload", async ({ page }) => {
   await expect(
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("91");
+  expect(browserErrors).toEqual([]);
 });

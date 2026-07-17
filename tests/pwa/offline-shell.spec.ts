@@ -4,6 +4,8 @@ test("loads the practice shell offline after the first visit", async ({
   context,
   page,
 }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
@@ -23,4 +25,5 @@ test("loads the practice shell offline after the first visit", async ({
   await expect(
     page.getByRole("button", { exact: true, name: "Play" }),
   ).toBeEnabled();
+  expect(pageErrors).toEqual([]);
 });
