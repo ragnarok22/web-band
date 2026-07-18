@@ -1597,7 +1597,7 @@ Implement the application in this order.
 - Add pattern switching at measure boundaries.
 - Add favorites.
 
-## Phase 4: Practice features
+## ✅ Phase 4: Practice features
 
 - Count-in.
 - Practice timer.

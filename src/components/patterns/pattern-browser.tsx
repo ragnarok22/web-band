@@ -60,6 +60,7 @@ export function PatternBrowser() {
   const [previewPatternId, setPreviewPatternId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const patterns = [...builtInPatterns, ...customPatterns];
+  const favoritePatternIdSet = new Set(favoritePatternIds);
   const visiblePatterns = filterAndSortPatterns(
     patterns,
     filters,
@@ -98,10 +99,16 @@ export function PatternBrowser() {
 
     setPreviewPatternId(pattern.id);
     try {
+      const settings = usePracticeStore.getState();
       await engine.play({
         bpm: pattern.defaultBpm,
+        countInMeasures: settings.countInMeasures,
+        fillFrequency: settings.fillFrequency,
+        humanization: settings.humanization,
         masterVolume,
+        mixer: settings.mixer,
         pattern,
+        swing: settings.swing,
       });
     } catch {
       setPreviewPatternId(null);
@@ -277,7 +284,7 @@ export function PatternBrowser() {
         >
           {visiblePatterns.map((pattern) => (
             <PatternCard
-              isFavorite={favoritePatternIds.includes(pattern.id)}
+              isFavorite={favoritePatternIdSet.has(pattern.id)}
               isPreviewing={
                 previewPatternId === pattern.id && status !== "stopped"
               }

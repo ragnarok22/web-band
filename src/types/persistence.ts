@@ -1,3 +1,9 @@
+import type {
+  CountInMeasures,
+  FillFrequency,
+  MixerSettings,
+} from "@/types/audio";
+
 export type PersistenceMode = "indexed-db" | "memory";
 
 export interface PersistenceStatus {
@@ -19,6 +25,12 @@ export interface PersistedEntity {
 
 export interface PracticeSettings {
   bpm: number;
+  countInMeasures: CountInMeasures;
+  fillFrequency: FillFrequency;
+  humanization: number;
   masterVolume: number;
+  mixer: MixerSettings;
   selectedPatternId: string;
+  swing: number;
+  wakeLockEnabled: boolean;
 }

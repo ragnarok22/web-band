@@ -20,7 +20,8 @@ export function TransportControls({
 }: TransportControlsProps) {
   const isBusy = status === "initializing";
   const isRunning = status === "playing" || status === "counting-in";
-  const canStop = isRunning || status === "paused" || status === "suspended";
+  const canStop =
+    isBusy || isRunning || status === "paused" || status === "suspended";
   const playLabel =
     status === "paused"
       ? "Resume"

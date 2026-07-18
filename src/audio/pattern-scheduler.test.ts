@@ -12,6 +12,19 @@ import {
 import { VisualTimeline } from "@/audio/visual-timeline";
 import { basicRockPattern } from "@/data/patterns/rock";
 
+function schedulerOptions(
+  onPatternStarted = vi.fn(),
+  countInMeasures: 0 | 1 | 2 | 4 = 1,
+) {
+  return {
+    countInMeasures,
+    fillFrequency: null,
+    humanization: 0,
+    onPatternStarted,
+    swing: 0,
+  } as const;
+}
+
 interface ScheduledRepeat {
   callback: RuntimeCallback;
   duration?: string;
@@ -23,6 +36,8 @@ class FakeAudioRuntime implements AudioRuntime {
   readonly cleared: number[] = [];
   readonly drawCallbacks: Array<() => void> = [];
   readonly repeats: ScheduledRepeat[] = [];
+  readonly swingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
+    [];
   bpm = 90;
   deferDraws = false;
   state: RuntimeTransportState = "stopped";
@@ -66,6 +81,9 @@ class FakeAudioRuntime implements AudioRuntime {
   setBpm(bpm: number): void {
     this.bpm = bpm;
   }
+  setSwing(amount: number, subdivision: "8n" | "16n"): void {
+    this.swingCalls.push({ amount, subdivision });
+  }
   setTimeSignature(): void {}
   async startAudio(): Promise<void> {}
   startTransport(): void {
@@ -89,7 +107,7 @@ describe("pattern scheduler", () => {
     const onPatternStarted = vi.fn();
     const scheduler = new PatternScheduler(runtime, instruments, timeline);
 
-    scheduler.schedule(basicRockPattern, { onPatternStarted });
+    scheduler.schedule(basicRockPattern, schedulerOptions(onPatternStarted));
 
     expect(runtime.repeats).toHaveLength(2);
     expect(runtime.repeats[0]).toMatchObject({
@@ -129,8 +147,8 @@ describe("pattern scheduler", () => {
       new VisualTimeline(),
     );
 
-    scheduler.schedule(basicRockPattern, { onPatternStarted: vi.fn() });
-    scheduler.schedule(basicRockPattern, { onPatternStarted: vi.fn() });
+    scheduler.schedule(basicRockPattern, schedulerOptions());
+    scheduler.schedule(basicRockPattern, schedulerOptions());
 
     expect(runtime.cleared).toEqual([1, 2]);
   });
@@ -157,7 +175,7 @@ describe("pattern scheduler", () => {
     };
     const onPatternChanged = vi.fn();
 
-    scheduler.schedule(basicRockPattern, { onPatternStarted: vi.fn() });
+    scheduler.schedule(basicRockPattern, schedulerOptions());
     const patternCallback = runtime.repeats[1]?.callback;
     patternCallback?.(1);
     scheduler.changePattern(nextPattern, onPatternChanged);
@@ -184,7 +202,7 @@ describe("pattern scheduler", () => {
     const onPatternStarted = vi.fn();
     const scheduler = new PatternScheduler(runtime, instruments, timeline);
 
-    scheduler.schedule(basicRockPattern, { onPatternStarted });
+    scheduler.schedule(basicRockPattern, schedulerOptions(onPatternStarted));
     const countInCallback = runtime.repeats[0]?.callback;
     const patternCallback = runtime.repeats[1]?.callback;
     patternCallback?.(1);
@@ -197,5 +215,92 @@ describe("pattern scheduler", () => {
     expect(instruments.trigger).toHaveBeenCalledTimes(2);
     expect(onPatternStarted).not.toHaveBeenCalled();
     expect(visuals).not.toHaveBeenCalled();
+  });
+
+  it("starts immediately when count-in is disabled", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+
+    expect(runtime.repeats).toHaveLength(1);
+    expect(runtime.repeats[0]).toMatchObject({
+      interval: "16n",
+      startTime: 0,
+    });
+  });
+
+  it("schedules multiple count-in measures and configures swing", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 4),
+      swing: 0.4,
+    });
+
+    expect(runtime.repeats[0]).toMatchObject({
+      duration: "4m",
+      startTime: 0,
+    });
+    expect(runtime.repeats[1]).toMatchObject({ startTime: "4m" });
+    expect(runtime.swingCalls).toEqual([{ amount: 0.4, subdivision: "8n" }]);
+  });
+
+  it("bounds humanized hit timing and velocity", () => {
+    const runtime = new FakeAudioRuntime();
+    const trigger = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      () => 1,
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      humanization: 1,
+    });
+    const callback = runtime.repeats[0]?.callback;
+
+    callback?.(1);
+    callback?.(2);
+    callback?.(3);
+
+    const nonDownbeatCall = trigger.mock.calls.find(([, time]) => time > 3);
+    expect(nonDownbeatCall?.[1]).toBeLessThanOrEqual(3.01);
+    expect(nonDownbeatCall?.[2]).toBeLessThanOrEqual(1);
+  });
+
+  it("keeps the post-fill crash when a pattern change is queued", () => {
+    const runtime = new FakeAudioRuntime();
+    const trigger = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      fillFrequency: 4,
+    });
+    const callback = runtime.repeats[0]?.callback;
+
+    for (let step = 0; step < 64; step += 1) callback?.(step / 10);
+    scheduler.changePattern(
+      { ...basicRockPattern, id: "next-pattern", name: "Next pattern" },
+      vi.fn(),
+    );
+    trigger.mockClear();
+    callback?.(7);
+
+    expect(trigger).toHaveBeenCalledWith("crash", 7, 0.9);
   });
 });

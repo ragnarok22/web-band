@@ -4,6 +4,8 @@ import { Drum, LibraryBig } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { usePracticeUiStore } from "@/stores/practice-ui-store";
+
 const navigationItems = [
   { href: "/practice", icon: Drum, label: "Practice" },
   { href: "/patterns", icon: LibraryBig, label: "Patterns" },
@@ -11,6 +13,9 @@ const navigationItems = [
 
 export function SiteNavigation() {
   const pathname = usePathname();
+  const isFocusMode = usePracticeUiStore((state) => state.isFocusMode);
+
+  if (pathname === "/practice" && isFocusMode) return null;
 
   return (
     <nav

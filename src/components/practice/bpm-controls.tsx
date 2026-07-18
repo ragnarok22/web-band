@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { Hand, RotateCcw } from "lucide-react";
 
 import { clampBpm, MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 
@@ -8,11 +8,17 @@ interface BpmControlsProps {
   bpm: number;
   defaultBpm: number;
   onChange: (bpm: number) => void;
+  onTap: () => void;
 }
 
 const adjustments = [-5, -1, 1, 5] as const;
 
-export function BpmControls({ bpm, defaultBpm, onChange }: BpmControlsProps) {
+export function BpmControls({
+  bpm,
+  defaultBpm,
+  onChange,
+  onTap,
+}: BpmControlsProps) {
   function commitDraft(input: HTMLInputElement): void {
     const parsed = Number(input.value);
     const nextBpm = clampBpm(parsed, bpm);
@@ -97,6 +103,17 @@ export function BpmControls({ bpm, defaultBpm, onChange }: BpmControlsProps) {
           </button>
         ))}
       </div>
+      <button
+        className="border-accent/30 bg-accent/8 text-accent hover:bg-accent/15 mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border text-sm font-extrabold transition-colors"
+        onClick={onTap}
+        type="button"
+      >
+        <Hand aria-hidden="true" className="size-4" />
+        Tap tempo{" "}
+        <kbd className="border-accent/25 rounded border px-1.5 py-0.5 text-[0.65rem]">
+          T
+        </kbd>
+      </button>
     </section>
   );
 }

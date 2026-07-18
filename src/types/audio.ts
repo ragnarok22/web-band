@@ -11,6 +11,20 @@ export type AudioEngineStatus =
   | "suspended"
   | "error";
 
+export type CountInMeasures = 0 | 1 | 2 | 4;
+export type FillFrequency = null | 4 | 8 | 16 | "random";
+
+export type MixerGroup =
+  "kick" | "snare" | "hiHat" | "toms" | "cymbals" | "percussion";
+
+export interface MixerChannelSettings {
+  muted: boolean;
+  solo: boolean;
+  volume: number;
+}
+
+export type MixerSettings = Record<MixerGroup, MixerChannelSettings>;
+
 export interface DrumVoice {
   trigger(time: number, velocity?: number): void;
   stop?(): void;

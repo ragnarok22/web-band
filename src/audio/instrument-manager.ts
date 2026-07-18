@@ -7,12 +7,28 @@ import { OpenHatVoice } from "@/audio/instruments/open-hat-voice";
 import { RimVoice } from "@/audio/instruments/rim-voice";
 import { SnareVoice } from "@/audio/instruments/snare-voice";
 import { TomVoice } from "@/audio/instruments/tom-voice";
-import type { DrumVoice, VoiceMap } from "@/types/audio";
+import { getEffectiveMixerVolume } from "@/lib/mixer";
+import type {
+  DrumVoice,
+  MixerGroup,
+  MixerSettings,
+  VoiceMap,
+} from "@/types/audio";
 import type { DrumInstrument } from "@/types/pattern";
+
+const mixerTrims: Record<MixerGroup, number> = {
+  cymbals: 0.72,
+  hiHat: 0.8,
+  kick: 0.95,
+  percussion: 0.76,
+  snare: 0.75,
+  toms: 0.82,
+};
 
 export class InstrumentManager {
   private readonly buses: AudioNode[] = [];
   private readonly clickVoice: DrumVoice;
+  private readonly groupBuses: Record<MixerGroup, GainNode>;
   private readonly masterGain: GainNode;
   private readonly voices: VoiceMap;
 
@@ -20,23 +36,24 @@ export class InstrumentManager {
     private readonly context: BaseAudioContext,
     initialVolume: number,
   ) {
-    const kickBus = context.createGain();
-    const snareBus = context.createGain();
-    const hatBus = context.createGain();
-    const tomBus = context.createGain();
-    const cymbalBus = context.createGain();
-    const percussionBus = context.createGain();
+    this.groupBuses = {
+      cymbals: context.createGain(),
+      hiHat: context.createGain(),
+      kick: context.createGain(),
+      percussion: context.createGain(),
+      snare: context.createGain(),
+      toms: context.createGain(),
+    };
     const clickBus = context.createGain();
     const compressor = context.createDynamicsCompressor();
 
     this.masterGain = context.createGain();
     this.masterGain.gain.value = this.toGain(initialVolume);
-    kickBus.gain.value = 0.95;
-    snareBus.gain.value = 0.75;
-    hatBus.gain.value = 0.8;
-    tomBus.gain.value = 0.82;
-    cymbalBus.gain.value = 0.72;
-    percussionBus.gain.value = 0.76;
+    for (const [group, bus] of Object.entries(this.groupBuses) as Array<
+      [MixerGroup, GainNode]
+    >) {
+      bus.gain.value = mixerTrims[group];
+    }
     clickBus.gain.value = 0.9;
 
     compressor.threshold.value = -8;
@@ -45,41 +62,24 @@ export class InstrumentManager {
     compressor.attack.value = 0.003;
     compressor.release.value = 0.16;
 
-    for (const bus of [
-      kickBus,
-      snareBus,
-      hatBus,
-      tomBus,
-      cymbalBus,
-      percussionBus,
-      clickBus,
-    ]) {
+    for (const bus of [...Object.values(this.groupBuses), clickBus]) {
       bus.connect(this.masterGain);
     }
     this.masterGain.connect(compressor).connect(context.destination);
-    this.buses.push(
-      kickBus,
-      snareBus,
-      hatBus,
-      tomBus,
-      cymbalBus,
-      percussionBus,
-      clickBus,
-      compressor,
-    );
+    this.buses.push(...Object.values(this.groupBuses), clickBus, compressor);
 
     this.voices = {
-      clap: new ClapVoice(context, percussionBus),
-      closedHat: new ClosedHatVoice(context, hatBus),
-      crash: new CymbalVoice(context, cymbalBus, "crash"),
-      highTom: new TomVoice(context, tomBus, 190),
-      kick: new KickVoice(context, kickBus),
-      lowTom: new TomVoice(context, tomBus, 92),
-      midTom: new TomVoice(context, tomBus, 135),
-      openHat: new OpenHatVoice(context, hatBus),
-      ride: new CymbalVoice(context, cymbalBus, "ride"),
-      rim: new RimVoice(context, percussionBus),
-      snare: new SnareVoice(context, snareBus),
+      clap: new ClapVoice(context, this.groupBuses.percussion),
+      closedHat: new ClosedHatVoice(context, this.groupBuses.hiHat),
+      crash: new CymbalVoice(context, this.groupBuses.cymbals, "crash"),
+      highTom: new TomVoice(context, this.groupBuses.toms, 190),
+      kick: new KickVoice(context, this.groupBuses.kick),
+      lowTom: new TomVoice(context, this.groupBuses.toms, 92),
+      midTom: new TomVoice(context, this.groupBuses.toms, 135),
+      openHat: new OpenHatVoice(context, this.groupBuses.hiHat),
+      ride: new CymbalVoice(context, this.groupBuses.cymbals, "ride"),
+      rim: new RimVoice(context, this.groupBuses.percussion),
+      snare: new SnareVoice(context, this.groupBuses.snare),
     };
     this.clickVoice = new ClickVoice(context, clickBus);
   }
@@ -98,6 +98,20 @@ export class InstrumentManager {
   setMasterVolume(volume: number, time = this.context.currentTime): void {
     this.masterGain.gain.cancelScheduledValues(time);
     this.masterGain.gain.setTargetAtTime(this.toGain(volume), time, 0.015);
+  }
+
+  setMixer(settings: MixerSettings, time = this.context.currentTime): void {
+    for (const [group, bus] of Object.entries(this.groupBuses) as Array<
+      [MixerGroup, GainNode]
+    >) {
+      const volume = getEffectiveMixerVolume(settings, group);
+      bus.gain.cancelScheduledValues(time);
+      bus.gain.setTargetAtTime(
+        mixerTrims[group] * volume * volume,
+        time,
+        0.015,
+      );
+    }
   }
 
   stop(): void {

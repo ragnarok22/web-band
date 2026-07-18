@@ -8,7 +8,14 @@ describe("BPM controls", () => {
   it("supports one- and five-BPM adjustments", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<BpmControls bpm={90} defaultBpm={90} onChange={onChange} />);
+    render(
+      <BpmControls
+        bpm={90}
+        defaultBpm={90}
+        onChange={onChange}
+        onTap={vi.fn()}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: "Increase BPM by 5" }));
     await user.click(screen.getByRole("button", { name: "Decrease BPM by 1" }));
@@ -20,7 +27,14 @@ describe("BPM controls", () => {
   it("commits numeric input and slider changes", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<BpmControls bpm={90} defaultBpm={90} onChange={onChange} />);
+    render(
+      <BpmControls
+        bpm={90}
+        defaultBpm={90}
+        onChange={onChange}
+        onTap={vi.fn()}
+      />,
+    );
     const numericInput = screen.getByRole("spinbutton", {
       name: "Current BPM",
     });
@@ -34,5 +48,17 @@ describe("BPM controls", () => {
 
     expect(onChange).toHaveBeenCalledWith(132);
     expect(onChange).toHaveBeenCalledWith(145);
+  });
+
+  it("supports tap tempo", async () => {
+    const user = userEvent.setup();
+    const onTap = vi.fn();
+    render(
+      <BpmControls bpm={90} defaultBpm={90} onChange={vi.fn()} onTap={onTap} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Tap tempo/ }));
+
+    expect(onTap).toHaveBeenCalledOnce();
   });
 });

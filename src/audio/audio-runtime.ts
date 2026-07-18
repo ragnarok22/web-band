@@ -1,6 +1,7 @@
 import * as Tone from "tone";
 
 export type RuntimeTransportState = "started" | "paused" | "stopped";
+export type RuntimeSwingSubdivision = "8n" | "16n";
 export type RuntimeCallback = (time: number) => void;
 
 export interface AudioRuntime {
@@ -20,6 +21,7 @@ export interface AudioRuntime {
     duration?: string,
   ): number;
   setBpm(bpm: number, smooth: boolean): void;
+  setSwing(amount: number, subdivision: RuntimeSwingSubdivision): void;
   setTimeSignature(numerator: number, denominator: number): void;
   startAudio(): Promise<void>;
   startTransport(): void;
@@ -86,6 +88,12 @@ export class ToneAudioRuntime implements AudioRuntime {
     } else {
       bpmSignal.value = bpm;
     }
+  }
+
+  setSwing(amount: number, subdivision: RuntimeSwingSubdivision): void {
+    const transport = Tone.getTransport();
+    transport.swingSubdivision = subdivision;
+    transport.swing = amount;
   }
 
   setTimeSignature(numerator: number, denominator: number): void {

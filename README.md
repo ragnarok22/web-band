@@ -1,6 +1,6 @@
 # Web Band Rhythm Practice
 
-Web Band is a browser-based drum and rhythm practice companion for guitarists. The completed foundation, audio-engine, and pattern-system phases provide a focused practice room, a 44-pattern groove library, accurate Tone.js scheduling, live tempo controls, synchronized beat visualization, and local persistence.
+Web Band is a browser-based drum and rhythm practice companion for guitarists. The completed foundation, audio-engine, pattern-system, and practice-feature phases provide a focused practice room, a 44-pattern groove library, accurate Tone.js scheduling, configurable groove controls, synchronized beat visualization, and local persistence.
 
 Every drum sound is synthesized in real time with the Web Audio API. The project contains no recorded drum samples, MP3 files, WAV files, external audio assets, backend, authentication, analytics, or cloud services.
 
@@ -15,16 +15,21 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Support for 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, and 12/8 patterns on eighth- and sixteenth-note grids.
 - Smooth BPM changes from 40 to 220 without restarting playback.
 - Play, Pause, Resume, and Stop behavior.
-- One-measure, meter-aware count-in with an accented downbeat.
+- Configurable 0-, 1-, 2-, or 4-measure count-in with meter-aware clicks and accented downbeats.
 - Audio-synchronized beat and subdivision visualization.
-- Perceptual master-volume control.
+- Practice timer, distraction-free focus mode, and tap tempo.
+- Live swing and subtle timing and velocity humanization.
+- Meter-aware generated fills every 4, 8, or 16 measures or at controlled random intervals.
+- Compact six-group mixer with volume, mute, solo, reset, and perceptual master-volume control.
+- Optional Screen Wake Lock during active practice.
+- Keyboard shortcuts for transport, BPM, tap tempo, focus mode, and master mute.
 - Versioned IndexedDB initialization through Dexie.
 - In-memory storage fallback with a nonblocking warning.
-- `localStorage` persistence for BPM, selected pattern, and volume.
+- Versioned `localStorage` persistence for practice and mixer preferences.
 - Installable PWA with offline practice and pattern-library routes plus an update notification.
 - Responsive layouts tested at 320px, mobile, and desktop widths.
 
-The remaining practice, guided-training, editing, history, and final-polish phases are tracked in `PLANING.md`.
+The remaining guided-training, editing, history, and final-polish phases are tracked in `PLANING.md`.
 
 ## Requirements
 
@@ -97,12 +102,14 @@ Components do not access IndexedDB directly. They initialize and consume storage
 
 1. Play invokes `Tone.start()` from the direct user interaction.
 2. The engine creates one reusable instrument manager and master signal path.
-3. The scheduler registers one count-in event and one continuous sixteenth-note pattern pulse on `Tone.getTransport()`.
+3. The scheduler registers an optional meter-aware count-in and one continuous sixteenth-note pattern pulse on `Tone.getTransport()`.
 4. Tone's callback time is passed directly to Web Audio nodes for sample-accurate scheduling.
 5. `Tone.getDraw().schedule()` publishes visual steps at the audible time.
 6. Queued pattern changes replace the active pattern at the next measure and may change meter or subdivision without rebuilding the transport loop.
-7. Pause preserves transport position. Stop clears owned schedules, resets position, and silences active voices.
-8. Disposal stops sources, disconnects one-shot and shared nodes, removes context listeners, and cancels draw work.
+7. Swing updates Tone Transport directly; humanization and fills alter individual scheduled hits without changing the transport grid.
+8. Six retained kit buses apply channel volume, mute, and solo automation without rebuilding voices or schedules.
+9. Pause preserves transport position. Stop clears owned schedules, resets position, and silences active voices.
+10. Disposal stops sources, disconnects one-shot and shared nodes, removes context listeners, and cancels draw work.
 
 The instrument modules use the following synthesis:
 
@@ -155,13 +162,18 @@ Kick:       x       x
 
 ## Local Settings
 
-The versioned key `web-band-practice-settings-v1` stores only:
+The versioned key `web-band-practice-settings-v2` stores:
 
 - Last BPM.
 - Last selected pattern ID.
 - Master volume.
+- Count-in length.
+- Swing and humanization.
+- Fill frequency.
+- Six mixer channel settings.
+- Wake Lock preference.
 
-The separate `web-band-recent-patterns-v1` key stores up to 20 recently used pattern IDs for browser sorting. Favorites remain in IndexedDB.
+The repository reads the legacy `web-band-practice-settings-v1` shape and fills the Phase 4 fields with safe defaults. The separate `web-band-recent-patterns-v1` key stores up to 20 recently used pattern IDs for browser sorting. Favorites remain in IndexedDB.
 
 Values are parsed defensively and clamped before use. Corrupted settings fall back to Basic Rock at 90 BPM and 80% volume.
 
@@ -191,6 +203,7 @@ Graceful degradation:
 - A suspended audio context resumes when Play is pressed.
 - Missing or blocked IndexedDB uses memory for the current visit.
 - Missing service-worker support leaves the online practice experience functional.
+- Missing or denied Screen Wake Lock leaves playback functional and reports a nonblocking status.
 
 ## Testing
 
@@ -201,6 +214,9 @@ Playwright runs the real browser audio engine and verifies:
 - Root redirect and initial Basic Rock state.
 - User-initiated audio startup.
 - Count-in to groove transition.
+- Configurable count-in, groove feel, fill, and mixer persistence.
+- Space-bar start and active-session stop behavior.
+- Focus-mode entry and exit.
 - Live BPM changes.
 - Pause, Resume, and Stop.
 - Pattern browsing and filtering.
@@ -214,11 +230,11 @@ The Web Audio implementation remains real in production. Unit component tests mo
 
 ## Known Limitations
 
-- The count-in is fixed to one measure, although it follows the selected pattern's meter.
-- Pattern editing, fills, mixer controls, wake lock, guided trainers, history, presets, theme selection, backup import/export, and keyboard shortcuts remain future phases.
-- Swing metadata is present on relevant patterns but transport swing control arrives in the next phase.
+- Pattern editing, guided trainers, history, presets, theme selection, and backup import/export remain future phases.
+- Wake Lock depends on browser support and a secure context.
+- Fills are generic meter-aware practice fills rather than category-specific arrangements.
 - Automated tests can verify scheduling, state, node creation, and error-free playback, but synthesized timbre still benefits from listening checks on physical devices and headphones.
 
 ## Future Improvements
 
-The next planned phase adds configurable count-in, practice timer, focus mode, tap tempo, swing, humanization, fills, mixer controls, and wake lock. Later phases add guided trainers, creation tools, history, backup workflows, and final cross-browser audio tuning as listed in `PLANING.md`.
+The next planned phase adds tempo, chord-progression, and strumming trainers plus practice presets. Later phases add creation tools, history, backup workflows, and final cross-browser audio tuning as listed in `PLANING.md`.

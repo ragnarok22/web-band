@@ -1,16 +1,35 @@
 import type { AudioRuntime } from "@/audio/audio-runtime";
+import { getGenericFillHits, shouldFillMeasure } from "@/audio/fill-generator";
 import type { VisualTimeline } from "@/audio/visual-timeline";
-import { getPatternStepCount, getStepsPerBar } from "@/lib/musical-time";
+import {
+  getPatternStepCount,
+  getStepsPerBar,
+  getSubdivisionNotation,
+} from "@/lib/musical-time";
+import { clampUnit } from "@/lib/mixer";
 import { validatePattern } from "@/lib/pattern-validation";
+import type { CountInMeasures, FillFrequency } from "@/types/audio";
+import type { DrumInstrument } from "@/types/pattern";
 import type { DrumPattern } from "@/types/pattern";
 
 interface PatternSchedulerOptions {
+  countInMeasures: CountInMeasures;
+  fillFrequency: FillFrequency;
+  humanization: number;
   onPatternStarted: () => void;
+  swing: number;
 }
 
 interface PendingPattern {
   onPatternChanged: (pattern: DrumPattern) => void;
   pattern: DrumPattern;
+}
+
+interface PlayableHit {
+  instrument: DrumInstrument;
+  probability?: number;
+  timingOffset?: number;
+  velocity: number;
 }
 
 export interface PatternInstrumentPlayer {
@@ -26,15 +45,21 @@ export class PatternScheduler {
   private absoluteSixteenthStep = 0;
   private activePattern: DrumPattern | null = null;
   private drawGeneration = 0;
+  private fillFrequency: FillFrequency = null;
   private hasStarted = false;
+  private humanization = 0;
+  private isCurrentMeasureFill = false;
   private pendingPattern: PendingPattern | null = null;
+  private previousMeasureWasFill = false;
   private scheduleGeneration = 0;
   private readonly scheduleIds = new Set<number>();
+  private swing = 0;
 
   constructor(
     private readonly runtime: AudioRuntime,
     private readonly instruments: PatternInstrumentPlayer,
     private readonly timeline: VisualTimeline,
+    private readonly random: () => number = Math.random,
   ) {}
 
   schedule(pattern: DrumPattern, options: PatternSchedulerOptions): void {
@@ -42,13 +67,38 @@ export class PatternScheduler {
 
     this.clear();
     this.activePattern = pattern;
+    this.fillFrequency = options.fillFrequency;
+    this.humanization = clampUnit(options.humanization);
+    this.swing = Math.min(0.65, Math.max(0, options.swing));
     this.runtime.setTimeSignature(
       pattern.timeSignature.numerator,
       pattern.timeSignature.denominator,
     );
+    this.runtime.setSwing(
+      this.swing,
+      getSubdivisionNotation(pattern.subdivision),
+    );
     const generation = this.scheduleGeneration;
-    this.scheduleCountIn(pattern, generation);
+    this.scheduleCountIn(pattern, options.countInMeasures, generation);
     this.schedulePattern(pattern, options, generation);
+  }
+
+  setFillFrequency(frequency: FillFrequency): void {
+    this.fillFrequency = frequency;
+  }
+
+  setHumanization(amount: number): void {
+    this.humanization = clampUnit(amount);
+  }
+
+  setSwing(amount: number): void {
+    this.swing = Math.min(0.65, Math.max(0, amount));
+    if (this.activePattern) {
+      this.runtime.setSwing(
+        this.swing,
+        getSubdivisionNotation(this.activePattern.subdivision),
+      );
+    }
   }
 
   changePattern(
@@ -78,7 +128,9 @@ export class PatternScheduler {
     this.absoluteSixteenthStep = 0;
     this.activePattern = null;
     this.hasStarted = false;
+    this.isCurrentMeasureFill = false;
     this.pendingPattern = null;
+    this.previousMeasureWasFill = false;
   }
 
   cancelPendingVisuals(): void {
@@ -86,7 +138,13 @@ export class PatternScheduler {
     this.runtime.cancelDraw();
   }
 
-  private scheduleCountIn(pattern: DrumPattern, generation: number): void {
+  private scheduleCountIn(
+    pattern: DrumPattern,
+    countInMeasures: CountInMeasures,
+    generation: number,
+  ): void {
+    if (countInMeasures === 0) return;
+
     let beatIndex = 0;
     const beatCount = pattern.timeSignature.numerator;
     const beatNotation = `${pattern.timeSignature.denominator}n`;
@@ -95,13 +153,14 @@ export class PatternScheduler {
       (time) => {
         if (!this.isScheduleCurrent(generation)) return;
         const currentBeat = beatIndex % beatCount;
+        const currentMeasure = Math.floor(beatIndex / beatCount) + 1;
         this.instruments.triggerCountIn(time, currentBeat === 0);
         const drawGeneration = this.drawGeneration;
         this.runtime.scheduleDraw(() => {
           if (!this.isDrawCurrent(generation, drawGeneration)) return;
           this.timeline.emit({
             isAccent: currentBeat === 0,
-            measure: 0,
+            measure: currentMeasure,
             phase: "count-in",
             step: currentBeat,
           });
@@ -110,7 +169,7 @@ export class PatternScheduler {
       },
       beatNotation,
       0,
-      "1m",
+      `${countInMeasures}m`,
     );
 
     this.scheduleIds.add(scheduleId);
@@ -132,6 +191,7 @@ export class PatternScheduler {
         const isMeasureBoundary =
           this.absoluteSixteenthStep === 0 ||
           this.absoluteSixteenthStep % measureLength === 0;
+        const addPostFillCrash = isMeasureBoundary && this.isCurrentMeasureFill;
 
         if (isMeasureBoundary && this.pendingPattern) {
           const pending = this.pendingPattern;
@@ -146,6 +206,18 @@ export class PatternScheduler {
 
         const pattern = this.activePattern ?? initialPattern;
         const currentAbsoluteSixteenthStep = this.absoluteSixteenthStep;
+        const sixteenthsPerBar = getStepsPerBar(pattern.timeSignature, 16);
+        const measure =
+          Math.floor(currentAbsoluteSixteenthStep / sixteenthsPerBar) + 1;
+        if (isMeasureBoundary) {
+          this.previousMeasureWasFill = this.isCurrentMeasureFill;
+          this.isCurrentMeasureFill = shouldFillMeasure(
+            this.fillFrequency,
+            measure,
+            this.previousMeasureWasFill,
+            this.random,
+          );
+        }
         const sixteenthsPerStep = 16 / pattern.subdivision;
         const patternLength = getPatternStepCount(pattern) * sixteenthsPerStep;
         const patternSixteenthStep = this.absoluteSixteenthStep % patternLength;
@@ -161,16 +233,31 @@ export class PatternScheduler {
           pattern.subdivision,
         );
         const stepInBar = patternStep % stepsPerBar;
-        const hits = pattern.hits.filter((hit) => hit.step === patternStep);
+        const patternHits: PlayableHit[] = pattern.hits.filter(
+          (hit) => hit.step === patternStep,
+        );
+        const fillHits = this.isCurrentMeasureFill
+          ? getGenericFillHits(pattern, stepInBar)
+          : [];
+        const hits: PlayableHit[] =
+          fillHits.length > 0 ? [...fillHits] : [...patternHits];
+
+        if (
+          addPostFillCrash &&
+          !hits.some((hit) => hit.instrument === "crash")
+        ) {
+          hits.push({ instrument: "crash", velocity: 0.9 });
+        }
 
         for (const hit of hits) {
           const shouldPlay =
-            hit.probability === undefined || Math.random() <= hit.probability;
+            hit.probability === undefined || this.random() <= hit.probability;
           if (shouldPlay) {
+            const humanized = this.humanizeHit(hit, stepInBar === 0);
             this.instruments.trigger(
               hit.instrument,
-              time + (hit.timingOffset ?? 0),
-              hit.velocity,
+              time + (hit.timingOffset ?? 0) + humanized.timeOffset,
+              humanized.velocity,
             );
           }
         }
@@ -197,7 +284,7 @@ export class PatternScheduler {
         this.absoluteSixteenthStep += 1;
       },
       "16n",
-      "1m",
+      options.countInMeasures === 0 ? 0 : `${options.countInMeasures}m`,
     );
 
     this.scheduleIds.add(scheduleId);
@@ -210,6 +297,30 @@ export class PatternScheduler {
       pattern.timeSignature.numerator,
       pattern.timeSignature.denominator,
     );
+    this.runtime.setSwing(
+      this.swing,
+      getSubdivisionNotation(pattern.subdivision),
+    );
+    this.isCurrentMeasureFill = false;
+    this.previousMeasureWasFill = false;
+  }
+
+  private humanizeHit(
+    hit: PlayableHit,
+    isDownbeat: boolean,
+  ): { timeOffset: number; velocity: number } {
+    if (this.humanization === 0) {
+      return { timeOffset: 0, velocity: hit.velocity };
+    }
+
+    const timeOffset = isDownbeat
+      ? 0
+      : this.random() * 0.01 * this.humanization;
+    const velocityOffset = (this.random() * 2 - 1) * 0.05 * this.humanization;
+    return {
+      timeOffset,
+      velocity: clampUnit(hit.velocity + velocityOffset),
+    };
   }
 
   private assertValidPattern(pattern: DrumPattern): void {

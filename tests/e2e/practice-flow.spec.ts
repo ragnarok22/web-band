@@ -66,3 +66,47 @@ test("persists the last BPM after a reload", async ({ page }) => {
   ).toHaveValue("91");
   expect(browserErrors).toEqual([]);
 });
+
+test("persists groove controls and supports focus keyboard practice", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.goto("/practice");
+
+  await page.getByText("Off", { exact: true }).click();
+  await page.getByRole("combobox", { name: "Phrase fills" }).selectOption("8");
+  await page.getByRole("slider", { name: "Swing" }).fill("0.25");
+  await page.getByRole("button", { name: "Mute Kick" }).click();
+
+  await page.locator("header").click();
+  await page.keyboard.press("Space");
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
+  await page.keyboard.press("Space");
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove stopped",
+  );
+
+  await page.getByRole("button", { name: "Focus" }).click();
+  await expect(page.getByText("Focus session")).toBeVisible();
+  await expect(
+    page.getByRole("navigation", { name: "Primary navigation" }),
+  ).toBeHidden();
+  await page.keyboard.press("f");
+  await expect(
+    page.getByRole("combobox", { name: "Current pattern" }),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("radio", { name: "Off" })).toBeChecked();
+  await expect(
+    page.getByRole("combobox", { name: "Phrase fills" }),
+  ).toHaveValue("8");
+  await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0.25");
+  await expect(page.getByRole("button", { name: "Mute Kick" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(browserErrors).toEqual([]);
+});

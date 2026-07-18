@@ -11,11 +11,27 @@ import type {
   RuntimeTransportState,
 } from "@/audio/audio-runtime";
 import { basicRockPattern } from "@/data/patterns/rock";
+import { createDefaultMixerSettings } from "@/lib/mixer";
 import { useAudioStore } from "@/stores/audio-store";
+
+function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
+  return {
+    bpm: 90,
+    countInMeasures,
+    fillFrequency: null,
+    humanization: 0,
+    masterVolume: 0.8,
+    mixer: createDefaultMixerSettings(),
+    pattern: basicRockPattern,
+    swing: 0,
+  } as const;
+}
 
 class FakeAudioRuntime implements AudioRuntime {
   readonly callbacks: RuntimeCallback[] = [];
   readonly setBpmCalls: Array<{ bpm: number; smooth: boolean }> = [];
+  readonly setSwingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
+    [];
   contextState: AudioContextState = "running";
   state: RuntimeTransportState = "stopped";
   startError: Error | null = null;
@@ -49,6 +65,9 @@ class FakeAudioRuntime implements AudioRuntime {
   setBpm(bpm: number, smooth: boolean): void {
     this.setBpmCalls.push({ bpm, smooth });
   }
+  setSwing(amount: number, subdivision: "8n" | "16n"): void {
+    this.setSwingCalls.push({ amount, subdivision });
+  }
   setTimeSignature(): void {}
   async startAudio(): Promise<void> {
     await this.startPromise;
@@ -67,6 +86,7 @@ function createInstruments(): ManagedInstruments {
   return {
     dispose: vi.fn(),
     setMasterVolume: vi.fn(),
+    setMixer: vi.fn(),
     stop: vi.fn(),
     trigger: vi.fn(),
     triggerCountIn: vi.fn(),
@@ -88,11 +108,7 @@ describe("audio engine", () => {
     const instruments = createInstruments();
     const engine = new AudioEngine(runtime, () => instruments);
 
-    await engine.play({
-      bpm: 90,
-      masterVolume: 0.8,
-      pattern: basicRockPattern,
-    });
+    await engine.play(playbackConfiguration());
     expect(useAudioStore.getState().status).toBe("counting-in");
     expect(runtime.state).toBe("started");
 
@@ -103,11 +119,7 @@ describe("audio engine", () => {
     expect(useAudioStore.getState().status).toBe("paused");
     expect(instruments.stop).toHaveBeenCalled();
 
-    await engine.play({
-      bpm: 90,
-      masterVolume: 0.8,
-      pattern: basicRockPattern,
-    });
+    await engine.play(playbackConfiguration());
     expect(useAudioStore.getState().status).toBe("playing");
 
     engine.stop();
@@ -128,11 +140,7 @@ describe("audio engine", () => {
     const engine = new AudioEngine(runtime, () => createInstruments());
     const onPatternChanged = vi.fn();
 
-    await engine.play({
-      bpm: 90,
-      masterVolume: 0.8,
-      pattern: basicRockPattern,
-    });
+    await engine.play(playbackConfiguration());
 
     expect(engine.changePattern(basicRockPattern, onPatternChanged)).toBe(true);
   });
@@ -143,13 +151,9 @@ describe("audio engine", () => {
     const factory = vi.fn(() => createInstruments());
     const engine = new AudioEngine(runtime, factory);
 
-    await expect(
-      engine.play({
-        bpm: 90,
-        masterVolume: 0.8,
-        pattern: basicRockPattern,
-      }),
-    ).rejects.toThrow("Audio permission denied");
+    await expect(engine.play(playbackConfiguration())).rejects.toThrow(
+      "Audio permission denied",
+    );
     expect(factory).not.toHaveBeenCalled();
     expect(useAudioStore.getState()).toMatchObject({
       errorMessage: "Audio permission denied",
@@ -175,11 +179,7 @@ describe("audio engine", () => {
     const factory = vi.fn(() => createInstruments());
     const engine = new AudioEngine(runtime, factory);
 
-    const playPromise = engine.play({
-      bpm: 90,
-      masterVolume: 0.8,
-      pattern: basicRockPattern,
-    });
+    const playPromise = engine.play(playbackConfiguration());
     engine.dispose();
     resolveStart();
     await playPromise;
@@ -187,5 +187,26 @@ describe("audio engine", () => {
     expect(factory).not.toHaveBeenCalled();
     expect(runtime.state).toBe("stopped");
     expect(useAudioStore.getState().status).toBe("not-initialized");
+  });
+
+  it("starts in playing state when count-in is disabled", async () => {
+    const runtime = new FakeAudioRuntime();
+    const engine = new AudioEngine(runtime, () => createInstruments());
+
+    await engine.play(playbackConfiguration(0));
+
+    expect(useAudioStore.getState().status).toBe("playing");
+    expect(runtime.callbacks).toHaveLength(1);
+  });
+
+  it("applies mixer settings when playback starts", async () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments = createInstruments();
+    const engine = new AudioEngine(runtime, () => instruments);
+    const configuration = playbackConfiguration();
+
+    await engine.play(configuration);
+
+    expect(instruments.setMixer).toHaveBeenCalledWith(configuration.mixer);
   });
 });

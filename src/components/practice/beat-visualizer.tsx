@@ -4,17 +4,23 @@ import { useEffect, useRef } from "react";
 
 import { visualTimeline } from "@/audio/visual-timeline";
 import { getBeatLabels, isMainBeat } from "@/lib/musical-time";
-import type { AudioEngineStatus } from "@/types/audio";
+import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 
 interface BeatVisualizerProps {
+  countInMeasures: CountInMeasures;
   pattern: DrumPattern;
   status: AudioEngineStatus;
 }
 
-export function BeatVisualizer({ pattern, status }: BeatVisualizerProps) {
+export function BeatVisualizer({
+  countInMeasures,
+  pattern,
+  status,
+}: BeatVisualizerProps) {
   const beatRefs = useRef<Array<HTMLDivElement | null>>([]);
   const countInRef = useRef<HTMLSpanElement>(null);
+  const countInMeasureRef = useRef<HTMLSpanElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const previousStepRef = useRef<number | null>(null);
   const labels = getBeatLabels(pattern);
@@ -24,6 +30,9 @@ export function BeatVisualizer({ pattern, status }: BeatVisualizerProps) {
       if (visualStep.phase === "count-in") {
         if (countInRef.current) {
           countInRef.current.textContent = String(visualStep.step + 1);
+        }
+        if (countInMeasureRef.current) {
+          countInMeasureRef.current.textContent = String(visualStep.measure);
         }
         return;
       }
@@ -63,6 +72,8 @@ export function BeatVisualizer({ pattern, status }: BeatVisualizerProps) {
       previousStepRef.current = null;
       if (measureRef.current) measureRef.current.textContent = "1";
       if (countInRef.current) countInRef.current.textContent = "1";
+      if (countInMeasureRef.current)
+        countInMeasureRef.current.textContent = "1";
     }
   }, [status]);
 
@@ -119,6 +130,11 @@ export function BeatVisualizer({ pattern, status }: BeatVisualizerProps) {
         >
           1
         </span>
+        {countInMeasures > 1 ? (
+          <span className="text-muted-strong text-xs font-bold tabular-nums">
+            Bar <span ref={countInMeasureRef}>1</span> of {countInMeasures}
+          </span>
+        ) : null}
       </div>
     </section>
   );

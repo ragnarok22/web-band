@@ -6,18 +6,30 @@ import {
 } from "@/audio/pattern-scheduler";
 import { visualTimeline } from "@/audio/visual-timeline";
 import { clampBpm } from "@/lib/musical-time";
+import { clampUnit } from "@/lib/mixer";
 import { useAudioStore } from "@/stores/audio-store";
+import type {
+  CountInMeasures,
+  FillFrequency,
+  MixerSettings,
+} from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 
 export interface PlaybackConfiguration {
   bpm: number;
+  countInMeasures: CountInMeasures;
+  fillFrequency: FillFrequency;
+  humanization: number;
   masterVolume: number;
+  mixer: MixerSettings;
   pattern: DrumPattern;
+  swing: number;
 }
 
 export interface ManagedInstruments extends PatternInstrumentPlayer {
   dispose: () => void;
   setMasterVolume: (volume: number) => void;
+  setMixer: (settings: MixerSettings) => void;
   stop: () => void;
 }
 
@@ -58,6 +70,16 @@ export class AudioEngine {
         if (!this.isLifecycleCurrent(generation)) return;
       }
 
+      this.setBpm(
+        configuration.bpm,
+        this.runtime.getTransportState() !== "stopped",
+      );
+      this.setMasterVolume(configuration.masterVolume);
+      this.setMixer(configuration.mixer);
+      this.setFillFrequency(configuration.fillFrequency);
+      this.setHumanization(configuration.humanization);
+      this.setSwing(configuration.swing);
+
       if (this.runtime.getTransportState() === "paused") {
         this.runtime.startTransport();
         useAudioStore
@@ -77,11 +99,12 @@ export class AudioEngine {
         return;
       }
 
-      this.setBpm(configuration.bpm, false);
-      this.setMasterVolume(configuration.masterVolume);
       this.runtime.stopTransport();
       this.runtime.resetTransport();
       this.patternScheduler?.schedule(configuration.pattern, {
+        countInMeasures: configuration.countInMeasures,
+        fillFrequency: configuration.fillFrequency,
+        humanization: configuration.humanization,
         onPatternStarted: () => {
           if (
             !this.isLifecycleCurrent(generation) ||
@@ -92,9 +115,15 @@ export class AudioEngine {
           this.currentPhase = "pattern";
           useAudioStore.getState().setStatus("playing");
         },
+        swing: configuration.swing,
       });
-      this.currentPhase = "count-in";
-      useAudioStore.getState().setStatus("counting-in");
+      this.currentPhase =
+        configuration.countInMeasures === 0 ? "pattern" : "count-in";
+      useAudioStore
+        .getState()
+        .setStatus(
+          configuration.countInMeasures === 0 ? "playing" : "counting-in",
+        );
       this.runtime.startTransport();
     } catch (error) {
       if (!this.isLifecycleCurrent(generation)) return;
@@ -126,9 +155,7 @@ export class AudioEngine {
     this.instruments?.stop();
     this.currentPhase = null;
 
-    if (this.instruments) {
-      useAudioStore.getState().setStatus("stopped");
-    }
+    useAudioStore.getState().setStatus("stopped");
   }
 
   setBpm(bpm: number, smooth = true): void {
@@ -137,6 +164,22 @@ export class AudioEngine {
 
   setMasterVolume(volume: number): void {
     this.instruments?.setMasterVolume(volume);
+  }
+
+  setMixer(settings: MixerSettings): void {
+    this.instruments?.setMixer(settings);
+  }
+
+  setFillFrequency(frequency: FillFrequency): void {
+    this.patternScheduler?.setFillFrequency(frequency);
+  }
+
+  setHumanization(amount: number): void {
+    this.patternScheduler?.setHumanization(clampUnit(amount));
+  }
+
+  setSwing(amount: number): void {
+    this.patternScheduler?.setSwing(Math.min(0.65, Math.max(0, amount)));
   }
 
   changePattern(

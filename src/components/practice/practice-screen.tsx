@@ -1,31 +1,38 @@
 "use client";
 
-import {
-  AudioLines,
-  CircleDot,
-  Clock3,
-  Drum,
-  Info,
-  LibraryBig,
-  X,
-} from "lucide-react";
+import { AudioLines, CircleDot, Drum, Info, LibraryBig, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { BpmControls } from "@/components/practice/bpm-controls";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
-import { MasterVolume } from "@/components/practice/master-volume";
+import { CompactMixer } from "@/components/practice/compact-mixer";
+import { CountInControl } from "@/components/practice/count-in-control";
+import { FocusMode } from "@/components/practice/focus-mode";
+import { GrooveControls } from "@/components/practice/groove-controls";
+import { SessionToolbar } from "@/components/practice/session-toolbar";
+import { ShortcutsDialog } from "@/components/practice/shortcuts-dialog";
 import { TransportControls } from "@/components/practice/transport-controls";
 import { builtInPatterns, getPatternById } from "@/data/patterns";
+import { usePracticeShortcuts } from "@/hooks/use-practice-shortcuts";
+import { usePracticeTimer } from "@/hooks/use-practice-timer";
+import { useTapTempo } from "@/hooks/use-tap-tempo";
+import { useWakeLock } from "@/hooks/use-wake-lock";
+import { audioStatusCopy, isSessionActive } from "@/lib/audio-status";
 import { clampBpm } from "@/lib/musical-time";
 import { formatPatternCategory } from "@/lib/pattern-filters";
 import { useAudioStore } from "@/stores/audio-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
-import type { AudioEngineStatus } from "@/types/audio";
+import { usePracticeUiStore } from "@/stores/practice-ui-store";
+import type { FillFrequency, MixerGroup } from "@/types/audio";
 
 const ONBOARDING_KEY = "web-band-onboarding-dismissed";
+
+function syncMixer(): void {
+  getAudioEngine().setMixer(usePracticeStore.getState().mixer);
+}
 
 function shouldShowOnboarding(): boolean {
   if (typeof window === "undefined") {
@@ -39,42 +46,74 @@ function shouldShowOnboarding(): boolean {
   }
 }
 
-const statusCopy: Record<AudioEngineStatus, string> = {
-  "not-initialized": "Audio waits for your first press",
-  initializing: "Starting audio engine",
-  ready: "Audio engine ready",
-  "counting-in": "Count in: listen for the downbeat",
-  playing: "Groove playing",
-  paused: "Groove paused",
-  stopped: "Groove stopped",
-  suspended: "Browser audio suspended: press Play to resume",
-  error: "Audio could not start",
-};
-
 export function PracticeScreen() {
   const status = useAudioStore((state) => state.status);
   const errorMessage = useAudioStore((state) => state.errorMessage);
   const bpm = usePracticeStore((state) => state.bpm);
+  const countInMeasures = usePracticeStore((state) => state.countInMeasures);
+  const fillFrequency = usePracticeStore((state) => state.fillFrequency);
+  const humanization = usePracticeStore((state) => state.humanization);
   const masterVolume = usePracticeStore((state) => state.masterVolume);
+  const mixer = usePracticeStore((state) => state.mixer);
   const selectedPatternId = usePracticeStore(
     (state) => state.selectedPatternId,
   );
   const setBpm = usePracticeStore((state) => state.setBpm);
+  const setCountInMeasures = usePracticeStore(
+    (state) => state.setCountInMeasures,
+  );
+  const setFillFrequency = usePracticeStore((state) => state.setFillFrequency);
+  const setHumanization = usePracticeStore((state) => state.setHumanization);
   const setMasterVolume = usePracticeStore((state) => state.setMasterVolume);
+  const setMixerMuted = usePracticeStore((state) => state.setMixerMuted);
+  const setMixerSolo = usePracticeStore((state) => state.setMixerSolo);
+  const setMixerVolume = usePracticeStore((state) => state.setMixerVolume);
+  const resetMixer = usePracticeStore((state) => state.resetMixer);
   const setSelectedPatternId = usePracticeStore(
     (state) => state.setSelectedPatternId,
   );
+  const swing = usePracticeStore((state) => state.swing);
+  const setSwing = usePracticeStore((state) => state.setSwing);
+  const wakeLockEnabled = usePracticeStore((state) => state.wakeLockEnabled);
+  const setWakeLockEnabled = usePracticeStore(
+    (state) => state.setWakeLockEnabled,
+  );
+  const isFocusMode = usePracticeUiStore((state) => state.isFocusMode);
+  const setFocusMode = usePracticeUiStore((state) => state.setFocusMode);
   const customPatterns = usePatternStore((state) => state.customPatterns);
   const markRecent = usePatternStore((state) => state.markRecent);
   const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
   const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
   const [patternAnnouncement, setPatternAnnouncement] = useState("");
+  const [masterMuted, setMasterMuted] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const focusButtonRef = useRef<HTMLButtonElement>(null);
   const patterns = [...builtInPatterns, ...customPatterns];
   const pattern = getPatternById(selectedPatternId, customPatterns);
+  const elapsedSeconds = usePracticeTimer(status);
+  const wakeLockStatus = useWakeLock(wakeLockEnabled, status);
+  const tapTempo = useTapTempo(changeBpm);
 
   useEffect(() => {
-    return () => disposeAudioEngine();
-  }, []);
+    return () => {
+      setFocusMode(false);
+      disposeAudioEngine();
+    };
+  }, [setFocusMode]);
+
+  usePracticeShortcuts({
+    disabled: shortcutsOpen,
+    onBpmChange: (amount) => changeBpm(bpm + amount),
+    onFocusToggle: () => {
+      if (isFocusMode) exitFocusMode();
+      else setFocusMode(true);
+    },
+    onMasterMuteToggle: toggleMasterMute,
+    onPlay: () => void play(),
+    onStop: stop,
+    onTapTempo: tapTempo,
+    status,
+  });
 
   function changeBpm(value: number): void {
     const nextBpm = clampBpm(value, bpm);
@@ -86,7 +125,50 @@ export function PracticeScreen() {
 
   function changeMasterVolume(volume: number): void {
     setMasterVolume(volume);
-    getAudioEngine().setMasterVolume(volume);
+    getAudioEngine().setMasterVolume(masterMuted ? 0 : volume);
+  }
+
+  function toggleMasterMute(): void {
+    setMasterMuted((muted) => {
+      const nextMuted = !muted;
+      getAudioEngine().setMasterVolume(nextMuted ? 0 : masterVolume);
+      return nextMuted;
+    });
+  }
+
+  function changeMixerVolume(group: MixerGroup, volume: number): void {
+    setMixerVolume(group, volume);
+    syncMixer();
+  }
+
+  function changeMixerMuted(group: MixerGroup, muted: boolean): void {
+    setMixerMuted(group, muted);
+    syncMixer();
+  }
+
+  function changeMixerSolo(group: MixerGroup, solo: boolean): void {
+    setMixerSolo(group, solo);
+    syncMixer();
+  }
+
+  function restoreMixer(): void {
+    resetMixer();
+    syncMixer();
+  }
+
+  function changeSwing(amount: number): void {
+    setSwing(amount);
+    getAudioEngine().setSwing(amount);
+  }
+
+  function changeHumanization(amount: number): void {
+    setHumanization(amount);
+    getAudioEngine().setHumanization(amount);
+  }
+
+  function changeFillFrequency(frequency: FillFrequency): void {
+    setFillFrequency(frequency);
+    getAudioEngine().setFillFrequency(frequency);
   }
 
   function dismissOnboarding(): void {
@@ -101,7 +183,16 @@ export function PracticeScreen() {
   async function play(): Promise<void> {
     markRecent(pattern.id);
     try {
-      await getAudioEngine().play({ bpm, masterVolume, pattern });
+      await getAudioEngine().play({
+        bpm,
+        countInMeasures,
+        fillFrequency,
+        humanization,
+        masterVolume: masterMuted ? 0 : masterVolume,
+        mixer,
+        pattern,
+        swing,
+      });
     } catch {
       // The engine records and exposes a user-facing error through the audio store.
     }
@@ -135,6 +226,32 @@ export function PracticeScreen() {
     getAudioEngine().stop();
   }
 
+  function exitFocusMode(): void {
+    setFocusMode(false);
+    window.requestAnimationFrame(() => focusButtonRef.current?.focus());
+  }
+
+  if (isFocusMode) {
+    return (
+      <>
+        <FocusMode
+          bpm={bpm}
+          countInMeasures={countInMeasures}
+          elapsedSeconds={elapsedSeconds}
+          onExit={exitFocusMode}
+          onPlay={() => void play()}
+          onStop={stop}
+          pattern={pattern}
+          status={status}
+        />
+        <ShortcutsDialog
+          onClose={() => setShortcutsOpen(false)}
+          open={shortcutsOpen}
+        />
+      </>
+    );
+  }
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-3 pb-8 sm:px-6 lg:px-8">
       <header className="border-border flex min-h-20 items-center justify-between border-b py-4">
@@ -156,7 +273,7 @@ export function PracticeScreen() {
             aria-hidden="true"
             className={`size-2 rounded-full ${status === "playing" ? "bg-success shadow-[0_0_12px_var(--success)]" : status === "counting-in" ? "bg-secondary-accent" : "bg-muted"}`}
           />
-          <span className="hidden sm:inline">{statusCopy[status]}</span>
+          <span className="hidden sm:inline">{audioStatusCopy[status]}</span>
           <span className="sm:hidden">{status.replace("-", " ")}</span>
         </div>
       </header>
@@ -222,19 +339,42 @@ export function PracticeScreen() {
                     Feel
                   </dt>
                   <dd className="text-foreground mt-1 font-extrabold">
-                    {pattern.swing ? "Swing" : "Straight"} {pattern.subdivision}
-                    ths
+                    {pattern.swing || swing > 0 ? "Swing" : "Straight"}{" "}
+                    {pattern.subdivision}ths
                   </dd>
                 </div>
               </dl>
             </div>
           </section>
 
-          <MasterVolume onChange={changeMasterVolume} volume={masterVolume} />
+          <CompactMixer
+            masterMuted={masterMuted}
+            masterVolume={masterVolume}
+            mixer={mixer}
+            onMasterMuteToggle={toggleMasterMute}
+            onMasterVolumeChange={changeMasterVolume}
+            onMutedChange={changeMixerMuted}
+            onReset={restoreMixer}
+            onSoloChange={changeMixerSolo}
+            onVolumeChange={changeMixerVolume}
+          />
         </aside>
 
         <section className="order-1 flex flex-col gap-5 lg:order-2">
-          <BeatVisualizer pattern={pattern} status={status} />
+          <SessionToolbar
+            elapsedSeconds={elapsedSeconds}
+            focusButtonRef={focusButtonRef}
+            onFocus={() => setFocusMode(true)}
+            onShortcuts={() => setShortcutsOpen(true)}
+            onWakeLockChange={setWakeLockEnabled}
+            wakeLockEnabled={wakeLockEnabled}
+            wakeLockStatus={wakeLockStatus}
+          />
+          <BeatVisualizer
+            countInMeasures={countInMeasures}
+            pattern={pattern}
+            status={status}
+          />
 
           <div className="border-border rounded-2xl border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] px-3 py-7 shadow-[0_24px_70px_var(--shadow)] backdrop-blur sm:px-6 sm:py-9">
             <TransportControls
@@ -245,7 +385,9 @@ export function PracticeScreen() {
             />
             <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
               <CircleDot aria-hidden="true" className="text-accent size-3" />
-              <span data-testid="transport-status">{statusCopy[status]}</span>
+              <span data-testid="transport-status">
+                {audioStatusCopy[status]}
+              </span>
             </div>
           </div>
 
@@ -260,8 +402,10 @@ export function PracticeScreen() {
               />
               <p className="flex-1">
                 Sound begins after you press Play because browsers require a
-                direct interaction. You will hear one measure of count-in, then
-                the groove.
+                direct interaction.{" "}
+                {countInMeasures === 0
+                  ? "The groove starts immediately."
+                  : `You will hear ${countInMeasures === 1 ? "one measure" : `${countInMeasures} measures`} of count-in, then the groove.`}
               </p>
               <button
                 aria-label="Dismiss audio tip"
@@ -289,24 +433,24 @@ export function PracticeScreen() {
             bpm={bpm}
             defaultBpm={pattern.defaultBpm}
             onChange={changeBpm}
+            onTap={tapTempo}
           />
 
-          <section className="border-border bg-surface rounded-2xl border p-5">
-            <div className="flex items-start gap-3">
-              <span className="bg-secondary-accent/10 text-secondary-accent flex size-10 shrink-0 items-center justify-center rounded-lg">
-                <Clock3 aria-hidden="true" className="size-5" />
-              </span>
-              <div>
-                <p className="text-foreground font-bold">
-                  One-measure count-in
-                </p>
-                <p className="text-muted mt-1 text-sm leading-5">
-                  {pattern.timeSignature.numerator} synthesized clicks. The
-                  first is accented.
-                </p>
-              </div>
-            </div>
-          </section>
+          <CountInControl
+            disabled={isSessionActive(status)}
+            measures={countInMeasures}
+            onChange={setCountInMeasures}
+            timeSignature={pattern.timeSignature}
+          />
+
+          <GrooveControls
+            fillFrequency={fillFrequency}
+            humanization={humanization}
+            onFillFrequencyChange={changeFillFrequency}
+            onHumanizationChange={changeHumanization}
+            onSwingChange={changeSwing}
+            swing={swing}
+          />
 
           <Link
             className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 lg:col-span-1"
@@ -319,8 +463,15 @@ export function PracticeScreen() {
       </div>
 
       <p aria-live="polite" className="sr-only" role="status">
-        {patternAnnouncement || statusCopy[status]}
+        {audioStatusCopy[status]}
       </p>
+      <p aria-live="polite" className="sr-only" role="status">
+        {patternAnnouncement}
+      </p>
+      <ShortcutsDialog
+        onClose={() => setShortcutsOpen(false)}
+        open={shortcutsOpen}
+      />
     </main>
   );
 }

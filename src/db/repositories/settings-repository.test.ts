@@ -9,9 +9,19 @@ import {
 describe("practice settings repository", () => {
   it("round-trips small practice settings through localStorage", () => {
     const settings = {
+      ...defaultPracticeSettings,
       bpm: 127,
+      countInMeasures: 2 as const,
+      fillFrequency: 8 as const,
+      humanization: 0.24,
       masterVolume: 0.42,
+      mixer: {
+        ...defaultPracticeSettings.mixer,
+        snare: { muted: true, solo: false, volume: 0.63 },
+      },
       selectedPatternId: "custom-groove",
+      swing: 0.34,
+      wakeLockEnabled: false,
     };
 
     expect(savePracticeSettings(settings)).toBe(true);
@@ -19,11 +29,11 @@ describe("practice settings repository", () => {
   });
 
   it("falls back safely when stored settings are corrupted", () => {
-    window.localStorage.setItem("web-band-practice-settings-v1", "{broken");
+    window.localStorage.setItem("web-band-practice-settings-v2", "{broken");
     expect(loadPracticeSettings()).toEqual(defaultPracticeSettings);
   });
 
-  it("clamps stored BPM and rejects invalid volume", () => {
+  it("fills Phase 4 defaults while loading legacy settings", () => {
     window.localStorage.setItem(
       "web-band-practice-settings-v1",
       JSON.stringify({
@@ -34,9 +44,45 @@ describe("practice settings repository", () => {
     );
 
     expect(loadPracticeSettings()).toEqual({
+      ...defaultPracticeSettings,
       bpm: 220,
       masterVolume: defaultPracticeSettings.masterVolume,
       selectedPatternId: "basic-rock",
+    });
+  });
+
+  it("validates stored Phase 4 settings", () => {
+    window.localStorage.setItem(
+      "web-band-practice-settings-v2",
+      JSON.stringify({
+        bpm: 120,
+        countInMeasures: 3,
+        fillFrequency: 6,
+        humanization: 2,
+        masterVolume: Number.NaN,
+        mixer: {
+          kick: { muted: true, solo: true, volume: -1 },
+          snare: { muted: "yes", solo: false, volume: 0.4 },
+        },
+        selectedPatternId: "funk",
+        swing: 1,
+        wakeLockEnabled: false,
+      }),
+    );
+
+    expect(loadPracticeSettings()).toEqual({
+      ...defaultPracticeSettings,
+      bpm: 120,
+      humanization: 1,
+      masterVolume: defaultPracticeSettings.masterVolume,
+      mixer: {
+        ...defaultPracticeSettings.mixer,
+        kick: { muted: true, solo: true, volume: 0 },
+        snare: { muted: false, solo: false, volume: 0.4 },
+      },
+      selectedPatternId: "funk",
+      swing: 0.65,
+      wakeLockEnabled: false,
     });
   });
 });
