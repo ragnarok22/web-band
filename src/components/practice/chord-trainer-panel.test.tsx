@@ -95,7 +95,7 @@ describe("chord trainer panel", () => {
     expect(
       screen.getByText("Delete Custom turnaround permanently?"),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    expect(deleteTrigger).toHaveFocus();
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(deleteTrigger).toHaveFocus();
 
