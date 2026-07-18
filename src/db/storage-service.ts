@@ -430,20 +430,29 @@ export class StorageService {
     repositories: MemoryRepositories,
     snapshot: PersistenceSnapshot,
   ): Promise<void> {
-    for (const pattern of snapshot.customPatterns)
-      await repositories.patterns.put(pattern);
-    for (const patternId of snapshot.favoritePatternIds)
-      await repositories.favorites.add(patternId);
-    for (const progression of snapshot.customChordProgressions)
-      await repositories.chordProgressions.put(progression);
-    for (const progressionId of snapshot.favoriteChordProgressionIds)
-      await repositories.chordProgressionFavorites.add(progressionId);
-    for (const pattern of snapshot.customStrummingPatterns)
-      await repositories.strummingPatterns.put(pattern);
-    for (const preset of snapshot.practicePresets)
-      await repositories.practicePresets.put(preset);
-    for (const session of snapshot.practiceSessions)
-      await repositories.practiceSessions.put(session);
+    await Promise.all([
+      ...snapshot.customPatterns.map((pattern) =>
+        repositories.patterns.put(pattern),
+      ),
+      ...snapshot.favoritePatternIds.map((patternId) =>
+        repositories.favorites.add(patternId),
+      ),
+      ...snapshot.customChordProgressions.map((progression) =>
+        repositories.chordProgressions.put(progression),
+      ),
+      ...snapshot.favoriteChordProgressionIds.map((progressionId) =>
+        repositories.chordProgressionFavorites.add(progressionId),
+      ),
+      ...snapshot.customStrummingPatterns.map((pattern) =>
+        repositories.strummingPatterns.put(pattern),
+      ),
+      ...snapshot.practicePresets.map((preset) =>
+        repositories.practicePresets.put(preset),
+      ),
+      ...snapshot.practiceSessions.map((session) =>
+        repositories.practiceSessions.put(session),
+      ),
+    ]);
   }
 
   private async openDatabase(databaseName: string): Promise<PersistenceStatus> {

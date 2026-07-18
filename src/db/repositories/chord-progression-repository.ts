@@ -1,5 +1,6 @@
 import type { EntityTable } from "dexie";
 
+import { cloneValidRecords } from "@/db/repositories/repository-helpers";
 import { isCustomChordProgression } from "@/lib/practice-validation";
 import type { CustomChordProgression } from "@/types/persistence";
 
@@ -49,9 +50,7 @@ export class DexieChordProgressionRepository implements ChordProgressionReposito
   async list(): Promise<CustomChordProgression[]> {
     const progressions = await this.table.toArray();
     return sortProgressions(
-      progressions
-        .filter(isCustomChordProgression)
-        .map((progression) => structuredClone(progression)),
+      cloneValidRecords(progressions, isCustomChordProgression),
     );
   }
 
@@ -84,9 +83,10 @@ export class MemoryChordProgressionRepository implements ChordProgressionReposit
 
   async list(): Promise<CustomChordProgression[]> {
     return sortProgressions(
-      Array.from(this.progressions.values())
-        .filter(isCustomChordProgression)
-        .map((progression) => structuredClone(progression)),
+      cloneValidRecords(
+        Array.from(this.progressions.values()),
+        isCustomChordProgression,
+      ),
     );
   }
 

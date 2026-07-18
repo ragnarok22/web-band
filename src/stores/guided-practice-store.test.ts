@@ -72,7 +72,18 @@ describe("guided practice store", () => {
       },
       isHydrated: true,
       mode: "chords",
-      strummingPattern: JSON.parse(JSON.stringify(basicPopPattern)),
+      strummingPattern: {
+        ...basicPopPattern,
+        steps: basicPopPattern.steps.map((step) =>
+          step.accent === undefined
+            ? {
+                action: step.action,
+                id: step.id,
+                subdivisionIndex: step.subdivisionIndex,
+              }
+            : step,
+        ),
+      },
     });
   });
 

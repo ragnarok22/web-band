@@ -15,6 +15,12 @@ const countLabels = {
   practiceSessions: "Practice sessions",
 } as const;
 
+const backupTimestampFormatter = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short",
+  timeZone: "UTC",
+});
+
 interface BackupPreviewDialogProps {
   errorMessage: string | null;
   isPending: boolean;
@@ -61,7 +67,7 @@ export function BackupPreviewDialog({
         <p className="text-muted mt-3 text-sm leading-6">
           Created{" "}
           <time dateTime={preview.exportedAt}>
-            {new Date(preview.exportedAt).toLocaleString()}
+            {backupTimestampFormatter.format(new Date(preview.exportedAt))} UTC
           </time>
           {preview.fileName ? ` from ${preview.fileName}` : ""}.
         </p>

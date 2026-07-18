@@ -204,10 +204,6 @@ function PatternEditorSession({
   return (
     <main className="mx-auto min-h-screen w-full max-w-[100rem] overflow-x-clip px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
       <EditorHeader
-        isDirty={isDirty}
-        isPlaying={playback.isPlaying}
-        isSaving={isSaving}
-        isValid={validation.success}
         onPlay={() =>
           void playback
             .togglePlayback()
@@ -220,6 +216,12 @@ function PatternEditorSession({
             )
         }
         onSave={() => void save()}
+        status={{
+          dirty: isDirty,
+          playing: playback.isPlaying,
+          saving: isSaving,
+          valid: validation.success,
+        }}
       />
 
       <div className="grid gap-5">

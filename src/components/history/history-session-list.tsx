@@ -7,6 +7,13 @@ interface HistorySessionListProps {
   sessions: readonly PracticeSession[];
 }
 
+const sessionDateFormatter = new Intl.DateTimeFormat(undefined, {
+  day: "numeric",
+  month: "long",
+  weekday: "long",
+  year: "numeric",
+});
+
 export function HistorySessionList({
   onDelete,
   sessions,
@@ -16,12 +23,9 @@ export function HistorySessionList({
   return (
     <div className="mt-6 space-y-8">
       {groups.map((group) => {
-        const date = new Intl.DateTimeFormat(undefined, {
-          day: "numeric",
-          month: "long",
-          weekday: "long",
-          year: "numeric",
-        }).format(new Date(group.sessions[0]!.startedAt));
+        const date = sessionDateFormatter.format(
+          new Date(group.sessions[0]!.startedAt),
+        );
         return (
           <section
             aria-labelledby={`history-day-${group.dateKey}`}

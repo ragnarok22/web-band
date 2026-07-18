@@ -242,17 +242,20 @@ export function copyPatternMeasure(
 ): MeasureClipboard {
   const stepCount = getStepsPerBar(pattern.timeSignature, pattern.subdivision);
   const start = measureIndex * stepCount;
+  const hits: MeasureClipboard["hits"] = [];
+  for (const hit of pattern.hits) {
+    if (hit.step < start || hit.step >= start + stepCount) continue;
+    hits.push({
+      flam: hit.flam,
+      instrument: hit.instrument,
+      probability: hit.probability,
+      step: hit.step - start,
+      timingOffset: hit.timingOffset,
+      velocity: hit.velocity,
+    });
+  }
   return {
-    hits: pattern.hits
-      .filter((hit) => hit.step >= start && hit.step < start + stepCount)
-      .map((hit) => ({
-        flam: hit.flam,
-        instrument: hit.instrument,
-        probability: hit.probability,
-        step: hit.step - start,
-        timingOffset: hit.timingOffset,
-        velocity: hit.velocity,
-      })),
+    hits,
     stepCount,
   };
 }

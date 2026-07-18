@@ -1616,7 +1616,7 @@ Implement the application in this order.
 - Strumming trainer.
 - Practice presets.
 
-## Phase 6: Creation and persistence
+## ✅ Phase 6: Creation and persistence
 
 - Custom pattern editor.
 - IndexedDB repositories.

@@ -1,5 +1,6 @@
 import type { EntityTable } from "dexie";
 
+import { cloneValidRecords } from "@/db/repositories/repository-helpers";
 import { isCustomDrumPattern } from "@/lib/persistence-validation";
 import type { CustomDrumPattern } from "@/types/persistence";
 
@@ -42,11 +43,7 @@ export class DexiePatternRepository implements PatternRepository {
 
   async list(): Promise<CustomDrumPattern[]> {
     const patterns = await this.table.toArray();
-    return sortPatterns(
-      patterns
-        .filter(isCustomDrumPattern)
-        .map((pattern) => structuredClone(pattern)),
-    );
+    return sortPatterns(cloneValidRecords(patterns, isCustomDrumPattern));
   }
 
   async put(pattern: CustomDrumPattern): Promise<void> {
@@ -76,9 +73,10 @@ export class MemoryPatternRepository implements PatternRepository {
 
   async list(): Promise<CustomDrumPattern[]> {
     return sortPatterns(
-      Array.from(this.patterns.values())
-        .filter(isCustomDrumPattern)
-        .map((pattern) => structuredClone(pattern)),
+      cloneValidRecords(
+        Array.from(this.patterns.values()),
+        isCustomDrumPattern,
+      ),
     );
   }
 

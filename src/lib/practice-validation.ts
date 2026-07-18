@@ -5,19 +5,14 @@ import type {
   CustomChordProgression,
   PracticePreset,
   PracticePresetConfiguration,
-  PracticePresetInput,
 } from "@/types/persistence";
 import type {
-  ChordProgression,
-  ChordStep,
   ChordTrainerConfiguration,
   GuidedPracticeConfiguration,
   PracticeMode,
   StrumAction,
   StrummingPattern,
-  StrumStep,
   TempoTrainerConfiguration,
-  TempoTrainerInterval,
 } from "@/types/practice";
 
 export interface PracticeValidationResult {
@@ -505,20 +500,6 @@ export function isTempoTrainerConfiguration(
   return validateTempoTrainerConfiguration(value).success;
 }
 
-export function isTempoTrainerInterval(
-  value: unknown,
-): value is TempoTrainerInterval {
-  return validateTempoTrainerInterval(value).success;
-}
-
-export function isChordStep(value: unknown): value is ChordStep {
-  return validateChordStep(value).success;
-}
-
-export function isChordProgression(value: unknown): value is ChordProgression {
-  return validateChordProgression(value).success;
-}
-
 export function isCustomChordProgression(
   value: unknown,
 ): value is CustomChordProgression {
@@ -529,10 +510,6 @@ export function isChordTrainerConfiguration(
   value: unknown,
 ): value is ChordTrainerConfiguration {
   return validateChordTrainerConfiguration(value).success;
-}
-
-export function isStrumStep(value: unknown): value is StrumStep {
-  return validateStrumStep(value).success;
 }
 
 export function isStrummingPattern(value: unknown): value is StrummingPattern {
@@ -549,12 +526,6 @@ export function isPracticePresetConfiguration(
   value: unknown,
 ): value is PracticePresetConfiguration {
   return validatePracticePresetConfiguration(value).success;
-}
-
-export function isPracticePresetInput(
-  value: unknown,
-): value is PracticePresetInput {
-  return validatePracticePresetInput(value).success;
 }
 
 export function isPracticePreset(value: unknown): value is PracticePreset {

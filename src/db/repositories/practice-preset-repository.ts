@@ -1,5 +1,6 @@
 import type { EntityTable } from "dexie";
 
+import { cloneValidRecords } from "@/db/repositories/repository-helpers";
 import { isPracticePreset } from "@/lib/practice-validation";
 import type { PracticePreset } from "@/types/persistence";
 
@@ -42,9 +43,7 @@ export class DexiePracticePresetRepository implements PracticePresetRepository {
 
   async list(): Promise<PracticePreset[]> {
     const presets = await this.table.toArray();
-    return sortPresets(
-      presets.filter(isPracticePreset).map((preset) => structuredClone(preset)),
-    );
+    return sortPresets(cloneValidRecords(presets, isPracticePreset));
   }
 
   async put(preset: PracticePreset): Promise<void> {
@@ -74,9 +73,7 @@ export class MemoryPracticePresetRepository implements PracticePresetRepository 
 
   async list(): Promise<PracticePreset[]> {
     return sortPresets(
-      Array.from(this.presets.values())
-        .filter(isPracticePreset)
-        .map((preset) => structuredClone(preset)),
+      cloneValidRecords(Array.from(this.presets.values()), isPracticePreset),
     );
   }
 

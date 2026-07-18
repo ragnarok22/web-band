@@ -90,10 +90,11 @@ export class MemoryChordProgressionFavoriteRepository implements ChordProgressio
   }
 
   async list(): Promise<string[]> {
-    return Array.from(this.records.values())
-      .filter(isFavoriteRecord)
-      .map((record) => record.progressionId)
-      .sort((left, right) => left.localeCompare(right));
+    const progressionIds: string[] = [];
+    for (const record of this.records.values()) {
+      if (isFavoriteRecord(record)) progressionIds.push(record.progressionId);
+    }
+    return progressionIds.sort((left, right) => left.localeCompare(right));
   }
 
   async remove(progressionId: string): Promise<void> {

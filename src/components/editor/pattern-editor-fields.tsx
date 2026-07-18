@@ -59,6 +59,7 @@ export function PatternEditorFields({
           <input
             className={`${inputClass} mt-1.5 text-base`}
             maxLength={100}
+            name="pattern-name"
             onChange={(event) => update({ name: event.target.value })}
             required
             type="text"
@@ -69,6 +70,7 @@ export function PatternEditorFields({
           Genre / category
           <select
             className={`${inputClass} mt-1.5`}
+            name="pattern-category"
             onChange={(event) =>
               update({ category: event.target.value as PatternCategory })
             }
@@ -87,6 +89,7 @@ export function PatternEditorFields({
         <textarea
           className={`${inputClass} mt-1.5 min-h-24 resize-y py-3 leading-6`}
           maxLength={1000}
+          name="pattern-description"
           onChange={(event) => update({ description: event.target.value })}
           placeholder="Describe the feel, accents, or practice goal."
           value={pattern.description}
@@ -95,6 +98,7 @@ export function PatternEditorFields({
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <SelectField
           label="Difficulty"
+          name="pattern-difficulty"
           onChange={(value) =>
             update({ difficulty: value as PatternDifficulty })
           }
@@ -106,6 +110,7 @@ export function PatternEditorFields({
         />
         <SelectField
           label="Meter"
+          name="pattern-meter"
           onChange={(value) => {
             const timeSignature = supportedTimeSignatures.find(
               ({ denominator, numerator }) =>
@@ -125,6 +130,7 @@ export function PatternEditorFields({
         />
         <SelectField
           label="Bars"
+          name="pattern-bars"
           onChange={(value) =>
             onChange(
               resizePatternDraft(pattern, {
@@ -140,6 +146,7 @@ export function PatternEditorFields({
         />
         <SelectField
           label="Subdivision"
+          name="pattern-subdivision"
           onChange={(value) =>
             onChange(
               resizePatternDraft(pattern, {
@@ -157,11 +164,13 @@ export function PatternEditorFields({
       <div className="grid gap-3 sm:grid-cols-3">
         <NumberField
           label="Default BPM"
+          name="pattern-default-bpm"
           onChange={(defaultBpm) => update({ defaultBpm })}
           value={pattern.defaultBpm}
         />
         <NumberField
           label="Recommended min"
+          name="pattern-recommended-min"
           onChange={(min) =>
             update({
               recommendedBpmRange: { ...pattern.recommendedBpmRange, min },
@@ -171,6 +180,7 @@ export function PatternEditorFields({
         />
         <NumberField
           label="Recommended max"
+          name="pattern-recommended-max"
           onChange={(max) =>
             update({
               recommendedBpmRange: { ...pattern.recommendedBpmRange, max },
@@ -185,17 +195,25 @@ export function PatternEditorFields({
 
 interface SelectFieldProps {
   label: string;
+  name: string;
   onChange: (value: string) => void;
   options: Array<{ label: string; value: string }>;
   value: string;
 }
 
-function SelectField({ label, onChange, options, value }: SelectFieldProps) {
+function SelectField({
+  label,
+  name,
+  onChange,
+  options,
+  value,
+}: SelectFieldProps) {
   return (
     <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
       {label}
       <select
         className={`${inputClass} mt-1.5`}
+        name={name}
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -211,10 +229,12 @@ function SelectField({ label, onChange, options, value }: SelectFieldProps) {
 
 function NumberField({
   label,
+  name,
   onChange,
   value,
 }: {
   label: string;
+  name: string;
   onChange: (value: number) => void;
   value: number;
 }) {
@@ -225,6 +245,7 @@ function NumberField({
         className={`${inputClass} mt-1.5 tabular-nums`}
         max={220}
         min={40}
+        name={name}
         onChange={(event) => onChange(event.currentTarget.valueAsNumber)}
         required
         type="number"

@@ -14,6 +14,11 @@ const modeLabels: Record<PracticeSession["practiceMode"], string> = {
   tempoTrainer: "Tempo trainer",
 };
 
+const sessionTimeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
 function formatSessionDuration(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -27,10 +32,7 @@ export function HistorySessionCard({
   onDelete,
   session,
 }: HistorySessionCardProps) {
-  const time = new Intl.DateTimeFormat(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(session.startedAt));
+  const time = sessionTimeFormatter.format(new Date(session.startedAt));
   const bpm =
     session.startingBpm === session.endingBpm
       ? `${session.startingBpm} BPM`

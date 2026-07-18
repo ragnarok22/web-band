@@ -1,5 +1,6 @@
 import type { EntityTable } from "dexie";
 
+import { cloneValidRecords } from "@/db/repositories/repository-helpers";
 import { isPracticeSession } from "@/lib/persistence-validation";
 import type { PracticeSession } from "@/types/persistence";
 
@@ -38,11 +39,7 @@ export class DexiePracticeSessionRepository implements PracticeSessionRepository
 
   async list(): Promise<PracticeSession[]> {
     const sessions = await this.table.toArray();
-    return sortSessions(
-      sessions
-        .filter(isPracticeSession)
-        .map((session) => structuredClone(session)),
-    );
+    return sortSessions(cloneValidRecords(sessions, isPracticeSession));
   }
 
   async put(session: PracticeSession): Promise<void> {
@@ -67,9 +64,7 @@ export class MemoryPracticeSessionRepository implements PracticeSessionRepositor
 
   async list(): Promise<PracticeSession[]> {
     return sortSessions(
-      Array.from(this.sessions.values())
-        .filter(isPracticeSession)
-        .map((session) => structuredClone(session)),
+      cloneValidRecords(Array.from(this.sessions.values()), isPracticeSession),
     );
   }
 

@@ -386,6 +386,7 @@ function GridToolbar({
             aria-label="Target measure"
             className="border-border bg-surface-elevated text-foreground mt-1 block min-h-11 rounded-xl border px-3 text-sm font-bold"
             disabled={disabled}
+            name="target-measure"
             onChange={(event) =>
               onTargetMeasureChange(Number(event.target.value))
             }

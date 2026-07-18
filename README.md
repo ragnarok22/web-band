@@ -1,6 +1,6 @@
 # Web Band Rhythm Practice
 
-Web Band is a browser-based drum and rhythm practice companion for guitarists. The completed foundation, audio-engine, pattern-system, practice-feature, and guided-practice phases provide a focused practice room, a 44-pattern groove library, accurate Tone.js scheduling, configurable groove controls, synchronized guidance, and local persistence.
+Web Band is a browser-based drum and rhythm practice companion for guitarists. The completed foundation, audio-engine, pattern-system, practice-feature, guided-practice, and creation-and-persistence phases provide a focused practice room, a 44-pattern groove library, accurate Tone.js scheduling, synchronized guidance, custom groove creation, a local practice journal, and portable backups.
 
 Every drum sound is synthesized in real time with the Web Audio API. The project contains no recorded drum samples, MP3 files, WAV files, external audio assets, backend, authentication, analytics, or cloud services.
 
@@ -27,13 +27,17 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Chord progression training with current/next chord guidance, countdowns, five built-in progressions, favorites, and a custom progression editor.
 - Strumming guidance with down, up, mute, rest, hold, and accent cues across seven built-in 4/4, 3/4, and 6/8 patterns.
 - Practice presets that save and atomically restore the groove and guided setup, with rename, duplicate, favorite, recent, and delete controls.
+- A responsive step-sequencer editor for creating, duplicating, previewing, saving, and deleting custom one-, two-, or four-bar drum patterns.
+- Per-hit velocity cycling plus advanced probability, flam, and timing controls, measure copy/paste, row clearing, and audio-synchronized editor playhead guidance.
+- A local practice journal with configurable session thresholds, weekly and lifetime totals, most-used groove and BPM range, grouped recent sessions, and deletion controls.
+- Versioned JSON export and validated merge or replace import for custom content, favorites, presets, history, and practice settings.
 - Versioned IndexedDB initialization through Dexie.
-- In-memory storage fallback with a nonblocking warning.
+- Runtime in-memory storage fallback with readable-data recovery, one retry, and a nonblocking warning.
 - Versioned `localStorage` persistence for practice and mixer preferences.
-- Installable PWA with offline practice and pattern-library routes plus an update notification.
+- Installable PWA with offline practice, pattern library, editor, history, and settings routes plus an update notification.
 - Responsive layouts tested at 320px, mobile, and desktop widths.
 
-The remaining custom drum-pattern editing, practice-history, backup, and final-quality phases are tracked in `PLANING.md`.
+The remaining final-quality work is tracked in `PLANING.md`.
 
 ## Requirements
 
@@ -91,12 +95,13 @@ src/
 |-- data/                 Pure built-in drum, chord, and strumming data
 |-- db/                   Dexie database, repositories, and fallback service
 |-- lib/                  Validation and musical-time calculations
+|-- services/             Backup orchestration across storage and stores
 |-- stores/               Focused serializable Zustand stores
 |-- test/                 Shared Vitest setup
 `-- types/                Audio, pattern, and persistence contracts
 ```
 
-Tone.js and Web Audio objects are never stored in Zustand or persisted. Zustand only holds serializable transport status, practice and guided configuration, library state, presets, and storage status.
+Tone.js and Web Audio objects are never stored in Zustand or persisted. Zustand only holds serializable transport status, practice and guided configuration, library state, presets, history, and storage status.
 
 Components do not access IndexedDB directly. They initialize and consume storage through `StorageService` and repository interfaces.
 
@@ -133,7 +138,7 @@ Noise buffers contain random values generated in memory by the application. They
 
 Dexie database name: `web-band`
 
-Schema version: `2`
+Schema version: `3`
 
 | Table                       | Primary key     | Current purpose                     |
 | --------------------------- | --------------- | ----------------------------------- |
@@ -141,13 +146,13 @@ Schema version: `2`
 | `favoritePatterns`          | `patternId`     | Pattern favorite records            |
 | `chordProgressions`         | `id`            | Validated custom chord progressions |
 | `favoriteChordProgressions` | `progressionId` | Chord progression favorite records  |
-| `strummingPatterns`         | `id`            | Future custom strumming records     |
-| `practiceSessions`          | `id`            | Future local practice history       |
+| `strummingPatterns`         | `id`            | Validated custom strumming records  |
+| `practiceSessions`          | `id`            | Local practice journal entries      |
 | `practicePresets`           | `id`            | Saved practice configurations       |
 
-Version 2 adds chord progression favorites while retaining all version 1 data. Future schema changes must continue to use explicit Dexie versions and migrations.
+Version 2 adds chord progression favorites. Version 3 strongly types custom patterns, custom strumming patterns, and practice sessions, with session indexes for start time, pattern, and mode. Existing version 1 and 2 rows are retained; invalid legacy rows are ignored by repository validation rather than reaching the UI or scheduler.
 
-If IndexedDB is missing, opening fails, or a repository operation makes the database unavailable, the storage service switches to fresh in-memory repositories for patterns, favorites, chord progressions, and presets and displays a nonblocking warning. The active practice configuration remains usable.
+If IndexedDB is missing, opening fails, or a later repository operation makes the database unavailable, the storage service attempts to copy readable records into in-memory repositories, retries the operation once, and displays a nonblocking warning. New memory-backed data lasts only for the current visit; the active practice configuration remains usable.
 
 ## Pattern Format
 
@@ -179,21 +184,34 @@ The versioned key `web-band-practice-settings-v2` stores:
 - Six mixer channel settings.
 - Wake Lock preference.
 
-The repository reads the legacy `web-band-practice-settings-v1` shape and fills the Phase 4 fields with safe defaults. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. Favorites, custom chord progressions, and practice presets remain in IndexedDB.
+The repository reads the legacy `web-band-practice-settings-v1` shape and fills the Phase 4 fields with safe defaults. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its minimum meaningful duration. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
 
 Values are parsed defensively and clamped before use. Corrupted settings fall back to Basic Rock at 90 BPM and 80% volume.
 
 ## PWA and Offline Behavior
 
-`src/app/manifest.ts` defines the installable app metadata and generated 192px, 512px, and maskable icons. Serwist precaches the built application assets, `/practice`, and `/patterns`; built-in pattern data and synthesis code are part of that shell.
+`src/app/manifest.ts` defines the installable app metadata and generated 192px, 512px, and maskable icons. Serwist precaches the built application assets and the `/practice`, `/patterns`, `/editor`, `/history`, and `/settings` routes; built-in pattern data and synthesis code are part of that shell.
 
-After the first successful production visit, the practice room and complete built-in pattern browser reload offline with saved local data. A service-worker controller change shows a reload notification when a new version becomes active.
+After the first successful production visit, every local-first route reloads offline with saved local data. A service-worker controller change shows a reload notification when a new version becomes active.
 
 No remote resources or audio files are cached.
 
 ## Import and Export
 
-Backup import and export are not part of the current phases. The database schema and validation boundaries are prepared for the later versioned JSON backup phase described in `PLANING.md`. No current control suggests that import or export is available.
+Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 1 envelope contains:
+
+```text
+app: "web-band"
+version: 1
+exportedAt: canonical UTC ISO timestamp
+data:
+  customPatterns, favoritePatternIds
+  customChordProgressions, favoriteChordProgressionIds
+  customStrummingPatterns, practicePresets, practiceSessions
+  settings: practice, guidedPractice, history
+```
+
+Imports are parsed as data, capped at 25 MB, and fully validated before mutation. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Replace starts a safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the small versioned settings stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
 
 ## Browser Support
 
@@ -208,12 +226,13 @@ Graceful degradation:
 - Missing Web Audio shows an audio initialization error.
 - A suspended audio context resumes when Play is pressed.
 - Missing or blocked IndexedDB uses memory for the current visit.
+- IndexedDB failures after startup trigger one recovery-and-retry attempt in memory.
 - Missing service-worker support leaves the online practice experience functional.
 - Missing or denied Screen Wake Lock leaves playback functional and reports a nonblocking status.
 
 ## Testing
 
-Vitest covers musical calculations, BPM clamping, all built-in content validation, tempo, chord, and strumming positions, Dexie repositories and migration, local settings, storage fallback and recovery, measure-aligned Tone scheduling, preset application, and core practice and browser controls.
+Vitest covers musical calculations, BPM clamping, built-in and custom content validation, editor transformations and grid interaction, tempo, chord, and strumming positions, practice-history lifecycle and aggregation, Dexie repositories and migrations, backup validation and orchestration, runtime storage recovery, measure-aligned Tone scheduling, and core UI controls.
 
 Playwright runs the real browser audio engine and verifies:
 
@@ -231,19 +250,24 @@ Playwright runs the real browser audio engine and verifies:
 - Measure-aligned pattern changes during active playback.
 - Guided tempo preset save and reload behavior.
 - Tempo-trainer advancement on a real musical boundary.
+- Custom pattern creation, save, library discovery, practice loading, and reload persistence.
+- Meaningful practice-session recording, journal persistence, and deletion.
+- JSON backup download, validation, merge, clear, restore, and reload persistence.
 - Reload persistence on desktop and mobile profiles.
-- Production service-worker control and offline loading for both primary routes.
+- Production service-worker control and offline loading for every local-first route.
 
 The Web Audio implementation remains real in production. Unit component tests mock only the engine boundary where browser audio is unavailable in jsdom.
 
 ## Known Limitations
 
-- Custom drum and strumming pattern editing, practice history, theme selection, and backup import/export remain future phases.
+- Custom strumming-pattern editing and theme selection remain future work.
 - Wake Lock depends on browser support and a secure context.
 - Fills are generic meter-aware practice fills rather than category-specific arrangements.
 - Chord symbols are text guidance only; Web Band does not synthesize guitar chords.
+- Session finalization on route navigation is best effort; abrupt browser or process termination can interrupt the final asynchronous IndexedDB write.
+- Data is local to one browser profile unless the user exports and imports a backup.
 - Automated tests can verify scheduling, state, node creation, and error-free playback, but synthesized timbre still benefits from listening checks on physical devices and headphones.
 
 ## Future Improvements
 
-The next planned phase adds custom drum-pattern creation, practice history, and versioned backup workflows. The final phase covers accessibility, responsive polish, broader browser verification, performance, and audio tuning as listed in `PLANING.md`.
+The final planned phase covers broader accessibility and browser verification, responsive polish, performance review, error handling, and cross-browser audio tuning as listed in `PLANING.md`.

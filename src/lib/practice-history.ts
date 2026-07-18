@@ -1,5 +1,16 @@
 import type { PracticeSession } from "@/types/persistence";
 
+export function formatHistoryDuration(seconds: number): string {
+  if (seconds > 0 && seconds < 60) return `${seconds} sec`;
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours === 0) return `${minutes} min`;
+  return remainingMinutes === 0
+    ? `${hours}h`
+    : `${hours}h ${remainingMinutes}m`;
+}
+
 export interface MostUsedPattern {
   durationSeconds: number;
   patternId: string;

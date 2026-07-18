@@ -72,10 +72,10 @@ export function ChordTrainerPanel({
     editorTriggerRef.current?.focus();
   }
 
-  async function run(action: () => Promise<void>): Promise<void> {
+  async function run<T>(action: () => Promise<T>): Promise<T | undefined> {
     setErrorMessage(null);
     try {
-      await action();
+      return await action();
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -83,6 +83,21 @@ export function ChordTrainerPanel({
           : "Progression change could not be saved.",
       );
     }
+  }
+
+  async function copySelectedProgression(): Promise<void> {
+    if (!availableSelected?.isBuiltIn) return;
+    const copied = await run(() => copyBuiltIn(availableSelected.id));
+    if (copied) selectProgression(copied);
+  }
+
+  async function removeSelectedProgression(): Promise<void> {
+    if (!availableSelected || availableSelected.isBuiltIn) return;
+    const deleted = await run(async () => {
+      await deleteProgression(availableSelected.id);
+      return true;
+    });
+    if (deleted) selectProgression(builtInChordProgressions[0]!);
   }
 
   async function saveEditor(input: ChordProgressionInput): Promise<void> {
@@ -180,11 +195,7 @@ export function ChordTrainerPanel({
           <button
             className={buttonClass}
             disabled={disabled}
-            onClick={() =>
-              void run(async () =>
-                selectProgression(await copyBuiltIn(availableSelected.id)),
-              )
-            }
+            onClick={() => void copySelectedProgression()}
             type="button"
           >
             <Copy aria-hidden="true" className="size-4" />
@@ -218,12 +229,7 @@ export function ChordTrainerPanel({
         <ChordProgressionDeleteConfirmation
           name={availableSelected.name}
           onCancel={() => setConfirmingDelete(false)}
-          onConfirm={() =>
-            void run(async () => {
-              await deleteProgression(availableSelected.id);
-              selectProgression(builtInChordProgressions[0]!);
-            })
-          }
+          onConfirm={() => void removeSelectedProgression()}
         />
       ) : null}
 
