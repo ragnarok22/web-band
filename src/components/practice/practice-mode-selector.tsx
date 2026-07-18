@@ -49,7 +49,7 @@ export function PracticeModeSelector({
       <legend className="sr-only">Practice mode</legend>
       <div className="grid grid-cols-2 gap-2">
         {modes.map((choice, index) => (
-          <label className="min-w-0" key={choice.value}>
+          <label className="flex min-w-0" key={choice.value}>
             <input
               checked={mode === choice.value}
               className="peer sr-only"
@@ -59,7 +59,7 @@ export function PracticeModeSelector({
               type="radio"
               value={choice.value}
             />
-            <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-accent/60 peer-checked:bg-accent/10 peer-checked:text-accent peer-focus-visible:outline-accent flex min-h-16 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
+            <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-accent/60 peer-checked:bg-accent/10 peer-checked:text-accent peer-focus-visible:outline-accent flex h-full min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
               <span
                 aria-hidden="true"
                 className="border-border bg-background flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-black tabular-nums"

@@ -51,6 +51,7 @@ export default function RootLayout({
   return (
     <html
       className={`${manrope.variable} ${geistMono.variable}`}
+      data-scroll-behavior="smooth"
       lang="en"
       suppressHydrationWarning
     >

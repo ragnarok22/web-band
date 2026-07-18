@@ -47,4 +47,15 @@ describe("practice mode selector", () => {
     expect(choices).toHaveClass("grid-cols-2");
     expect(choices).not.toHaveClass("lg:grid-cols-4");
   });
+
+  it("stretches every card to the full height of its grid row", () => {
+    render(<SelectorHarness />);
+
+    for (const radio of screen.getAllByRole("radio")) {
+      const label = radio.closest("label");
+      const card = label?.querySelector(":scope > span");
+      expect(label).toHaveClass("flex");
+      expect(card).toHaveClass("h-full", "w-full");
+    }
+  });
 });
