@@ -7,6 +7,29 @@ import type { AudioEngineStatus } from "@/types/audio";
 describe("useWakeLock", () => {
   afterEach(() => {
     Reflect.deleteProperty(navigator, "wakeLock");
+    vi.restoreAllMocks();
+  });
+
+  it("removes the visibility listener when the hook unmounts", () => {
+    const addEventListener = vi.spyOn(document, "addEventListener");
+    const removeEventListener = vi.spyOn(document, "removeEventListener");
+    Object.defineProperty(navigator, "wakeLock", {
+      configurable: true,
+      value: { request: vi.fn() },
+    });
+
+    const { unmount } = renderHook(() => useWakeLock(true, "stopped"));
+    const visibilitySubscription = addEventListener.mock.calls.find(
+      ([eventName]) => eventName === "visibilitychange",
+    );
+    expect(visibilitySubscription).toBeDefined();
+
+    unmount();
+
+    expect(removeEventListener).toHaveBeenCalledWith(
+      "visibilitychange",
+      visibilitySubscription?.[1],
+    );
   });
 
   it("requests during practice and releases after stop", async () => {

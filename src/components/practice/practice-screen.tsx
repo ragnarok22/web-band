@@ -1,27 +1,25 @@
 "use client";
 
-import { AudioLines, CircleDot, Drum, Info, LibraryBig, X } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
-import { BpmControls } from "@/components/practice/bpm-controls";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
 import { CompactMixer } from "@/components/practice/compact-mixer";
-import { CountInControl } from "@/components/practice/count-in-control";
-import { FocusMode } from "@/components/practice/focus-mode";
-import { GrooveControls } from "@/components/practice/groove-controls";
+import { PatternSummary } from "@/components/practice/pattern-summary";
+import { PracticeFocusSession } from "@/components/practice/practice-focus-session";
+import { PracticeHeader } from "@/components/practice/practice-header";
+import { PracticeNotices } from "@/components/practice/practice-notices";
+import { PracticeSettings } from "@/components/practice/practice-settings";
 import { SessionToolbar } from "@/components/practice/session-toolbar";
 import { ShortcutsDialog } from "@/components/practice/shortcuts-dialog";
-import { TransportControls } from "@/components/practice/transport-controls";
+import { TransportPanel } from "@/components/practice/transport-panel";
 import { builtInPatterns, getPatternById } from "@/data/patterns";
 import { usePracticeShortcuts } from "@/hooks/use-practice-shortcuts";
 import { usePracticeTimer } from "@/hooks/use-practice-timer";
 import { useTapTempo } from "@/hooks/use-tap-tempo";
 import { useWakeLock } from "@/hooks/use-wake-lock";
-import { audioStatusCopy, isSessionActive } from "@/lib/audio-status";
+import { audioStatusCopy } from "@/lib/audio-status";
 import { clampBpm } from "@/lib/musical-time";
-import { formatPatternCategory } from "@/lib/pattern-filters";
 import { useAudioStore } from "@/stores/audio-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
@@ -233,119 +231,34 @@ export function PracticeScreen() {
 
   if (isFocusMode) {
     return (
-      <>
-        <FocusMode
-          bpm={bpm}
-          countInMeasures={countInMeasures}
-          elapsedSeconds={elapsedSeconds}
-          onExit={exitFocusMode}
-          onPlay={() => void play()}
-          onStop={stop}
-          pattern={pattern}
-          status={status}
-        />
-        <ShortcutsDialog
-          onClose={() => setShortcutsOpen(false)}
-          open={shortcutsOpen}
-        />
-      </>
+      <PracticeFocusSession
+        bpm={bpm}
+        countInMeasures={countInMeasures}
+        elapsedSeconds={elapsedSeconds}
+        onExit={exitFocusMode}
+        onPlay={() => void play()}
+        onShortcutsClose={() => setShortcutsOpen(false)}
+        onStop={stop}
+        pattern={pattern}
+        shortcutsOpen={shortcutsOpen}
+        status={status}
+      />
     );
   }
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-3 pb-8 sm:px-6 lg:px-8">
-      <header className="border-border flex min-h-20 items-center justify-between border-b py-4">
-        <div className="flex items-center gap-3">
-          <span className="border-accent/25 bg-accent/10 text-accent flex size-11 items-center justify-center rounded-xl border shadow-[inset_0_1px_rgba(255,255,255,0.08)]">
-            <Drum aria-hidden="true" className="size-6" />
-          </span>
-          <div>
-            <p className="text-foreground text-lg leading-tight font-extrabold tracking-[-0.03em]">
-              Web Band
-            </p>
-            <p className="text-muted text-xs font-semibold tracking-[0.12em] uppercase">
-              Practice room
-            </p>
-          </div>
-        </div>
-        <div className="border-border bg-surface text-muted-strong flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold">
-          <span
-            aria-hidden="true"
-            className={`size-2 rounded-full ${status === "playing" ? "bg-success shadow-[0_0_12px_var(--success)]" : status === "counting-in" ? "bg-secondary-accent" : "bg-muted"}`}
-          />
-          <span className="hidden sm:inline">{audioStatusCopy[status]}</span>
-          <span className="sm:hidden">{status.replace("-", " ")}</span>
-        </div>
-      </header>
+      <PracticeHeader status={status} />
 
       <div className="grid flex-1 gap-4 pt-4 lg:grid-cols-[minmax(16rem,0.78fr)_minmax(25rem,1.5fr)_minmax(16rem,0.78fr)] lg:items-start lg:gap-5 lg:pt-6">
         <aside className="order-2 grid gap-4 sm:grid-cols-2 lg:order-1 lg:grid-cols-1">
-          <section className="border-border bg-surface relative overflow-hidden rounded-2xl border p-5">
-            <div
-              aria-hidden="true"
-              className="bg-accent/8 absolute -top-20 -right-20 size-48 rounded-full blur-3xl"
-            />
-            <div className="relative">
-              <div className="mb-6 flex items-center justify-between">
-                <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
-                  {formatPatternCategory(pattern.category)}
-                </span>
-                <AudioLines aria-hidden="true" className="text-muted size-5" />
-              </div>
-              <p className="text-muted text-xs font-bold tracking-[0.16em] uppercase">
-                Current pattern
-              </p>
-              <h1 className="text-foreground mt-2 text-3xl font-black tracking-[-0.045em]">
-                {pattern.name}
-              </h1>
-              <label className="mt-4 block">
-                <span className="text-muted mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
-                  Quick select
-                </span>
-                <select
-                  aria-label="Current pattern"
-                  className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-xl border px-3 text-sm font-bold"
-                  onChange={(event) => changePattern(event.target.value)}
-                  value={pendingPatternId ?? pattern.id}
-                >
-                  {patterns.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.name} - {candidate.timeSignature.numerator}/
-                      {candidate.timeSignature.denominator}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {pendingPatternId ? (
-                <p className="text-secondary-accent mt-2 text-xs font-bold">
-                  Queued for the next measure
-                </p>
-              ) : null}
-              <p className="text-muted mt-3 text-sm leading-6">
-                {pattern.description}
-              </p>
-              <dl className="border-border mt-6 grid grid-cols-2 gap-3 border-t pt-4">
-                <div>
-                  <dt className="text-muted text-[0.68rem] font-bold tracking-wider uppercase">
-                    Meter
-                  </dt>
-                  <dd className="text-foreground mt-1 font-extrabold tabular-nums">
-                    {pattern.timeSignature.numerator}/
-                    {pattern.timeSignature.denominator}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-muted text-[0.68rem] font-bold tracking-wider uppercase">
-                    Feel
-                  </dt>
-                  <dd className="text-foreground mt-1 font-extrabold">
-                    {pattern.swing || swing > 0 ? "Swing" : "Straight"}{" "}
-                    {pattern.subdivision}ths
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </section>
+          <PatternSummary
+            onPatternChange={changePattern}
+            pattern={pattern}
+            patterns={patterns}
+            pendingPatternId={pendingPatternId}
+            swing={swing}
+          />
 
           <CompactMixer
             masterMuted={masterMuted}
@@ -376,90 +289,37 @@ export function PracticeScreen() {
             status={status}
           />
 
-          <div className="border-border rounded-2xl border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] px-3 py-7 shadow-[0_24px_70px_var(--shadow)] backdrop-blur sm:px-6 sm:py-9">
-            <TransportControls
-              onPause={() => getAudioEngine().pause()}
-              onPlay={() => void play()}
-              onStop={stop}
-              status={status}
-            />
-            <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
-              <CircleDot aria-hidden="true" className="text-accent size-3" />
-              <span data-testid="transport-status">
-                {audioStatusCopy[status]}
-              </span>
-            </div>
-          </div>
+          <TransportPanel
+            onPause={() => getAudioEngine().pause()}
+            onPlay={() => void play()}
+            onStop={stop}
+            status={status}
+          />
 
-          {showOnboarding ? (
-            <aside
-              className="border-accent/20 bg-accent/7 text-muted-strong flex items-start gap-3 rounded-xl border p-4 text-sm leading-6"
-              role="note"
-            >
-              <Info
-                aria-hidden="true"
-                className="text-accent mt-0.5 size-5 shrink-0"
-              />
-              <p className="flex-1">
-                Sound begins after you press Play because browsers require a
-                direct interaction.{" "}
-                {countInMeasures === 0
-                  ? "The groove starts immediately."
-                  : `You will hear ${countInMeasures === 1 ? "one measure" : `${countInMeasures} measures`} of count-in, then the groove.`}
-              </p>
-              <button
-                aria-label="Dismiss audio tip"
-                className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors"
-                onClick={dismissOnboarding}
-                type="button"
-              >
-                <X aria-hidden="true" className="size-4" />
-              </button>
-            </aside>
-          ) : null}
-
-          {errorMessage ? (
-            <p
-              className="border-danger/30 bg-danger/10 text-foreground rounded-xl border p-4 text-sm"
-              role="alert"
-            >
-              {errorMessage}
-            </p>
-          ) : null}
+          <PracticeNotices
+            countInMeasures={countInMeasures}
+            errorMessage={errorMessage}
+            onDismiss={dismissOnboarding}
+            showOnboarding={showOnboarding}
+          />
         </section>
 
-        <aside className="order-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <BpmControls
-            bpm={bpm}
-            defaultBpm={pattern.defaultBpm}
-            onChange={changeBpm}
-            onTap={tapTempo}
-          />
-
-          <CountInControl
-            disabled={isSessionActive(status)}
-            measures={countInMeasures}
-            onChange={setCountInMeasures}
-            timeSignature={pattern.timeSignature}
-          />
-
-          <GrooveControls
-            fillFrequency={fillFrequency}
-            humanization={humanization}
-            onFillFrequencyChange={changeFillFrequency}
-            onHumanizationChange={changeHumanization}
-            onSwingChange={changeSwing}
-            swing={swing}
-          />
-
-          <Link
-            className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 lg:col-span-1"
-            href="/patterns"
-          >
-            <LibraryBig aria-hidden="true" className="size-4" />
-            Browse all patterns
-          </Link>
-        </aside>
+        <PracticeSettings
+          bpm={bpm}
+          countInMeasures={countInMeasures}
+          defaultBpm={pattern.defaultBpm}
+          fillFrequency={fillFrequency}
+          humanization={humanization}
+          onBpmChange={changeBpm}
+          onCountInChange={setCountInMeasures}
+          onFillFrequencyChange={changeFillFrequency}
+          onHumanizationChange={changeHumanization}
+          onSwingChange={changeSwing}
+          onTapTempo={tapTempo}
+          status={status}
+          swing={swing}
+          timeSignature={pattern.timeSignature}
+        />
       </div>
 
       <p aria-live="polite" className="sr-only" role="status">

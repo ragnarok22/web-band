@@ -18,7 +18,7 @@ export function useWakeLock(
     enabled && audioStatus !== "initializing" && isSessionActive(audioStatus);
 
   useEffect(() => {
-    if (!supported) return;
+    if (!supported) return () => undefined;
     const wakeLock = navigator.wakeLock;
 
     let active = true;
@@ -45,10 +45,10 @@ export function useWakeLock(
           return;
         }
         sentinel = nextSentinel;
-        sentinel.addEventListener("release", () => {
+        sentinel.onrelease = () => {
           sentinel = null;
           if (active) setStatus("idle");
-        });
+        };
         setStatus("active");
       } catch {
         if (active && generation === requestGeneration) setStatus("error");
