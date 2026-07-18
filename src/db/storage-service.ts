@@ -44,6 +44,7 @@ import {
   isPracticePreset,
 } from "@/lib/practice-validation";
 import type {
+  CustomDrumPattern,
   ImportCollectionCounts,
   ImportMode,
   ImportSummary,
@@ -301,6 +302,26 @@ export class StorageService {
     }
 
     return createImportSummary(imported, mode);
+  }
+
+  async putCustomPatterns(
+    patterns: readonly CustomDrumPattern[],
+  ): Promise<void> {
+    const imported = structuredClone([...patterns]);
+    if (
+      imported.length === 0 ||
+      !imported.every(isCustomDrumPattern) ||
+      new Set(imported.map(({ id }) => id)).size !== imported.length
+    ) {
+      throw new Error("Only unique, valid custom patterns can be imported.");
+    }
+    if (this.database) {
+      await this.database.transaction("rw", this.database.customPatterns, () =>
+        this.database!.customPatterns.bulkPut(imported),
+      );
+      return;
+    }
+    await Promise.all(imported.map((pattern) => this.repository.put(pattern)));
   }
 
   async recoverFromIndexedDbFailure(): Promise<PersistenceStatus> {

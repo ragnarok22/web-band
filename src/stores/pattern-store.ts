@@ -14,6 +14,7 @@ import { isCustomDrumPattern } from "@/lib/persistence-validation";
 import { executeStorageOperation } from "@/lib/storage-execution";
 import { usePracticeStore } from "@/stores/practice-store";
 import type { CustomDrumPattern } from "@/types/persistence";
+import type { ImportedPattern } from "@/types/pattern-sharing";
 
 export type PatternChanges = Partial<
   Omit<CustomDrumPattern, "createdAt" | "id" | "isBuiltIn" | "updatedAt">
@@ -28,6 +29,9 @@ interface PatternStore {
   delete: (patternId: string) => Promise<void>;
   duplicate: (patternId: string) => Promise<CustomDrumPattern>;
   hydrate: () => Promise<void>;
+  importPatterns: (
+    patterns: readonly CustomDrumPattern[],
+  ) => Promise<ImportedPattern[]>;
   markRecent: (patternId: string) => void;
   refreshAfterImport: () => Promise<void>;
   toggleFavorite: (patternId: string) => Promise<void>;
@@ -138,6 +142,51 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
       set({ isHydrated: true });
       throw error;
     }
+  },
+  importPatterns: async (patterns) => {
+    if (!get().isHydrated) {
+      throw new Error("Your pattern library is still loading.");
+    }
+    if (patterns.length === 0) {
+      throw new Error("Choose at least one valid custom pattern to import.");
+    }
+
+    const current = get().customPatterns;
+    const unavailable = unavailableIds(current);
+    const unavailableSet = new Set(unavailable);
+    const sourceIds = new Set<string>();
+    const imported: ImportedPattern[] = [];
+    for (const source of patterns) {
+      if (!isCustomDrumPattern(source)) {
+        throw new Error("Only valid custom patterns can be imported.");
+      }
+      if (sourceIds.has(source.id)) {
+        throw new Error("Imported pattern IDs must be unique.");
+      }
+      sourceIds.add(source.id);
+
+      if (unavailableSet.has(source.id)) {
+        const pattern = duplicatePatternDraft(source, [...unavailableSet]);
+        pattern.name = source.name;
+        unavailableSet.add(pattern.id);
+        imported.push({ pattern, resolution: "copied" });
+      } else {
+        const pattern = structuredClone(source);
+        unavailableSet.add(pattern.id);
+        imported.push({ pattern, resolution: "created" });
+      }
+    }
+
+    await executeStorageOperation(() =>
+      storageService.putCustomPatterns(imported.map(({ pattern }) => pattern)),
+    );
+    set({
+      customPatterns: sortPatterns([
+        ...imported.map(({ pattern }) => pattern),
+        ...get().customPatterns,
+      ]),
+    });
+    return structuredClone(imported);
   },
   markRecent: (patternId) => {
     const recentPatternIds = [

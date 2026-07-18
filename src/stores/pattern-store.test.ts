@@ -137,4 +137,58 @@ describe("pattern store", () => {
       usePracticePresetStore.getState().presets[0]?.configuration.patternId,
     ).toBe(created.id);
   });
+
+  it("imports shared patterns without overwriting ID collisions", async () => {
+    usePatternStore.setState({ isHydrated: true });
+    const existing = await usePatternStore.getState().create();
+    const newPattern = {
+      ...structuredClone(existing),
+      createdAt: "2026-07-18T13:00:00.000Z",
+      id: "friend-pattern",
+      name: "Friend Pattern",
+      updatedAt: "2026-07-18T13:00:00.000Z",
+    };
+
+    const imported = await usePatternStore
+      .getState()
+      .importPatterns([existing, newPattern]);
+
+    expect(imported).toHaveLength(2);
+    expect(imported[0]).toMatchObject({
+      resolution: "copied",
+      pattern: { name: existing.name },
+    });
+    expect(imported[0]?.pattern.id).not.toBe(existing.id);
+    expect(imported[1]).toMatchObject({
+      resolution: "created",
+      pattern: { id: "friend-pattern" },
+    });
+    expect(usePatternStore.getState().customPatterns).toHaveLength(3);
+    expect(
+      await storageService.patternRepository.get(imported[0]!.pattern.id),
+    ).toEqual(imported[0]!.pattern);
+    expect(
+      await storageService.patternRepository.get("friend-pattern"),
+    ).toEqual(imported[1]!.pattern);
+  });
+
+  it("does not update state when a shared-pattern batch cannot persist", async () => {
+    usePatternStore.setState({ isHydrated: true });
+    const source = await usePatternStore.getState().create();
+    const before = [...usePatternStore.getState().customPatterns];
+    vi.spyOn(storageService, "putCustomPatterns").mockRejectedValueOnce(
+      new Error("batch failed"),
+    );
+
+    await expect(
+      usePatternStore.getState().importPatterns([
+        {
+          ...source,
+          id: "failed-import",
+          name: "Failed Import",
+        },
+      ]),
+    ).rejects.toThrow("batch failed");
+    expect(usePatternStore.getState().customPatterns).toEqual(before);
+  });
 });

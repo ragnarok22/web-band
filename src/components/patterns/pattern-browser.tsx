@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { PatternCard } from "@/components/patterns/pattern-card";
+import { PatternSharingControl } from "@/components/patterns/pattern-sharing-control";
 import { builtInPatterns } from "@/data/patterns";
 import {
   defaultPatternFilters,
@@ -173,6 +174,7 @@ export function PatternBrowser() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <PatternSharingControl />
           <Link
             className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition-colors"
             href="/editor"

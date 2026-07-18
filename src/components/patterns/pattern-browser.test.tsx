@@ -14,6 +14,10 @@ const engine = vi.hoisted(() => ({
   play: vi.fn(() => Promise.resolve()),
   stop: vi.fn(),
 }));
+const patternSharing = vi.hoisted(() => ({
+  downloadPatternShareEnvelope: vi.fn(),
+  parsePatternShareFile: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => router,
@@ -23,6 +27,27 @@ vi.mock("@/audio/audio-engine", () => ({
   disposeAudioEngine: vi.fn(),
   getAudioEngine: () => engine,
 }));
+
+vi.mock("@/lib/pattern-sharing-browser", () => patternSharing);
+
+function customPattern(): CustomDrumPattern {
+  return {
+    bars: 1,
+    category: "rock",
+    createdAt: "2026-07-18T12:00:00.000Z",
+    defaultBpm: 90,
+    description: "Made here.",
+    difficulty: "beginner",
+    hits: [],
+    id: "my-pattern",
+    isBuiltIn: false,
+    name: "My Pattern",
+    recommendedBpmRange: { max: 120, min: 70 },
+    subdivision: 8,
+    timeSignature: { denominator: 4, numerator: 4 },
+    updatedAt: "2026-07-18T12:00:00.000Z",
+  };
+}
 
 describe("pattern browser", () => {
   beforeEach(() => {
@@ -115,23 +140,7 @@ describe("pattern browser", () => {
   });
 
   it("links create, built-in duplicate, and custom edit actions", () => {
-    const customPattern: CustomDrumPattern = {
-      bars: 1,
-      category: "rock",
-      createdAt: "2026-07-18T12:00:00.000Z",
-      defaultBpm: 90,
-      description: "Made here.",
-      difficulty: "beginner",
-      hits: [],
-      id: "my-pattern",
-      isBuiltIn: false,
-      name: "My Pattern",
-      recommendedBpmRange: { max: 120, min: 70 },
-      subdivision: 8,
-      timeSignature: { denominator: 4, numerator: 4 },
-      updatedAt: "2026-07-18T12:00:00.000Z",
-    };
-    usePatternStore.setState({ customPatterns: [customPattern] });
+    usePatternStore.setState({ customPatterns: [customPattern()] });
 
     render(<PatternBrowser />);
 
@@ -151,5 +160,50 @@ describe("pattern browser", () => {
     expect(
       screen.getByRole("heading", { name: "My Pattern" }).closest("article"),
     ).toHaveClass("[content-visibility:auto]");
+  });
+
+  it("exports and previews imports for shared custom patterns", async () => {
+    const user = userEvent.setup();
+    const pattern = customPattern();
+    const importPatterns = vi.fn(async () => [
+      { pattern, resolution: "created" as const },
+    ]);
+    usePatternStore.setState({ customPatterns: [pattern], importPatterns });
+    patternSharing.parsePatternShareFile.mockResolvedValue({
+      byteSize: 100,
+      envelope: {
+        app: "web-band",
+        data: { patterns: [pattern] },
+        exportedAt: "2026-07-18T12:00:00.000Z",
+        kind: "drum-patterns",
+        version: 1,
+      },
+      fileName: "my-pattern.json",
+      patternCount: 1,
+    });
+    render(<PatternBrowser />);
+
+    expect(
+      screen.queryByRole("button", { name: "Export Basic Rock pattern" }),
+    ).toBeNull();
+    await user.click(
+      screen.getByRole("button", { name: "Export My Pattern pattern" }),
+    );
+    expect(patternSharing.downloadPatternShareEnvelope).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { patterns: [pattern] } }),
+    );
+
+    await user.upload(
+      screen.getByLabelText("Choose shared pattern file"),
+      new File(["{}"], "my-pattern.json", { type: "application/json" }),
+    );
+    expect(
+      await screen.findByRole("dialog", { name: "Import this pattern?" }),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Add to library" }));
+    expect(importPatterns).toHaveBeenCalledWith([pattern]);
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Imported 1 pattern.",
+    );
   });
 });

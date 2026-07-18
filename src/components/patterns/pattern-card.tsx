@@ -4,6 +4,8 @@ import { Copy, Heart, Pencil, Play, Square, Target } from "lucide-react";
 import Link from "next/link";
 
 import { RhythmPreview } from "@/components/patterns/rhythm-preview";
+import { PatternExportButton } from "@/components/patterns/pattern-export-button";
+import { isCustomDrumPattern } from "@/lib/persistence-validation";
 import {
   formatPatternCategory,
   getTimeSignatureLabel,
@@ -46,18 +48,23 @@ export function PatternCard({
             {pattern.name}
           </h2>
         </div>
-        <button
-          aria-label={`${isFavorite ? "Remove" : "Add"} ${pattern.name} ${isFavorite ? "from" : "to"} favorites`}
-          aria-pressed={isFavorite}
-          className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
-          onClick={onFavorite}
-          type="button"
-        >
-          <Heart
-            aria-hidden="true"
-            className={`size-5 ${isFavorite ? "fill-current" : ""}`}
-          />
-        </button>
+        <div className="flex shrink-0 gap-2">
+          {isCustomDrumPattern(pattern) ? (
+            <PatternExportButton pattern={pattern} />
+          ) : null}
+          <button
+            aria-label={`${isFavorite ? "Remove" : "Add"} ${pattern.name} ${isFavorite ? "from" : "to"} favorites`}
+            aria-pressed={isFavorite}
+            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
+            onClick={onFavorite}
+            type="button"
+          >
+            <Heart
+              aria-hidden="true"
+              className={`size-5 ${isFavorite ? "fill-current" : ""}`}
+            />
+          </button>
+        </div>
       </div>
 
       <p className="text-muted min-h-12 text-sm leading-6 [overflow-wrap:anywhere] break-words">

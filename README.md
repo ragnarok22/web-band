@@ -29,6 +29,7 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Practice presets that save and atomically restore the groove and guided setup, with rename, duplicate, favorite, recent, and delete controls.
 - A responsive step-sequencer editor for creating, duplicating, previewing, saving, and deleting custom one-, two-, or four-bar drum patterns.
 - Per-hit velocity cycling plus advanced probability, flam, and timing controls, measure copy/paste, row clearing, and audio-synchronized editor playhead guidance.
+- Pattern-only JSON sharing for one groove or the full custom library, with previewed imports that create copies instead of overwriting ID collisions.
 - A local practice journal with configurable session thresholds, weekly and lifetime totals, most-used groove and BPM range, grouped recent sessions, and deletion controls.
 - Versioned JSON export and validated merge or replace import for custom content, favorites, presets, history, and practice settings.
 - Versioned IndexedDB initialization through Dexie.
@@ -198,6 +199,19 @@ No remote resources or audio files are cached.
 
 ## Import and Export
 
+The Pattern Library can export one custom groove as `web-band-pattern-<name>.json` or all custom grooves as `web-band-patterns-YYYY-MM-DD.json`. Pattern-share files use a separate strict envelope:
+
+```text
+app: "web-band"
+kind: "drum-patterns"
+version: 1
+exportedAt: canonical UTC ISO timestamp
+data:
+  patterns: one to 100 validated custom drum patterns
+```
+
+Pattern files are capped at 10 MB and cannot contain built-in IDs, malformed hits, duplicate pattern IDs, or more than 100 grooves. The import preview lists every groove before saving. If an imported ID already exists locally, Web Band creates a new pattern and hit IDs so shared files never overwrite the recipient's work.
+
 Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 1 envelope contains:
 
 ```text
@@ -232,7 +246,7 @@ Graceful degradation:
 
 ## Testing
 
-Vitest covers musical calculations, BPM clamping, built-in and custom content validation, editor transformations and grid interaction, tempo, chord, and strumming positions, practice-history lifecycle and aggregation, Dexie repositories and migrations, backup validation and orchestration, runtime storage recovery, measure-aligned Tone scheduling, and core UI controls.
+Vitest covers musical calculations, BPM clamping, built-in and custom content validation, editor transformations and grid interaction, pattern-share parsing and collision-safe imports, tempo, chord, and strumming positions, practice-history lifecycle and aggregation, Dexie repositories and migrations, backup validation and orchestration, runtime storage recovery, measure-aligned Tone scheduling, and core UI controls.
 
 Playwright runs the real browser audio engine and verifies:
 
@@ -251,6 +265,7 @@ Playwright runs the real browser audio engine and verifies:
 - Guided tempo preset save and reload behavior.
 - Tempo-trainer advancement on a real musical boundary.
 - Custom pattern creation, save, library discovery, practice loading, and reload persistence.
+- Pattern-only download, removal, import, and reload persistence.
 - Meaningful practice-session recording, journal persistence, and deletion.
 - JSON backup download, validation, merge, clear, restore, and reload persistence.
 - Reload persistence on desktop and mobile profiles.
