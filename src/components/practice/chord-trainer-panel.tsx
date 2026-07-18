@@ -47,7 +47,9 @@ export function ChordTrainerPanel({
   const [editorTarget, setEditorTarget] = useState<EditorTarget>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const deleteTriggerRef = useRef<HTMLButtonElement>(null);
   const editorTriggerRef = useRef<HTMLButtonElement>(null);
+  const progressionSelectRef = useRef<HTMLSelectElement>(null);
   const selected = configuration.progression;
   const availableSelected = selected.isBuiltIn
     ? builtInChordProgressions.find(({ id }) => id === selected.id)
@@ -97,7 +99,10 @@ export function ChordTrainerPanel({
       await deleteProgression(availableSelected.id);
       return true;
     });
-    if (deleted) selectProgression(builtInChordProgressions[0]!);
+    if (deleted) {
+      selectProgression(builtInChordProgressions[0]!);
+      window.requestAnimationFrame(() => progressionSelectRef.current?.focus());
+    }
   }
 
   async function saveEditor(input: ChordProgressionInput): Promise<void> {
@@ -155,6 +160,7 @@ export function ChordTrainerPanel({
             ].find(({ id }) => id === event.target.value);
             if (progression) selectProgression(progression);
           }}
+          ref={progressionSelectRef}
           value={availableSelected?.id ?? ""}
         >
           {!availableSelected ? (
@@ -216,6 +222,7 @@ export function ChordTrainerPanel({
               className={`${buttonClass} border-danger/30 text-danger`}
               disabled={disabled}
               onClick={() => setConfirmingDelete(true)}
+              ref={deleteTriggerRef}
               type="button"
             >
               <Trash2 aria-hidden="true" className="size-4" />
@@ -228,7 +235,10 @@ export function ChordTrainerPanel({
       {confirmingDelete && availableSelected ? (
         <ChordProgressionDeleteConfirmation
           name={availableSelected.name}
-          onCancel={() => setConfirmingDelete(false)}
+          onCancel={() => {
+            setConfirmingDelete(false);
+            deleteTriggerRef.current?.focus();
+          }}
           onConfirm={() => void removeSelectedProgression()}
         />
       ) : null}

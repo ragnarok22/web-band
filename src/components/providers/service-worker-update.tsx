@@ -35,7 +35,7 @@ export function ServiceWorkerUpdate() {
 
   return (
     <aside
-      className="border-border-strong bg-surface-elevated fixed right-4 bottom-4 z-50 flex max-w-sm items-center gap-3 rounded-xl border p-4 shadow-2xl"
+      className="border-border-strong bg-surface-elevated pointer-events-auto flex w-full items-center justify-between gap-3 rounded-xl border p-4 shadow-2xl"
       role="status"
     >
       <p className="text-muted-strong text-sm">A new version is ready.</p>

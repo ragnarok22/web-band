@@ -26,7 +26,7 @@ export function DeleteLocalDataDialog({
   return (
     <dialog
       aria-labelledby={headingId}
-      className="border-danger/35 bg-surface text-foreground fixed inset-0 m-auto w-[min(92vw,30rem)] rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop:bg-black/75"
+      className="border-danger/35 bg-surface text-foreground fixed inset-0 m-auto w-[min(92vw,30rem)] overscroll-contain rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop:bg-black/75"
       onCancel={(event) => {
         event.preventDefault();
         if (!isPending) dialogRef.current?.close();
@@ -77,7 +77,7 @@ export function DeleteLocalDataDialog({
             onClick={() => void onConfirm()}
             type="button"
           >
-            {isPending ? "Deleting..." : "Delete local data"}
+            {isPending ? "Deleting…" : "Delete local data"}
           </button>
         </div>
       </div>

@@ -21,6 +21,27 @@
   color-scheme: dark;
 }
 
+html[data-theme="light"] {
+  --background: #f3eee5;
+  --background-deep: #e7dfd2;
+  --surface: #fbf8f2;
+  --surface-elevated: #fffdf8;
+  --surface-hover: #e9e0d3;
+  --foreground: #211d18;
+  --muted: #6f675d;
+  --muted-strong: #514a42;
+  --accent: #a96205;
+  --accent-strong: #854c00;
+  --accent-ink: #fff8e8;
+  --secondary-accent: #b54a31;
+  --success: #2f7a49;
+  --danger: #a63f2e;
+  --border: rgba(33, 29, 24, 0.12);
+  --border-strong: rgba(33, 29, 24, 0.22);
+  --shadow: rgba(58, 42, 24, 0.18);
+  color-scheme: light;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-background-deep: var(--background-deep);
@@ -49,11 +70,13 @@
 html {
   min-width: 320px;
   background: var(--background-deep);
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
+  overflow-x: clip;
   background:
     radial-gradient(
       circle at 50% -15%,
@@ -66,13 +89,21 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
+select {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
 button:not(:disabled),
-input[type="range"]:not(:disabled) {
+input[type="range"]:not(:disabled),
+select:not(:disabled) {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -87,6 +118,34 @@ button:disabled {
 ::selection {
   background: var(--accent);
   color: var(--accent-ink);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  scroll-margin-top: 1rem;
+  text-wrap: balance;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: max(0.75rem, env(safe-area-inset-top));
+  left: max(0.75rem, env(safe-area-inset-left));
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+  transform: translateY(-200%);
+  transition: transform 120ms ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 .tabular-nums {
@@ -208,7 +267,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: rgba(18, 17, 15, 0.92);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
   opacity: 0;
   pointer-events: none;
   transform: scale(0.97);
@@ -243,4 +302,13 @@ button:disabled {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  scroll-behavior: auto !important;
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

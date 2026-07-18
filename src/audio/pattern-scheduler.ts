@@ -17,7 +17,11 @@ import { getStepsPerBar, getSubdivisionNotation } from "@/lib/musical-time";
 import { clampUnit } from "@/lib/mixer";
 import { validatePattern } from "@/lib/pattern-validation";
 import { isStrummingPatternMeterCompatible } from "@/lib/guided-practice";
-import type { CountInMeasures, FillFrequency } from "@/types/audio";
+import type {
+  CountInMeasures,
+  FillFrequency,
+  ScheduledVisualStep,
+} from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
 
@@ -37,6 +41,20 @@ interface PendingPattern {
   pattern: DrumPattern;
 }
 
+interface PlannedHit {
+  instrument: DrumPattern["hits"][number]["instrument"];
+  timeOffset: number;
+  velocity: number;
+}
+
+interface PlannedPatternTick {
+  guidance: GuidedPracticeTick;
+  hits: PlannedHit[];
+  patternChange: PendingPattern | null;
+  semanticCallbackId: number | null;
+  visual: ScheduledVisualStep | null;
+}
+
 type TargetStopState = "delivered" | "idle" | "pending";
 
 export interface PatternInstrumentPlayer {
@@ -51,12 +69,15 @@ export interface PatternInstrumentPlayer {
 export class PatternScheduler {
   private patternAbsoluteSixteenth = 0;
   private activePattern: DrumPattern | null = null;
+  private callbackGeneration = 0;
+  private readonly callbackIds = new Set<number>();
   private drawGeneration = 0;
   private fillFrequency: FillFrequency = null;
   private hasStarted = false;
   private humanization = 0;
   private isCurrentMeasureFill = false;
   private pendingPattern: PendingPattern | null = null;
+  private readonly plannedTicks = new Map<number, PlannedPatternTick>();
   private previousMeasureWasFill = false;
   private scheduleGeneration = 0;
   private readonly scheduleIds = new Set<number>();
@@ -157,11 +178,13 @@ export class PatternScheduler {
   clear(): void {
     this.scheduleGeneration += 1;
     this.drawGeneration += 1;
+    this.cancelPendingCallbacks();
     for (const scheduleId of this.scheduleIds) {
       this.runtime.clearSchedule(scheduleId);
     }
     this.scheduleIds.clear();
     this.runtime.cancelDraw();
+    this.plannedTicks.clear();
     this.patternAbsoluteSixteenth = 0;
     this.activePattern = null;
     this.hasStarted = false;
@@ -176,9 +199,9 @@ export class PatternScheduler {
   cancelPendingVisuals(): void {
     this.drawGeneration += 1;
     this.runtime.cancelDraw();
+    this.cancelPendingCallbacks();
     if (this.targetStopState === "pending") {
       this.targetStopState = "idle";
-      this.guidedController.rearmTargetStop();
     }
   }
 
@@ -189,13 +212,14 @@ export class PatternScheduler {
   ): void {
     if (countInMeasures === 0) return;
 
-    let beatIndex = 0;
     const beatCount = pattern.timeSignature.numerator;
     const beatNotation = `${pattern.timeSignature.denominator}n`;
+    const sixteenthsPerBeat = 16 / pattern.timeSignature.denominator;
 
     const scheduleId = this.runtime.scheduleRepeat(
-      (time) => {
+      (time, transportSixteenth) => {
         if (!this.isScheduleCurrent(generation)) return;
+        const beatIndex = Math.round(transportSixteenth / sixteenthsPerBeat);
         const currentBeat = beatIndex % beatCount;
         const currentMeasure = Math.floor(beatIndex / beatCount) + 1;
         this.instruments.triggerCountIn(time, currentBeat === 0);
@@ -209,7 +233,6 @@ export class PatternScheduler {
             step: currentBeat,
           });
         }, time);
-        beatIndex += 1;
       },
       beatNotation,
       0,
@@ -225,107 +248,175 @@ export class PatternScheduler {
     generation: number,
   ): void {
     const scheduleId = this.runtime.scheduleRepeat(
-      (time) => {
+      (time, transportSixteenth) => {
         if (!this.isScheduleCurrent(generation)) return;
         if (this.targetStopState !== "idle") return;
-        const patternBeforeBoundary = this.activePattern ?? initialPattern;
-        const measureLength = getStepsPerBar(
-          patternBeforeBoundary.timeSignature,
-          16,
-        );
-        const isMeasureBoundary =
-          this.patternAbsoluteSixteenth === 0 ||
-          this.patternAbsoluteSixteenth % measureLength === 0;
-        const addPostFillCrash = isMeasureBoundary && this.isCurrentMeasureFill;
-
-        if (isMeasureBoundary && this.pendingPattern) {
-          const pending = this.pendingPattern;
-          this.applyPattern(pending.pattern);
-          this.pendingPattern = null;
-          const drawGeneration = this.drawGeneration;
-          this.runtime.scheduleDraw(() => {
-            if (!this.isDrawCurrent(generation, drawGeneration)) return;
-            pending.onPatternChanged(pending.pattern);
-          }, time);
-        }
-
-        const pattern = this.activePattern ?? initialPattern;
-        const currentAbsoluteSixteenthStep = this.patternAbsoluteSixteenth;
-        const sixteenthsPerBar = getStepsPerBar(pattern.timeSignature, 16);
-        const measure =
-          Math.floor(currentAbsoluteSixteenthStep / sixteenthsPerBar) + 1;
-        if (isMeasureBoundary) {
-          this.previousMeasureWasFill = this.isCurrentMeasureFill;
-          this.isCurrentMeasureFill = shouldFillMeasure(
-            this.fillFrequency,
-            measure,
-            this.previousMeasureWasFill,
-            this.random,
-          );
-        }
-        const guidanceTick = this.guidedController.tick();
-        this.scheduleGuidance(
-          guidanceTick,
+        const plan =
+          this.plannedTicks.get(transportSixteenth) ??
+          this.planPatternTick(initialPattern, transportSixteenth);
+        this.playPatternTick(
+          plan,
+          transportSixteenth,
           time,
           generation,
-          options.onTargetStop,
+          options,
         );
-        if (guidanceTick.shouldStop) return;
-        const playableStep = getPlayablePatternStep(
-          pattern,
-          this.patternAbsoluteSixteenth,
-          this.isCurrentMeasureFill,
-          addPostFillCrash,
-        );
-        if (!playableStep) {
-          this.patternAbsoluteSixteenth += 1;
-          return;
-        }
-
-        for (const hit of playableStep.hits) {
-          const shouldPlay =
-            hit.probability === undefined || this.random() <= hit.probability;
-          if (shouldPlay) {
-            const humanized = humanizeHit(
-              hit,
-              playableStep.stepInBar === 0,
-              this.humanization,
-              this.random,
-            );
-            this.instruments.trigger(
-              hit.instrument,
-              time + (hit.timingOffset ?? 0) + humanized.timeOffset,
-              humanized.velocity,
-            );
-          }
-        }
-
-        const drawGeneration = this.drawGeneration;
-        this.runtime.scheduleDraw(() => {
-          if (!this.isDrawCurrent(generation, drawGeneration)) return;
-          if (!this.hasStarted) {
-            this.hasStarted = true;
-            options.onPatternStarted();
-          }
-          this.timeline.emit({
-            isAccent: playableStep.hits.some((hit) => hit.velocity >= 0.8),
-            measure:
-              Math.floor(
-                currentAbsoluteSixteenthStep /
-                  getStepsPerBar(pattern.timeSignature, 16),
-              ) + 1,
-            phase: "pattern",
-            step: playableStep.stepInBar,
-          });
-        }, time);
-
-        this.patternAbsoluteSixteenth += 1;
       },
       "16n",
       options.countInMeasures === 0 ? 0 : `${options.countInMeasures}m`,
     );
 
     this.scheduleIds.add(scheduleId);
+  }
+
+  private planPatternTick(
+    initialPattern: DrumPattern,
+    transportSixteenth: number,
+  ): PlannedPatternTick {
+    const patternBeforeBoundary = this.activePattern ?? initialPattern;
+    const measureLength = getStepsPerBar(
+      patternBeforeBoundary.timeSignature,
+      16,
+    );
+    const isMeasureBoundary =
+      this.patternAbsoluteSixteenth === 0 ||
+      this.patternAbsoluteSixteenth % measureLength === 0;
+    const addPostFillCrash = isMeasureBoundary && this.isCurrentMeasureFill;
+    let patternChange: PendingPattern | null = null;
+
+    if (isMeasureBoundary && this.pendingPattern) {
+      patternChange = this.pendingPattern;
+      this.applyPattern(patternChange.pattern);
+      this.pendingPattern = null;
+    }
+
+    const pattern = this.activePattern ?? initialPattern;
+    const currentAbsoluteSixteenthStep = this.patternAbsoluteSixteenth;
+    const sixteenthsPerBar = getStepsPerBar(pattern.timeSignature, 16);
+    const measure =
+      Math.floor(currentAbsoluteSixteenthStep / sixteenthsPerBar) + 1;
+    if (isMeasureBoundary) {
+      this.previousMeasureWasFill = this.isCurrentMeasureFill;
+      this.isCurrentMeasureFill = shouldFillMeasure(
+        this.fillFrequency,
+        measure,
+        this.previousMeasureWasFill,
+        this.random,
+      );
+    }
+
+    const guidance = this.guidedController.tick();
+    const hits: PlannedHit[] = [];
+    let visual: ScheduledVisualStep | null = null;
+    if (!guidance.shouldStop) {
+      const playableStep = getPlayablePatternStep(
+        pattern,
+        this.patternAbsoluteSixteenth,
+        this.isCurrentMeasureFill,
+        addPostFillCrash,
+      );
+      this.patternAbsoluteSixteenth += 1;
+
+      if (playableStep) {
+        for (const hit of playableStep.hits) {
+          const shouldPlay =
+            hit.probability === undefined || this.random() <= hit.probability;
+          if (!shouldPlay) continue;
+
+          const humanized = humanizeHit(
+            hit,
+            playableStep.stepInBar === 0,
+            this.humanization,
+            this.random,
+          );
+          hits.push({
+            instrument: hit.instrument,
+            timeOffset: (hit.timingOffset ?? 0) + humanized.timeOffset,
+            velocity: humanized.velocity,
+          });
+        }
+        visual = {
+          isAccent: playableStep.hits.some((hit) => hit.velocity >= 0.8),
+          measure:
+            Math.floor(currentAbsoluteSixteenthStep / sixteenthsPerBar) + 1,
+          phase: "pattern",
+          step: playableStep.stepInBar,
+        };
+      }
+    }
+
+    const plan: PlannedPatternTick = {
+      guidance,
+      hits,
+      patternChange,
+      semanticCallbackId: null,
+      visual,
+    };
+    this.plannedTicks.set(transportSixteenth, plan);
+    return plan;
+  }
+
+  private playPatternTick(
+    plan: PlannedPatternTick,
+    transportSixteenth: number,
+    time: number,
+    generation: number,
+    options: PatternSchedulerOptions,
+  ): void {
+    if (plan.guidance.bpmChange !== null) {
+      this.runtime.setBpmAtTime(plan.guidance.bpmChange, time);
+    }
+    if (plan.guidance.shouldStop) this.targetStopState = "pending";
+
+    for (const hit of plan.hits) {
+      this.instruments.trigger(
+        hit.instrument,
+        time + hit.timeOffset,
+        hit.velocity,
+      );
+    }
+
+    if (plan.visual) {
+      const visual = plan.visual;
+      const drawGeneration = this.drawGeneration;
+      this.runtime.scheduleDraw(() => {
+        if (!this.isDrawCurrent(generation, drawGeneration)) return;
+        this.timeline.emit(visual);
+      }, time);
+    }
+
+    if (plan.semanticCallbackId !== null) return;
+
+    const callbackGeneration = this.callbackGeneration;
+    let callbackId: number | null = null;
+    let deliveredSynchronously = false;
+    const scheduledId = this.runtime.scheduleCallback(() => {
+      deliveredSynchronously = true;
+      if (callbackId !== null) this.callbackIds.delete(callbackId);
+      if (!this.isCallbackCurrent(generation, callbackGeneration)) return;
+
+      plan.semanticCallbackId = null;
+      if (this.plannedTicks.get(transportSixteenth) === plan) {
+        this.plannedTicks.delete(transportSixteenth);
+      }
+      this.guidedTimeline.publish(plan.guidance.frame);
+      if (plan.patternChange) {
+        plan.patternChange.onPatternChanged(plan.patternChange.pattern);
+      }
+      if (plan.visual && !this.hasStarted) {
+        this.hasStarted = true;
+        options.onPatternStarted();
+      }
+      if (plan.guidance.shouldStop) {
+        this.targetStopState = "delivered";
+        options.onTargetStop?.();
+      }
+    }, time);
+    callbackId = scheduledId;
+    if (!deliveredSynchronously) {
+      plan.semanticCallbackId = scheduledId;
+      this.callbackIds.add(scheduledId);
+    }
   }
 
   private applyPattern(pattern: DrumPattern): void {
@@ -344,25 +435,15 @@ export class PatternScheduler {
     this.previousMeasureWasFill = false;
   }
 
-  private scheduleGuidance(
-    tick: GuidedPracticeTick,
-    time: number,
-    generation: number,
-    onTargetStop?: () => void,
-  ): void {
-    if (tick.bpmChange !== null) {
-      this.runtime.setBpmAtTime(tick.bpmChange, time);
+  private cancelPendingCallbacks(): void {
+    this.callbackGeneration += 1;
+    for (const callbackId of this.callbackIds) {
+      this.runtime.clearCallback(callbackId);
     }
-    if (tick.shouldStop) this.targetStopState = "pending";
-    const drawGeneration = this.drawGeneration;
-    this.runtime.scheduleDraw(() => {
-      if (!this.isDrawCurrent(generation, drawGeneration)) return;
-      this.guidedTimeline.publish(tick.frame);
-      if (tick.shouldStop) {
-        this.targetStopState = "delivered";
-        onTargetStop?.();
-      }
-    }, time);
+    this.callbackIds.clear();
+    for (const plan of this.plannedTicks.values()) {
+      plan.semanticCallbackId = null;
+    }
   }
 
   private assertValidPattern(pattern: DrumPattern): void {
@@ -391,6 +472,16 @@ export class PatternScheduler {
 
   private isScheduleCurrent(generation: number): boolean {
     return generation === this.scheduleGeneration;
+  }
+
+  private isCallbackCurrent(
+    scheduleGeneration: number,
+    callbackGeneration: number,
+  ): boolean {
+    return (
+      this.isScheduleCurrent(scheduleGeneration) &&
+      callbackGeneration === this.callbackGeneration
+    );
   }
 
   private isDrawCurrent(

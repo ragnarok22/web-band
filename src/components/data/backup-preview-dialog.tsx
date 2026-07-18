@@ -161,7 +161,7 @@ export function BackupPreviewDialog({
             onClick={() => void onImport(mode)}
             type="button"
           >
-            {isPending ? "Importing..." : "Import data"}
+            {isPending ? "Importing…" : "Import data"}
           </button>
         </div>
       </div>

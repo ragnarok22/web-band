@@ -88,12 +88,18 @@ describe("chord trainer panel", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    const deleteTrigger = screen.getByRole("button", { name: "Delete" });
+    await user.click(deleteTrigger);
 
     expect(deleteProgression).not.toHaveBeenCalled();
     expect(
       screen.getByText("Delete Custom turnaround permanently?"),
     ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(deleteTrigger).toHaveFocus();
+
+    await user.click(deleteTrigger);
     await user.click(
       screen.getByRole("button", {
         name: "Delete Custom turnaround permanently",
@@ -105,6 +111,11 @@ describe("chord trainer panel", () => {
       expect.objectContaining({
         progression: expect.objectContaining({ isBuiltIn: true }),
       }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("combobox", { name: "Progression" }),
+      ).toHaveFocus(),
     );
   });
 

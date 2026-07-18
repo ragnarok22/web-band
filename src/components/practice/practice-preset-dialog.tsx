@@ -144,7 +144,7 @@ export function PracticePresetDialog({
 
           {!isHydrated ? (
             <p className="text-muted py-12 text-center text-sm font-bold">
-              Loading presets...
+              Loading presets…
             </p>
           ) : visiblePresets.length > 0 ? (
             <ul

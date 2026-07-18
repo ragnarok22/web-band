@@ -14,7 +14,7 @@ export function StorageWarning() {
   return (
     <aside
       aria-live="polite"
-      className="border-secondary-accent/40 bg-surface-elevated text-foreground fixed right-4 bottom-4 left-4 z-50 mx-auto flex max-w-xl items-start gap-3 rounded-xl border p-4 text-sm shadow-2xl sm:left-auto"
+      className="border-secondary-accent/40 bg-surface-elevated text-foreground pointer-events-auto flex w-full items-start gap-3 rounded-xl border p-4 text-sm shadow-2xl"
       role="status"
     >
       <AlertTriangle

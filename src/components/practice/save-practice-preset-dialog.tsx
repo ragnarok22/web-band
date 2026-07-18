@@ -140,7 +140,7 @@ export function SavePracticePresetDialog({
             disabled={isSaving}
             type="submit"
           >
-            {isSaving ? "Saving..." : "Save preset"}
+            {isSaving ? "Saving…" : "Save preset"}
           </button>
         </div>
       </form>

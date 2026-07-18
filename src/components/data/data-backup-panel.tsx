@@ -137,7 +137,7 @@ export function DataBackupPanel({
           type="button"
         >
           <Download aria-hidden="true" className="size-4" />
-          {isPending ? "Working..." : "Export data"}
+          {isPending ? "Working…" : "Export data"}
         </button>
         <button
           className="bg-accent text-accent-ink flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold disabled:opacity-45"

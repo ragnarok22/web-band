@@ -247,14 +247,23 @@ describe("practice preset bar", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "Open presets" }));
-    await user.click(
-      screen.getByRole("button", { name: "Delete Morning Pocket" }),
-    );
+    const deleteTrigger = screen.getByRole("button", {
+      name: "Delete Morning Pocket",
+    });
+    await user.click(deleteTrigger);
 
     expect(deletePreset).not.toHaveBeenCalled();
     expect(
       screen.getByText("Delete Morning Pocket permanently?"),
     ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    const restoredDeleteTrigger = screen.getByRole("button", {
+      name: "Delete Morning Pocket",
+    });
+    expect(restoredDeleteTrigger).toHaveFocus();
+
+    await user.click(restoredDeleteTrigger);
     await user.click(
       screen.getByRole("button", {
         name: "Delete Morning Pocket permanently",

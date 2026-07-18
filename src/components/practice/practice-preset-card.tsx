@@ -1,7 +1,14 @@
 "use client";
 
 import { Check, Copy, Heart, Pencil, Play, Trash2, X } from "lucide-react";
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+  type Ref,
+} from "react";
 
 import {
   getPracticeModeLabel,
@@ -35,7 +42,16 @@ export function PracticePresetCard({
   );
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState(preset.name);
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const shouldRestoreDeleteFocus = useRef(false);
   const isPending = pendingAction !== null;
+
+  useEffect(() => {
+    if (!confirmingDelete && shouldRestoreDeleteFocus.current) {
+      shouldRestoreDeleteFocus.current = false;
+      deleteButtonRef.current?.focus();
+    }
+  }, [confirmingDelete]);
 
   async function runAction(
     action: PendingAction,
@@ -104,7 +120,7 @@ export function PracticePresetCard({
                   type="submit"
                 >
                   <Check aria-hidden="true" className="size-4" />
-                  {pendingAction === "rename" ? "Saving..." : "Save name"}
+                  {pendingAction === "rename" ? "Saving…" : "Save name"}
                 </button>
               </div>
             </form>
@@ -163,9 +179,13 @@ export function PracticePresetCard({
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
+              autoFocus
               className="border-border text-muted-strong hover:bg-surface-hover min-h-11 rounded-xl border px-3 text-sm font-extrabold"
               disabled={isPending}
-              onClick={() => setConfirmingDelete(false)}
+              onClick={() => {
+                shouldRestoreDeleteFocus.current = true;
+                setConfirmingDelete(false);
+              }}
               type="button"
             >
               Cancel
@@ -181,7 +201,7 @@ export function PracticePresetCard({
               }
               type="button"
             >
-              {pendingAction === "delete" ? "Deleting..." : "Delete preset"}
+              {pendingAction === "delete" ? "Deleting…" : "Delete preset"}
             </button>
           </div>
         </div>
@@ -195,7 +215,7 @@ export function PracticePresetCard({
             type="button"
           >
             <Play aria-hidden="true" className="size-4 fill-current" />
-            {pendingAction === "load" ? "Loading..." : "Load"}
+            {pendingAction === "load" ? "Loading…" : "Load"}
           </button>
           <CardAction
             disabled={isPending}
@@ -216,6 +236,7 @@ export function PracticePresetCard({
             <Copy aria-hidden="true" className="size-4" />
           </CardAction>
           <CardAction
+            buttonRef={deleteButtonRef}
             disabled={isPending}
             label={`Delete ${preset.name}`}
             onClick={() => setConfirmingDelete(true)}
@@ -229,19 +250,27 @@ export function PracticePresetCard({
 }
 
 interface CardActionProps {
+  buttonRef?: Ref<HTMLButtonElement>;
   children: ReactNode;
   disabled: boolean;
   label: string;
   onClick: () => void;
 }
 
-function CardAction({ children, disabled, label, onClick }: CardActionProps) {
+function CardAction({
+  buttonRef,
+  children,
+  disabled,
+  label,
+  onClick,
+}: CardActionProps) {
   return (
     <button
       aria-label={label}
       className="border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center rounded-xl border"
       disabled={disabled}
       onClick={onClick}
+      ref={buttonRef}
       type="button"
     >
       {children}

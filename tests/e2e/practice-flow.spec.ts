@@ -96,6 +96,14 @@ test("persists groove controls and supports focus keyboard practice", async ({
   );
   await page.keyboard.press("Space");
   await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove paused",
+  );
+  await page.keyboard.press("Space");
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("transport-status")).toHaveText(
     "Groove stopped",
   );
 

@@ -30,12 +30,15 @@ function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
 
 class FakeAudioRuntime implements AudioRuntime {
   readonly callbacks: RuntimeCallback[] = [];
+  readonly clearedCallbacks: number[] = [];
   readonly drawCallbacks: Array<() => void> = [];
+  readonly semanticCallbacks: Array<{ callback: () => void; id: number }> = [];
   readonly setBpmCalls: Array<{ bpm: number; smooth: boolean }> = [];
   readonly setBpmAtTimeCalls: Array<{ bpm: number; time: number }> = [];
   readonly setSwingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
     [];
   contextState: AudioContextState = "running";
+  deferCallbacks = false;
   deferDraws = false;
   state: RuntimeTransportState = "stopped";
   startError: Error | null = null;
@@ -43,6 +46,9 @@ class FakeAudioRuntime implements AudioRuntime {
 
   addContextStateListener(): () => void {
     return () => undefined;
+  }
+  clearCallback(callbackId: number): void {
+    this.clearedCallbacks.push(callbackId);
   }
   cancelDraw(): void {}
   clearSchedule(): void {}
@@ -59,6 +65,12 @@ class FakeAudioRuntime implements AudioRuntime {
     this.state = "paused";
   }
   resetTransport(): void {}
+  scheduleCallback(callback: () => void): number {
+    const id = this.semanticCallbacks.length + 1;
+    this.semanticCallbacks.push({ callback, id });
+    if (!this.deferCallbacks) callback();
+    return id;
+  }
   scheduleDraw(callback: () => void): void {
     if (this.deferDraws) {
       this.drawCallbacks.push(callback);
@@ -123,7 +135,7 @@ describe("audio engine", () => {
     expect(useAudioStore.getState().status).toBe("counting-in");
     expect(runtime.state).toBe("started");
 
-    runtime.callbacks[1]?.(2);
+    runtime.callbacks[1]?.(2, 16);
     expect(useAudioStore.getState().status).toBe("playing");
 
     engine.pause();
@@ -249,7 +261,7 @@ describe("audio engine", () => {
 
     expect(runtime.setBpmCalls).toEqual([{ bpm: 60, smooth: false }]);
     for (let step = 0; step <= 16; step += 1) {
-      runtime.callbacks[0]?.(5 + step / 4);
+      runtime.callbacks[0]?.(5 + step / 4, step);
     }
     expect(runtime.setBpmAtTimeCalls).toEqual([{ bpm: 62, time: 9 }]);
   });
@@ -290,8 +302,9 @@ describe("audio engine", () => {
     expect(runtime.setBpmCalls).toHaveLength(3);
   });
 
-  it("stops at target only when the audible Draw callback runs", async () => {
+  it("stops at target when the audible context callback runs", async () => {
     const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
     runtime.deferDraws = true;
     const engine = new AudioEngine(runtime, () => createInstruments());
     await engine.play({
@@ -310,17 +323,20 @@ describe("audio engine", () => {
     });
 
     for (let step = 0; step <= 16; step += 1) {
-      runtime.callbacks[0]?.(step / 4);
+      runtime.callbacks[0]?.(step / 4, step);
     }
     expect(runtime.state).toBe("started");
 
-    runtime.drawCallbacks.forEach((draw) => draw());
+    runtime.semanticCallbacks.forEach(({ callback }) => callback());
     expect(runtime.state).toBe("stopped");
     expect(useAudioStore.getState().status).toBe("stopped");
+    runtime.drawCallbacks.forEach((draw) => draw());
+    expect(runtime.state).toBe("stopped");
   });
 
-  it("stops after resuming when pause cancels a pending target Draw", async () => {
+  it("stops after resuming when pause cancels a pending target callback", async () => {
     const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
     runtime.deferDraws = true;
     const engine = new AudioEngine(runtime, () => createInstruments());
     await engine.play({
@@ -339,23 +355,26 @@ describe("audio engine", () => {
     });
 
     for (let step = 0; step <= 16; step += 1) {
-      runtime.callbacks[0]?.(step / 4);
+      runtime.callbacks[0]?.(step / 4, step);
     }
-    const canceledDraws = [...runtime.drawCallbacks];
+    const canceledCallbacks = [...runtime.semanticCallbacks];
     engine.pause();
-    canceledDraws.forEach((draw) => draw());
+    canceledCallbacks.forEach(({ callback }) => callback());
     expect(runtime.state).toBe("paused");
 
     await engine.play(playbackConfiguration(0));
-    runtime.callbacks[0]?.(17 / 4);
-    runtime.drawCallbacks.slice(canceledDraws.length).forEach((draw) => draw());
+    runtime.callbacks[0]?.(17 / 4, 16);
+    runtime.semanticCallbacks
+      .slice(canceledCallbacks.length)
+      .forEach(({ callback }) => callback());
 
     expect(runtime.state).toBe("stopped");
     expect(useAudioStore.getState().status).toBe("stopped");
   });
 
-  it("does not let stale target Draw callbacks stop a new session", async () => {
+  it("does not let stale target callbacks stop a new session", async () => {
     const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
     runtime.deferDraws = true;
     const engine = new AudioEngine(runtime, () => createInstruments());
     await engine.play({
@@ -373,13 +392,14 @@ describe("audio engine", () => {
       },
     });
     for (let step = 0; step <= 16; step += 1) {
-      runtime.callbacks[0]?.(step / 4);
+      runtime.callbacks[0]?.(step / 4, step);
     }
+    const staleCallbacks = [...runtime.semanticCallbacks];
     engine.stop();
 
     await engine.play(playbackConfiguration(0));
     expect(runtime.state).toBe("started");
-    runtime.drawCallbacks.forEach((draw) => draw());
+    staleCallbacks.forEach(({ callback }) => callback());
 
     expect(runtime.state).toBe("started");
     expect(useAudioStore.getState().status).toBe("playing");

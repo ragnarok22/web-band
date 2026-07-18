@@ -104,7 +104,7 @@ export function PatternShareDialog({
             onClick={() => void onImport()}
             type="button"
           >
-            {isPending ? "Importing..." : "Add to library"}
+            {isPending ? "Importing…" : "Add to library"}
           </button>
         </div>
       </div>

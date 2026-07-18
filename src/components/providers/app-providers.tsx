@@ -2,7 +2,12 @@
 
 import { useEffect, type ReactNode } from "react";
 
+import { AppNotifications } from "@/components/providers/app-notifications";
 import { storageService } from "@/db/storage-service";
+import {
+  applyAppearancePreferences,
+  useAppearanceStore,
+} from "@/stores/appearance-store";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
@@ -11,9 +16,6 @@ import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { useStorageStore } from "@/stores/storage-store";
-
-import { ServiceWorkerUpdate } from "./service-worker-update";
-import { StorageWarning } from "./storage-warning";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -38,8 +40,10 @@ export function AppProviders({ children }: AppProvidersProps) {
     (state) => state.hydrate,
   );
   const setStorageStatus = useStorageStore((state) => state.setStorageStatus);
+  const hydrateAppearance = useAppearanceStore((state) => state.hydrate);
 
   useEffect(() => {
+    hydrateAppearance();
     hydrate();
     hydrateHistorySettings();
 
@@ -78,6 +82,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     };
   }, [
     hydrate,
+    hydrateAppearance,
     hydrateChordProgressions,
     hydrateGuidedPractice,
     hydrateHistorySettings,
@@ -87,11 +92,23 @@ export function AppProviders({ children }: AppProvidersProps) {
     setStorageStatus,
   ]);
 
+  useEffect(() => {
+    const colorScheme = window.matchMedia?.("(prefers-color-scheme: light)");
+    const handleColorSchemeChange = () => {
+      const { reducedMotion, theme } = useAppearanceStore.getState();
+      if (theme === "system") {
+        applyAppearancePreferences({ reducedMotion, theme });
+      }
+    };
+    colorScheme?.addEventListener("change", handleColorSchemeChange);
+    return () =>
+      colorScheme?.removeEventListener("change", handleColorSchemeChange);
+  }, []);
+
   return (
     <>
       {children}
-      <StorageWarning />
-      <ServiceWorkerUpdate />
+      <AppNotifications />
     </>
   );
 }

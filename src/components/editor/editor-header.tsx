@@ -67,7 +67,7 @@ export function EditorHeader({ onPlay, onSave, status }: EditorHeaderProps) {
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />
-            {status.saving ? "Saving..." : "Save pattern"}
+            {status.saving ? "Saving…" : "Save pattern"}
           </button>
         </div>
       </div>

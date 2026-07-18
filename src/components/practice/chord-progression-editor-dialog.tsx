@@ -282,7 +282,7 @@ export function ChordProgressionEditorDialog({
               className="bg-accent text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
               type="submit"
             >
-              {isSaving ? "Saving..." : "Save progression"}
+              {isSaving ? "Saving…" : "Save progression"}
             </button>
           </div>
         </fieldset>

@@ -39,18 +39,24 @@ interface ScheduledRepeat {
 }
 
 class FakeAudioRuntime implements AudioRuntime {
+  readonly clearedCallbacks: number[] = [];
   readonly cleared: number[] = [];
   readonly drawCallbacks: Array<() => void> = [];
   readonly repeats: ScheduledRepeat[] = [];
+  readonly semanticCallbacks: Array<{ callback: () => void; id: number }> = [];
   readonly scheduledBpmChanges: Array<{ bpm: number; time: number }> = [];
   readonly swingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
     [];
   bpm = 90;
+  deferCallbacks = false;
   deferDraws = false;
   state: RuntimeTransportState = "stopped";
 
   addContextStateListener(): () => void {
     return () => undefined;
+  }
+  clearCallback(callbackId: number): void {
+    this.clearedCallbacks.push(callbackId);
   }
   cancelDraw(): void {}
   clearSchedule(scheduleId: number): void {
@@ -69,6 +75,12 @@ class FakeAudioRuntime implements AudioRuntime {
     this.state = "paused";
   }
   resetTransport(): void {}
+  scheduleCallback(callback: () => void): number {
+    const id = this.semanticCallbacks.length + 1;
+    this.semanticCallbacks.push({ callback, id });
+    if (!this.deferCallbacks) callback();
+    return id;
+  }
   scheduleDraw(callback: () => void): void {
     if (this.deferDraws) {
       this.drawCallbacks.push(callback);
@@ -138,10 +150,10 @@ describe("pattern scheduler", () => {
       startTime: "1m",
     });
 
-    runtime.repeats[0]?.callback(1);
+    runtime.repeats[0]?.callback(1, 0);
     expect(instruments.triggerCountIn).toHaveBeenCalledWith(1, true);
 
-    runtime.repeats[1]?.callback(2);
+    runtime.repeats[1]?.callback(2, 16);
     expect(instruments.trigger).toHaveBeenCalledWith("closedHat", 2, 0.72);
     expect(instruments.trigger).toHaveBeenCalledWith("kick", 2, 1);
     expect(onPatternStarted).toHaveBeenCalledOnce();
@@ -195,20 +207,21 @@ describe("pattern scheduler", () => {
 
     scheduler.schedule(basicRockPattern, schedulerOptions());
     const patternCallback = runtime.repeats[1]?.callback;
-    patternCallback?.(1);
+    patternCallback?.(1, 0);
     scheduler.changePattern(nextPattern, onPatternChanged);
 
     for (let step = 1; step < 16; step += 1) {
-      patternCallback?.(1 + step / 10);
+      patternCallback?.(1 + step / 10, step);
       expect(onPatternChanged).not.toHaveBeenCalled();
     }
 
-    patternCallback?.(3);
+    patternCallback?.(3, 16);
     expect(onPatternChanged).toHaveBeenCalledWith(nextPattern);
   });
 
   it("ignores transport and draw callbacks after clear", () => {
     const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
     runtime.deferDraws = true;
     const instruments: PatternInstrumentPlayer = {
       trigger: vi.fn(),
@@ -230,10 +243,11 @@ describe("pattern scheduler", () => {
     scheduler.schedule(basicRockPattern, schedulerOptions(onPatternStarted));
     const countInCallback = runtime.repeats[0]?.callback;
     const patternCallback = runtime.repeats[1]?.callback;
-    patternCallback?.(1);
+    patternCallback?.(1, 0);
     scheduler.clear();
-    countInCallback?.(2);
-    patternCallback?.(3);
+    countInCallback?.(2, 0);
+    patternCallback?.(3, 1);
+    runtime.semanticCallbacks.forEach(({ callback }) => callback());
     runtime.drawCallbacks.forEach((callback) => callback());
 
     expect(instruments.triggerCountIn).not.toHaveBeenCalled();
@@ -296,9 +310,9 @@ describe("pattern scheduler", () => {
     });
     const callback = runtime.repeats[0]?.callback;
 
-    callback?.(1);
-    callback?.(2);
-    callback?.(3);
+    callback?.(1, 0);
+    callback?.(2, 1);
+    callback?.(3, 2);
 
     const nonDownbeatCall = trigger.mock.calls.find(([, time]) => time > 3);
     expect(nonDownbeatCall?.[1]).toBeLessThanOrEqual(3.01);
@@ -319,13 +333,15 @@ describe("pattern scheduler", () => {
     });
     const callback = runtime.repeats[0]?.callback;
 
-    for (let step = 0; step < 64; step += 1) callback?.(step / 10);
+    for (let step = 0; step < 64; step += 1) {
+      callback?.(step / 10, step);
+    }
     scheduler.changePattern(
       { ...basicRockPattern, id: "next-pattern", name: "Next pattern" },
       vi.fn(),
     );
     trigger.mockClear();
-    callback?.(7);
+    callback?.(7, 64);
 
     expect(trigger).toHaveBeenCalledWith("crash", 7, 0.9);
   });
@@ -342,11 +358,11 @@ describe("pattern scheduler", () => {
     );
     scheduler.schedule(basicRockPattern, schedulerOptions());
 
-    runtime.repeats[0]?.callback(1);
-    runtime.repeats[0]?.callback(2);
+    runtime.repeats[0]?.callback(1, 0);
+    runtime.repeats[0]?.callback(2, 4);
     expect(guidedTimeline.getSnapshot()).toBeNull();
 
-    runtime.repeats[1]?.callback(3);
+    runtime.repeats[1]?.callback(3, 16);
     expect(guidedTimeline.getSnapshot()).toMatchObject({
       absoluteSixteenth: 0,
       elapsedSeconds: 0,
@@ -377,7 +393,9 @@ describe("pattern scheduler", () => {
     });
 
     const callback = runtime.repeats[0]?.callback;
-    for (let step = 0; step < 16; step += 1) callback?.(step / 10);
+    for (let step = 0; step < 16; step += 1) {
+      callback?.(step / 10, step);
+    }
 
     expect(
       frames.map((frame) =>
@@ -410,12 +428,14 @@ describe("pattern scheduler", () => {
     });
 
     const callback = runtime.repeats[0]?.callback;
-    for (let step = 0; step <= 16; step += 1) callback?.(10 + step / 4);
+    for (let step = 0; step <= 16; step += 1) {
+      callback?.(10 + step / 4, step);
+    }
 
     expect(runtime.scheduledBpmChanges).toEqual([{ bpm: 62, time: 14 }]);
   });
 
-  it("retains guided state across visual cancellation and resets it on clear", () => {
+  it("retains delivered guidance across visual cancellation and resets it on clear", () => {
     const runtime = new FakeAudioRuntime();
     runtime.deferDraws = true;
     const guidedTimeline = new GuidanceTimeline();
@@ -429,13 +449,18 @@ describe("pattern scheduler", () => {
     scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
     const callback = runtime.repeats[0]?.callback;
 
-    for (let step = 0; step < 4; step += 1) callback?.(step);
+    for (let step = 0; step < 4; step += 1) callback?.(step, step);
+    expect(guidedTimeline.getSnapshot()).toMatchObject({
+      absoluteSixteenth: 3,
+    });
     scheduler.cancelPendingVisuals();
     runtime.drawCallbacks.forEach((draw) => draw());
-    expect(guidedTimeline.getSnapshot()).toBeNull();
+    expect(guidedTimeline.getSnapshot()).toMatchObject({
+      absoluteSixteenth: 3,
+    });
 
     runtime.deferDraws = false;
-    callback?.(4);
+    callback?.(4, 4);
     expect(guidedTimeline.getSnapshot()).toMatchObject({
       absoluteSixteenth: 4,
     });
@@ -443,10 +468,38 @@ describe("pattern scheduler", () => {
     expect(guidedTimeline.getSnapshot()).toBeNull();
 
     scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
-    runtime.repeats.at(-1)?.callback(5);
+    runtime.repeats.at(-1)?.callback(5, 0);
     expect(guidedTimeline.getSnapshot()).toMatchObject({
       absoluteSixteenth: 0,
     });
+  });
+
+  it("replays a lookahead step after pause without advancing the pattern", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
+    runtime.deferDraws = true;
+    const trigger = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+    const callback = runtime.repeats[0]?.callback as (
+      time: number,
+      transportSixteenth: number,
+    ) => void;
+
+    callback(1, 0);
+    scheduler.cancelPendingVisuals();
+    callback(2, 0);
+
+    expect(trigger.mock.calls).toEqual([
+      ["kick", 1, 1],
+      ["closedHat", 1, 0.72],
+      ["kick", 2, 1],
+      ["closedHat", 2, 0.72],
+    ]);
   });
 
   it("keeps guidance continuous when the drum pattern cursor resets", () => {
@@ -465,19 +518,54 @@ describe("pattern scheduler", () => {
     );
     scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
     const callback = runtime.repeats[0]?.callback;
-    callback?.(0);
+    callback?.(0, 0);
     scheduler.changePattern(
       { ...basicRockPattern, id: "guided-next", name: "Guided next" },
       vi.fn(),
     );
-    for (let step = 1; step <= 16; step += 1) callback?.(step);
+    for (let step = 1; step <= 16; step += 1) callback?.(step, step);
 
     expect(frames.map((frame) => frame.absoluteSixteenth)).toEqual(
       Array.from({ length: 17 }, (_, index) => index),
     );
   });
 
-  it("signals target stop once from an audible Draw callback", () => {
+  it("signals target stop once from the audible context callback", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
+    runtime.deferDraws = true;
+    const onTargetStop = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 62,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: true,
+        },
+      },
+      onTargetStop,
+    });
+    const callback = runtime.repeats[0]?.callback;
+    for (let step = 0; step <= 20; step += 1) callback?.(step, step);
+
+    expect(onTargetStop).not.toHaveBeenCalled();
+    runtime.semanticCallbacks.forEach(({ callback: deliver }) => deliver());
+    expect(onTargetStop).toHaveBeenCalledOnce();
+    runtime.drawCallbacks.forEach((draw) => draw());
+    expect(onTargetStop).toHaveBeenCalledOnce();
+  });
+
+  it("delivers target stop without depending on visual Draw callbacks", () => {
     const runtime = new FakeAudioRuntime();
     runtime.deferDraws = true;
     const onTargetStop = vi.fn();
@@ -502,15 +590,17 @@ describe("pattern scheduler", () => {
       onTargetStop,
     });
     const callback = runtime.repeats[0]?.callback;
-    for (let step = 0; step <= 20; step += 1) callback?.(step);
 
-    expect(onTargetStop).not.toHaveBeenCalled();
-    runtime.drawCallbacks.forEach((draw) => draw());
+    for (let step = 0; step <= 16; step += 1) {
+      callback?.(step / 4, step);
+    }
+
     expect(onTargetStop).toHaveBeenCalledOnce();
   });
 
   it("publishes target guidance without scheduling the target downbeat", () => {
     const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
     runtime.deferDraws = true;
     const trigger = vi.fn();
     const onTargetStop = vi.fn();
@@ -542,18 +632,22 @@ describe("pattern scheduler", () => {
       onTargetStop,
     });
     const callback = runtime.repeats[0]?.callback;
-    for (let step = 0; step < 16; step += 1) callback?.(step / 4);
+    for (let step = 0; step < 16; step += 1) {
+      callback?.(step / 4, step);
+    }
     trigger.mockClear();
 
-    callback?.(4);
+    callback?.(4, 16);
 
     expect(trigger).not.toHaveBeenCalled();
     expect(onTargetStop).not.toHaveBeenCalled();
-    runtime.drawCallbacks.forEach((draw) => draw());
+    runtime.semanticCallbacks.forEach(({ callback: deliver }) => deliver());
     expect(frames.at(-1)).toMatchObject({
       absoluteSixteenth: 16,
       position: { currentBpm: 62, isAtTarget: true },
     });
+    expect(onTargetStop).toHaveBeenCalledOnce();
+    runtime.drawCallbacks.forEach((draw) => draw());
     expect(onTargetStop).toHaveBeenCalledOnce();
   });
 
@@ -653,7 +747,7 @@ describe("pattern scheduler", () => {
       false,
     );
     for (let step = 0; step <= 16; step += 1) {
-      runtime.repeats[0]?.callback(step);
+      runtime.repeats[0]?.callback(step, step);
     }
     expect(onPatternChanged).not.toHaveBeenCalled();
   });

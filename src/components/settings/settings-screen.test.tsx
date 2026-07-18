@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SettingsScreen } from "@/components/settings/settings-screen";
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
+import {
+  defaultAppearancePreferences,
+  useAppearanceStore,
+} from "@/stores/appearance-store";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
 import { useStorageStore } from "@/stores/storage-store";
 
@@ -21,6 +25,10 @@ function actions() {
 
 describe("settings screen", () => {
   beforeEach(() => {
+    useAppearanceStore.setState({
+      ...defaultAppearancePreferences,
+      hasHydrated: true,
+    });
     useHistorySettingsStore.setState({
       ...defaultHistorySettings,
       hasHydrated: true,
@@ -49,6 +57,20 @@ describe("settings screen", () => {
     await user.type(duration, "45");
     expect(useHistorySettingsStore.getState().minimumDurationSeconds).toBe(45);
     expect(screen.getByText("Saved on this device")).toBeVisible();
+  });
+
+  it("applies theme and reduced-motion preferences immediately", async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen actions={actions()} />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Color theme" }),
+      "light",
+    );
+    await user.click(screen.getByRole("checkbox", { name: "Reduce motion" }));
+
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(document.documentElement.dataset.reduceMotion).toBe("true");
   });
 
   it("requires destructive confirmation and announces successful deletion", async () => {

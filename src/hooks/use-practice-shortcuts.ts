@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent } from "react";
 
-import { isSessionActive } from "@/lib/audio-status";
+import { isPracticeRunning, isSessionActive } from "@/lib/audio-status";
 import type { AudioEngineStatus } from "@/types/audio";
 
 const interactiveSelector = [
@@ -38,6 +38,8 @@ interface PracticeShortcutOptions {
   onBpmChange: (amount: number) => void;
   onFocusToggle: () => void;
   onMasterMuteToggle: () => void;
+  onPatternChange: (direction: -1 | 1) => void;
+  onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
   onTapTempo: () => void;
@@ -59,12 +61,13 @@ export function usePracticeShortcuts(options: PracticeShortcutOptions): void {
     }
 
     const key = event.key.toLowerCase();
-    const canRepeat = key === "arrowup" || key === "arrowdown";
+    const canRepeat = key.startsWith("arrow");
     if (event.repeat && !canRepeat) return;
 
     if (event.code === "Space") {
       event.preventDefault();
-      if (isSessionActive(options.status)) options.onStop();
+      if (options.status === "initializing") return;
+      if (isPracticeRunning(options.status)) options.onPause();
       else options.onPlay();
       return;
     }
@@ -81,6 +84,12 @@ export function usePracticeShortcuts(options: PracticeShortcutOptions): void {
       event.preventDefault();
       const direction = key === "arrowup" ? 1 : -1;
       options.onBpmChange(direction * (event.shiftKey ? 5 : 1));
+      return;
+    }
+
+    if (key === "arrowleft" || key === "arrowright") {
+      event.preventDefault();
+      options.onPatternChange(key === "arrowleft" ? -1 : 1);
       return;
     }
 

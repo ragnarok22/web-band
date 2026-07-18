@@ -11,10 +11,11 @@ interface ShortcutsDialogProps {
 }
 
 const shortcuts = [
-  ["Space", "Start when idle, stop when active"],
+  ["Space", "Play or pause"],
   ["Escape", "Stop playback"],
   ["↑ / ↓", "Change tempo by 1 BPM"],
   ["Shift + ↑ / ↓", "Change tempo by 5 BPM"],
+  ["← / →", "Change pattern"],
   ["T", "Tap tempo"],
   ["F", "Toggle focus mode"],
   ["M", "Mute or unmute master"],

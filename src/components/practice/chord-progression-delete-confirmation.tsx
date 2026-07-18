@@ -16,6 +16,7 @@ export function ChordProgressionDeleteConfirmation({
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button
+          autoFocus
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground min-h-11 rounded-lg border px-3 text-sm font-extrabold"
           onClick={onCancel}
           type="button"

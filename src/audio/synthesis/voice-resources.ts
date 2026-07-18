@@ -9,23 +9,27 @@ export class VoiceResources {
     source.addEventListener(
       "ended",
       () => {
-        this.sources.get(source)?.();
+        const trackedCleanup = this.sources.get(source);
+        if (!trackedCleanup) return;
+
         this.sources.delete(source);
+        trackedCleanup();
       },
       { once: true },
     );
   }
 
   stop(): void {
-    for (const source of this.sources.keys()) {
+    for (const [source, cleanup] of this.sources) {
+      this.sources.delete(source);
       try {
         source.stop();
       } catch {
         // A one-shot source may already have ended between iteration and stop.
+      } finally {
+        cleanup();
       }
     }
-
-    this.sources.clear();
   }
 }
 

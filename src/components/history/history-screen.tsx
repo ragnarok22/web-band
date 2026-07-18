@@ -2,7 +2,7 @@
 
 import { ArrowRight, BookOpen, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { DataBackupPanel } from "@/components/data/data-backup-panel";
 import { HistoryConfirmationDialog } from "@/components/history/history-confirmation-dialog";
@@ -20,6 +20,25 @@ export function HistoryScreen() {
     PracticeSession | "all" | null
   >(null);
   const [announcement, setAnnouncement] = useState("");
+  const confirmationTriggerRef = useRef<HTMLElement | null>(null);
+  const pageHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  function openConfirmation(value: PracticeSession | "all"): void {
+    confirmationTriggerRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    setConfirmation(value);
+  }
+
+  function closeConfirmation(): void {
+    const trigger = confirmationTriggerRef.current;
+    setConfirmation(null);
+    window.setTimeout(() => {
+      if (trigger?.isConnected) trigger.focus();
+      else pageHeadingRef.current?.focus();
+    });
+  }
 
   if (!isHydrated || isLoading) {
     return (
@@ -44,7 +63,11 @@ export function HistoryScreen() {
               <BookOpen aria-hidden="true" className="size-4" />
               Practice journal
             </p>
-            <h1 className="text-foreground mt-3 max-w-2xl text-4xl font-black tracking-[-0.055em] sm:text-6xl">
+            <h1
+              className="text-foreground mt-3 max-w-2xl text-4xl font-black tracking-[-0.055em] sm:text-6xl"
+              ref={pageHeadingRef}
+              tabIndex={-1}
+            >
               The work you put in.
             </h1>
             <p className="text-muted mt-4 max-w-xl text-sm leading-6 sm:text-base">
@@ -55,7 +78,7 @@ export function HistoryScreen() {
           {sessions.length > 0 ? (
             <button
               className="border-border text-muted-strong hover:border-danger/40 hover:text-danger flex min-h-11 items-center justify-center gap-2 self-start rounded-xl border px-4 text-sm font-extrabold transition-colors sm:self-auto"
-              onClick={() => setConfirmation("all")}
+              onClick={() => openConfirmation("all")}
               type="button"
             >
               <Trash2 aria-hidden="true" className="size-4" />
@@ -112,7 +135,7 @@ export function HistoryScreen() {
               Recent sessions
             </h2>
             <HistorySessionList
-              onDelete={setConfirmation}
+              onDelete={openConfirmation}
               sessions={sessions}
             />
           </section>
@@ -126,7 +149,7 @@ export function HistoryScreen() {
           confirmLabel="Clear all"
           description="Every locally saved practice session will be removed from this device. This cannot be undone."
           heading="Clear practice history?"
-          onClose={() => setConfirmation(null)}
+          onClose={closeConfirmation}
           onConfirm={async () => {
             await usePracticeHistoryStore.getState().clearAll();
             setAnnouncement("Practice history cleared.");
@@ -138,7 +161,7 @@ export function HistoryScreen() {
           confirmLabel="Delete session"
           description={`Remove the ${confirmation.patternName} session from your local journal? This cannot be undone.`}
           heading="Delete this session?"
-          onClose={() => setConfirmation(null)}
+          onClose={closeConfirmation}
           onConfirm={async () => {
             await usePracticeHistoryStore.getState().deleteOne(confirmation.id);
             setAnnouncement(`${confirmation.patternName} session deleted.`);

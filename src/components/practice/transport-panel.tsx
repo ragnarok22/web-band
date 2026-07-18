@@ -33,7 +33,7 @@ export function TransportPanel({
         <span data-testid="transport-status">
           {isReady
             ? audioStatusCopy[status]
-            : "Loading your saved practice setup..."}
+            : "Loading your saved practice setup…"}
         </span>
       </div>
     </div>

@@ -104,10 +104,6 @@ export class GuidedPracticeController {
     return true;
   }
 
-  rearmTargetStop(): void {
-    this.stopSignaled = false;
-  }
-
   reset(): void {
     this.absoluteSixteenth = 0;
     this.completedMeasures = 0;

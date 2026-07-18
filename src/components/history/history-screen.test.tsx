@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -99,6 +99,11 @@ describe("history screen", () => {
     expect(
       await screen.findByRole("heading", { name: "No sessions yet" }),
     ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "The work you put in." }),
+      ).toHaveFocus(),
+    );
   });
 
   it("requires confirmation before clearing all sessions", async () => {
@@ -123,6 +128,11 @@ describe("history screen", () => {
     expect(
       await screen.findByRole("heading", { name: "No sessions yet" }),
     ).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.getByRole("heading", { name: "The work you put in." }),
+      ).toHaveFocus(),
+    );
   });
 
   it("keeps destructive failures visible inside the open dialog", async () => {

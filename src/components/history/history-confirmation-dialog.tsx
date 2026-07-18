@@ -44,7 +44,7 @@ export function HistoryConfirmationDialog({
   return (
     <dialog
       aria-labelledby="history-confirmation-heading"
-      className="border-border bg-surface text-foreground fixed inset-0 m-auto w-[min(92vw,28rem)] rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop:bg-black/75"
+      className="border-border bg-surface text-foreground fixed inset-0 m-auto w-[min(92vw,28rem)] overscroll-contain rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop:bg-black/75"
       onCancel={(event) => {
         event.preventDefault();
         if (!isWorking) dialogRef.current?.close();
@@ -75,6 +75,7 @@ export function HistoryConfirmationDialog({
         ) : null}
         <div className="mt-6 flex justify-end gap-2">
           <button
+            autoFocus
             className="border-border text-muted-strong min-h-11 rounded-xl border px-4 text-sm font-extrabold"
             disabled={isWorking}
             onClick={() => dialogRef.current?.close()}
@@ -88,7 +89,7 @@ export function HistoryConfirmationDialog({
             onClick={() => void confirm()}
             type="button"
           >
-            {isWorking ? "Working..." : confirmLabel}
+            {isWorking ? "Working…" : confirmLabel}
           </button>
         </div>
       </div>

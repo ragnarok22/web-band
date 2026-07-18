@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, Settings2, Trash2 } from "lucide-react";
+import { Database, Palette, Settings2, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -13,6 +13,7 @@ import {
   type ClearLocalDataCompletion,
 } from "@/services/backup-service";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
+import { type ColorTheme, useAppearanceStore } from "@/stores/appearance-store";
 import { useStorageStore } from "@/stores/storage-store";
 
 interface SettingsActions extends DataBackupActions {
@@ -44,6 +45,12 @@ export function SettingsScreen({
   );
   const storageMode = useStorageStore((state) => state.mode);
   const storageWarning = useStorageStore((state) => state.warning);
+  const reducedMotion = useAppearanceStore((state) => state.reducedMotion);
+  const theme = useAppearanceStore((state) => state.theme);
+  const setReducedMotion = useAppearanceStore(
+    (state) => state.setReducedMotion,
+  );
+  const setTheme = useAppearanceStore((state) => state.setTheme);
   const [minimumDurationInput, setMinimumDurationInput] = useState<
     string | null
   >(null);
@@ -81,11 +88,55 @@ export function SettingsScreen({
           Settings, kept simple.
         </h1>
         <p className="text-muted mt-4 max-w-2xl leading-7">
-          Manage practice history and the data saved locally in this browser.
+          Manage appearance, practice history, and data saved in this browser.
         </p>
       </header>
 
       <div className="mt-8 space-y-6 sm:mt-10">
+        <section
+          aria-labelledby="appearance-settings-heading"
+          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
+        >
+          <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+            <Palette aria-hidden="true" className="size-4" />
+            Appearance
+          </p>
+          <h2
+            className="mt-2 text-2xl font-black"
+            id="appearance-settings-heading"
+          >
+            Tune the interface
+          </h2>
+          <div className="border-border mt-5 grid gap-5 border-t pt-5 sm:grid-cols-2">
+            <label className="text-sm font-extrabold" htmlFor="color-theme">
+              Color theme
+              <select
+                autoComplete="off"
+                className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
+                id="color-theme"
+                name="color-theme"
+                onChange={(event) =>
+                  setTheme(event.currentTarget.value as ColorTheme)
+                }
+                value={theme}
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="system">Use device setting</option>
+              </select>
+            </label>
+            <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold sm:self-end">
+              Reduce motion
+              <input
+                checked={reducedMotion}
+                className="size-6 accent-[var(--accent)]"
+                onChange={(event) => setReducedMotion(event.target.checked)}
+                type="checkbox"
+              />
+            </label>
+          </div>
+        </section>
+
         <section
           aria-labelledby="history-settings-heading"
           className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"

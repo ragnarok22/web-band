@@ -96,7 +96,7 @@ export function ConfirmationDialog({
             onClick={() => void confirm()}
             type="button"
           >
-            {isWorking ? "Working..." : confirmLabel}
+            {isWorking ? "Working…" : confirmLabel}
           </button>
         </div>
       </div>

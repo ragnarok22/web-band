@@ -208,6 +208,8 @@ export function usePracticeController() {
       else setFocusMode(true);
     },
     onMasterMuteToggle: toggleMasterMute,
+    onPatternChange: changePatternByOffset,
+    onPause: () => getAudioEngine().pause(),
     onPlay: () => void play(),
     onStop: stop,
     onTapTempo: () => {
@@ -324,6 +326,18 @@ export function usePracticeController() {
         ? `Pattern change rejected. Stop the active guided session before changing meter to ${nextPattern.timeSignature.numerator}/${nextPattern.timeSignature.denominator}. ${pattern.name} remains selected.`
         : `Pattern change rejected while the session is active. Stop playback and try ${nextPattern.name} again.`,
     );
+  }
+
+  function changePatternByOffset(direction: -1 | 1): void {
+    if (patterns.length < 2) return;
+    const selectedIndex = patterns.findIndex(
+      ({ id }) => id === (pendingPatternId ?? pattern.id),
+    );
+    const nextIndex =
+      (Math.max(0, selectedIndex) + direction + patterns.length) %
+      patterns.length;
+    const nextPattern = patterns[nextIndex];
+    if (nextPattern) changePattern(nextPattern.id);
   }
 
   function loadPreset(preset: PracticePreset): void {

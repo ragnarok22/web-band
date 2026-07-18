@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { guidanceTimeline } from "@/audio/guidance-timeline";
 import { PracticeScreen } from "@/components/practice/practice-screen";
 import { gDEmCProgression } from "@/data/chord-progressions";
+import { builtInPatterns } from "@/data/patterns";
 import { quarterDownstrokesPattern } from "@/data/strumming-patterns";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { useAudioStore } from "@/stores/audio-store";
@@ -157,7 +158,7 @@ describe("practice screen", () => {
     render(<PracticeScreen />);
 
     expect(
-      screen.getByText("Loading your saved practice setup..."),
+      screen.getByText("Loading your saved practice setup…"),
     ).toBeVisible();
     const play = screen.getByRole("button", { name: "Play" });
     expect(play).toBeDisabled();
@@ -394,24 +395,38 @@ describe("practice screen", () => {
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
-  it("uses Space to start while idle and stop while active", () => {
+  it("uses Space to play, pause, and resume", () => {
     render(<PracticeScreen />);
 
     fireEvent.keyDown(window, { code: "Space", key: " " });
     expect(engine.play).toHaveBeenCalledOnce();
 
-    for (const status of [
-      "initializing",
-      "counting-in",
-      "playing",
-      "paused",
-      "suspended",
-    ] as const) {
+    for (const status of ["counting-in", "playing"] as const) {
       act(() => useAudioStore.setState({ status }));
       fireEvent.keyDown(window, { code: "Space", key: " " });
     }
-    expect(engine.stop).toHaveBeenCalledTimes(5);
-    expect(engine.play).toHaveBeenCalledOnce();
+    expect(engine.pause).toHaveBeenCalledTimes(2);
+
+    for (const status of ["paused", "suspended"] as const) {
+      act(() => useAudioStore.setState({ status }));
+      fireEvent.keyDown(window, { code: "Space", key: " " });
+    }
+    expect(engine.play).toHaveBeenCalledTimes(3);
+    expect(engine.stop).not.toHaveBeenCalled();
+  });
+
+  it("uses Left and Right arrows to move through patterns", () => {
+    render(<PracticeScreen />);
+
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(usePracticeStore.getState().selectedPatternId).toBe(
+      builtInPatterns[1]?.id,
+    );
+
+    fireEvent.keyDown(window, { key: "ArrowLeft" });
+    expect(usePracticeStore.getState().selectedPatternId).toBe(
+      builtInPatterns[0]?.id,
+    );
   });
 
   it("suppresses global shortcuts while preset and mode dialogs are open", async () => {
