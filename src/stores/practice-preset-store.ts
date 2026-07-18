@@ -26,6 +26,7 @@ interface PracticePresetStore {
   duplicate: (presetId: string, name?: string) => Promise<PracticePreset>;
   hydrate: () => Promise<void>;
   markUsed: (presetId: string) => Promise<void>;
+  refreshAfterImport: () => Promise<void>;
   rename: (presetId: string, name: string) => Promise<PracticePreset>;
   toggleFavorite: (presetId: string) => Promise<void>;
   update: (
@@ -156,6 +157,7 @@ export const usePracticePresetStore = create<PracticePresetStore>(
       },
       presets: [],
       recentPresetIds: [],
+      refreshAfterImport: async () => get().hydrate(),
       rename: async (presetId, name) => {
         const preset = findPreset(presetId);
         return savePreset({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Drum, LibraryBig } from "lucide-react";
+import { Drum, History, LibraryBig, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,6 +9,8 @@ import { usePracticeUiStore } from "@/stores/practice-ui-store";
 const navigationItems = [
   { href: "/practice", icon: Drum, label: "Practice" },
   { href: "/patterns", icon: LibraryBig, label: "Patterns" },
+  { href: "/history", icon: History, label: "History" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ] as const;
 
 export function SiteNavigation() {
@@ -27,13 +29,13 @@ export function SiteNavigation() {
           <Drum aria-hidden="true" className="size-6" />
         </span>
       </div>
-      <div className="mx-auto grid max-w-sm grid-cols-2 gap-2 lg:mx-0 lg:flex lg:flex-1 lg:flex-col">
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-1 sm:gap-2 lg:mx-0 lg:flex lg:flex-1 lg:flex-col">
         {navigationItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href;
           return (
             <Link
               aria-current={isActive ? "page" : undefined}
-              className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-3 text-xs font-extrabold transition-colors lg:min-h-16 lg:flex-col lg:gap-1 ${isActive ? "bg-accent text-accent-ink" : "text-muted-strong hover:bg-surface-hover hover:text-foreground"}`}
+              className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[0.68rem] font-extrabold transition-colors lg:min-h-16 lg:text-xs ${isActive ? "bg-accent text-accent-ink" : "text-muted-strong hover:bg-surface-hover hover:text-foreground"}`}
               href={href}
               key={href}
             >

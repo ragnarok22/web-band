@@ -26,6 +26,7 @@ export function PracticeScreen() {
         countInMeasures={practice.countInMeasures}
         elapsedSeconds={practice.elapsedSeconds}
         errorMessage={practice.errorMessage}
+        historyNotice={practice.historyNotice}
         onDismissNotice={practice.dismissOnboarding}
         onExit={practice.exitFocusMode}
         onPlay={() => void practice.play()}
@@ -103,6 +104,7 @@ export function PracticeScreen() {
           <PracticeNotices
             countInMeasures={practice.countInMeasures}
             errorMessage={practice.errorMessage}
+            noticeMessage={practice.historyNotice}
             onDismiss={practice.dismissOnboarding}
             showOnboarding={practice.showOnboarding}
           />

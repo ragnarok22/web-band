@@ -18,6 +18,7 @@ interface FocusModeProps {
   countInMeasures: CountInMeasures;
   elapsedSeconds: number;
   errorMessage: string | null;
+  historyNotice: string | null;
   onDismissNotice: () => void;
   onExit: () => void;
   onPlay: () => void;
@@ -33,6 +34,7 @@ export function FocusMode({
   countInMeasures,
   elapsedSeconds,
   errorMessage,
+  historyNotice,
   onDismissNotice,
   onExit,
   onPlay,
@@ -118,6 +120,7 @@ export function FocusMode({
         <PracticeNotices
           countInMeasures={countInMeasures}
           errorMessage={errorMessage}
+          noticeMessage={historyNotice}
           onDismiss={onDismissNotice}
           showOnboarding={showOnboarding}
         />

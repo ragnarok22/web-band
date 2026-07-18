@@ -1,61 +1,89 @@
 import type { EntityTable } from "dexie";
 
-import { isDrumPattern } from "@/lib/pattern-validation";
-import type { DrumPattern } from "@/types/pattern";
+import { isCustomDrumPattern } from "@/lib/persistence-validation";
+import type { CustomDrumPattern } from "@/types/persistence";
 
 export interface PatternRepository {
   delete(patternId: string): Promise<void>;
-  get(patternId: string): Promise<DrumPattern | undefined>;
-  list(): Promise<DrumPattern[]>;
-  put(pattern: DrumPattern): Promise<void>;
+  get(patternId: string): Promise<CustomDrumPattern | undefined>;
+  list(): Promise<CustomDrumPattern[]>;
+  put(pattern: CustomDrumPattern): Promise<void>;
+}
+
+function assertPatternId(patternId: string): void {
+  if (!patternId.trim() || patternId.length > 128) {
+    throw new Error("Pattern ID is invalid.");
+  }
+}
+
+function sortPatterns(patterns: CustomDrumPattern[]): CustomDrumPattern[] {
+  return patterns.sort(
+    (left, right) =>
+      right.updatedAt.localeCompare(left.updatedAt) ||
+      left.id.localeCompare(right.id),
+  );
 }
 
 export class DexiePatternRepository implements PatternRepository {
-  constructor(private readonly table: EntityTable<DrumPattern, "id">) {}
+  constructor(private readonly table: EntityTable<CustomDrumPattern, "id">) {}
 
   async delete(patternId: string): Promise<void> {
+    assertPatternId(patternId);
     await this.table.delete(patternId);
   }
 
-  async get(patternId: string): Promise<DrumPattern | undefined> {
+  async get(patternId: string): Promise<CustomDrumPattern | undefined> {
+    assertPatternId(patternId);
     const pattern = await this.table.get(patternId);
-    return pattern && isDrumPattern(pattern) ? pattern : undefined;
+    return pattern && isCustomDrumPattern(pattern)
+      ? structuredClone(pattern)
+      : undefined;
   }
 
-  async list(): Promise<DrumPattern[]> {
+  async list(): Promise<CustomDrumPattern[]> {
     const patterns = await this.table.toArray();
-    return patterns.filter(isDrumPattern);
+    return sortPatterns(
+      patterns
+        .filter(isCustomDrumPattern)
+        .map((pattern) => structuredClone(pattern)),
+    );
   }
 
-  async put(pattern: DrumPattern): Promise<void> {
-    if (!isDrumPattern(pattern) || pattern.isBuiltIn) {
+  async put(pattern: CustomDrumPattern): Promise<void> {
+    if (!isCustomDrumPattern(pattern)) {
       throw new Error("Only valid custom patterns can be saved.");
     }
 
-    await this.table.put(pattern);
+    await this.table.put(structuredClone(pattern));
   }
 }
 
 export class MemoryPatternRepository implements PatternRepository {
-  private readonly patterns = new Map<string, DrumPattern>();
+  private readonly patterns = new Map<string, CustomDrumPattern>();
 
   async delete(patternId: string): Promise<void> {
+    assertPatternId(patternId);
     this.patterns.delete(patternId);
   }
 
-  async get(patternId: string): Promise<DrumPattern | undefined> {
+  async get(patternId: string): Promise<CustomDrumPattern | undefined> {
+    assertPatternId(patternId);
     const pattern = this.patterns.get(patternId);
-    return pattern ? structuredClone(pattern) : undefined;
+    return pattern && isCustomDrumPattern(pattern)
+      ? structuredClone(pattern)
+      : undefined;
   }
 
-  async list(): Promise<DrumPattern[]> {
-    return Array.from(this.patterns.values(), (pattern) =>
-      structuredClone(pattern),
+  async list(): Promise<CustomDrumPattern[]> {
+    return sortPatterns(
+      Array.from(this.patterns.values())
+        .filter(isCustomDrumPattern)
+        .map((pattern) => structuredClone(pattern)),
     );
   }
 
-  async put(pattern: DrumPattern): Promise<void> {
-    if (!isDrumPattern(pattern) || pattern.isBuiltIn) {
+  async put(pattern: CustomDrumPattern): Promise<void> {
+    if (!isCustomDrumPattern(pattern)) {
       throw new Error("Only valid custom patterns can be saved.");
     }
 

@@ -1,25 +1,26 @@
 import Dexie, { type EntityTable } from "dexie";
 
-import type { DrumPattern } from "@/types/pattern";
 import type {
   CustomChordProgression,
+  CustomDrumPattern,
+  CustomStrummingPattern,
   FavoriteChordProgressionRecord,
   FavoritePatternRecord,
-  PersistedEntity,
   PracticePreset,
+  PracticeSession,
 } from "@/types/persistence";
 
 export class WebBandDatabase extends Dexie {
   chordProgressions!: EntityTable<CustomChordProgression, "id">;
-  customPatterns!: EntityTable<DrumPattern, "id">;
+  customPatterns!: EntityTable<CustomDrumPattern, "id">;
   favoriteChordProgressions!: EntityTable<
     FavoriteChordProgressionRecord,
     "progressionId"
   >;
   favoritePatterns!: EntityTable<FavoritePatternRecord, "patternId">;
   practicePresets!: EntityTable<PracticePreset, "id">;
-  practiceSessions!: EntityTable<PersistedEntity, "id">;
-  strummingPatterns!: EntityTable<PersistedEntity, "id">;
+  practiceSessions!: EntityTable<PracticeSession, "id">;
+  strummingPatterns!: EntityTable<CustomStrummingPattern, "id">;
 
   constructor(name = "web-band") {
     super(name);
@@ -40,6 +41,17 @@ export class WebBandDatabase extends Dexie {
       favoritePatterns: "patternId, createdAt",
       practicePresets: "id, updatedAt",
       practiceSessions: "id, createdAt, updatedAt",
+      strummingPatterns: "id, updatedAt",
+    });
+
+    this.version(3).stores({
+      chordProgressions: "id, updatedAt",
+      customPatterns: "id, category, difficulty, updatedAt",
+      favoriteChordProgressions: "progressionId, createdAt",
+      favoritePatterns: "patternId, createdAt",
+      practicePresets: "id, updatedAt",
+      practiceSessions:
+        "id, startedAt, patternId, practiceMode, createdAt, updatedAt",
       strummingPatterns: "id, updatedAt",
     });
   }

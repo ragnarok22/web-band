@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("loads the practice shell offline after the first visit", async ({
+test("loads every local-first route offline after the first visit", async ({
   context,
   page,
 }) => {
@@ -31,5 +31,20 @@ test("loads the practice shell offline after the first visit", async ({
     page.getByRole("heading", { name: "Find your pocket" }),
   ).toBeVisible();
   await expect(page.getByText("44 of 44 patterns")).toBeVisible();
+
+  await page.goto("/history", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "The work you put in." }),
+  ).toBeVisible();
+
+  await page.goto("/settings", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Settings, kept simple." }),
+  ).toBeVisible();
+
+  await page.goto("/editor", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "Shape your groove" }),
+  ).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

@@ -1,5 +1,5 @@
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
-import { isCanonicalUtcIsoTimestamp } from "@/lib/persistence-validation";
+import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type {
   CustomChordProgression,
   PracticePreset,
@@ -44,6 +44,7 @@ const MAX_NAME_LENGTH = 100;
 const MAX_CHORD_LENGTH = 32;
 const MAX_CHORD_STEPS = 64;
 const MAX_CHORD_DURATION = 64;
+const MAX_STRUM_STEPS = 48;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -264,7 +265,8 @@ export function validateStrumStep(value: unknown): PracticeValidationResult {
     return { errors: ["Strum step must be an object."], success: false };
   }
 
-  if (!hasText(value.id)) errors.push("Strum step ID is required.");
+  if (!hasBoundedText(value.id, MAX_ID_LENGTH))
+    errors.push("Strum step ID is invalid.");
   if (
     !Number.isInteger(value.subdivisionIndex) ||
     typeof value.subdivisionIndex !== "number" ||
@@ -288,8 +290,10 @@ export function validateStrummingPattern(
     return { errors: ["Strumming pattern must be an object."], success: false };
   }
 
-  if (!hasText(value.id)) errors.push("Strumming pattern ID is required.");
-  if (!hasText(value.name)) errors.push("Strumming pattern name is required.");
+  if (!hasBoundedText(value.id, MAX_ID_LENGTH))
+    errors.push("Strumming pattern ID is invalid.");
+  if (!hasBoundedText(value.name, MAX_NAME_LENGTH))
+    errors.push("Strumming pattern name is invalid.");
   if (!isValidTimeSignature(value.timeSignature))
     errors.push("Strumming pattern time signature is invalid.");
   if (value.subdivision !== 8 && value.subdivision !== 16)
@@ -299,6 +303,8 @@ export function validateStrummingPattern(
 
   if (!Array.isArray(value.steps)) {
     errors.push("Strumming pattern steps must be an array.");
+  } else if (value.steps.length > MAX_STRUM_STEPS) {
+    errors.push("Strumming pattern cannot contain more than 48 steps.");
   } else if (
     isRecord(value.timeSignature) &&
     isPositiveInteger(value.timeSignature.numerator) &&

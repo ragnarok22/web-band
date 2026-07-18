@@ -5,6 +5,8 @@ import { useEffect, type ReactNode } from "react";
 import { storageService } from "@/db/storage-service";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
+import { useHistorySettingsStore } from "@/stores/history-settings-store";
+import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePatternStore } from "@/stores/pattern-store";
@@ -19,6 +21,12 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   const hydrate = usePracticeStore((state) => state.hydrate);
+  const hydrateHistorySettings = useHistorySettingsStore(
+    (state) => state.hydrate,
+  );
+  const hydratePracticeHistory = usePracticeHistoryStore(
+    (state) => state.hydrate,
+  );
   const hydrateChordProgressions = useChordProgressionStore(
     (state) => state.hydrate,
   );
@@ -33,6 +41,7 @@ export function AppProviders({ children }: AppProvidersProps) {
 
   useEffect(() => {
     hydrate();
+    hydrateHistorySettings();
 
     let isActive = true;
     void storageService.initialize().then(async (status) => {
@@ -46,6 +55,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         hydratePatterns(),
         hydrateChordProgressions(),
         hydratePracticePresets(),
+        hydratePracticeHistory(),
       ]);
       if (
         isActive &&
@@ -57,6 +67,7 @@ export function AppProviders({ children }: AppProvidersProps) {
           hydratePatterns(),
           hydrateChordProgressions(),
           hydratePracticePresets(),
+          hydratePracticeHistory(),
         ]);
       }
     });
@@ -68,8 +79,10 @@ export function AppProviders({ children }: AppProvidersProps) {
     hydrate,
     hydrateChordProgressions,
     hydrateGuidedPractice,
+    hydrateHistorySettings,
     hydratePatterns,
     hydratePracticePresets,
+    hydratePracticeHistory,
     setStorageStatus,
   ]);
 

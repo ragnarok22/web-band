@@ -6,7 +6,7 @@ import {
   DexiePatternRepository,
   MemoryPatternRepository,
 } from "@/db/repositories/pattern-repository";
-import type { DrumPattern } from "@/types/pattern";
+import type { CustomDrumPattern } from "@/types/persistence";
 
 let database: WebBandDatabase | null = null;
 
@@ -15,16 +15,18 @@ afterEach(async () => {
   database = null;
 });
 
-function createCustomPattern(): DrumPattern {
-  const timestamp = new Date().toISOString();
+function createCustomPattern(
+  id = "my-rock-pattern",
+  updatedAt = "2026-07-18T12:00:00.000Z",
+): CustomDrumPattern {
   return {
     ...structuredClone(basicRockPattern),
     category: "custom",
-    createdAt: timestamp,
-    id: "my-rock-pattern",
+    createdAt: "2026-07-18T10:00:00.000Z",
+    id,
     isBuiltIn: false,
-    name: "My Rock Pattern",
-    updatedAt: timestamp,
+    name: id,
+    updatedAt,
   };
 }
 
@@ -33,23 +35,43 @@ describe("Dexie pattern repository", () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
     const repository = new DexiePatternRepository(database.customPatterns);
-    const pattern = createCustomPattern();
+    const older = createCustomPattern("older", "2026-07-18T11:00:00.000Z");
+    const newerB = createCustomPattern("newer-b");
+    const newerA = createCustomPattern("newer-a");
 
-    await repository.put(pattern);
-    expect(await repository.get(pattern.id)).toEqual(pattern);
-    expect(await repository.list()).toEqual([pattern]);
+    await repository.put(older);
+    await repository.put(newerB);
+    await repository.put(newerA);
+    await database.customPatterns.put({
+      ...createCustomPattern("corrupt"),
+      createdAt: "not-a-date",
+    } as CustomDrumPattern);
+    expect((await repository.list()).map(({ id }) => id)).toEqual([
+      "newer-a",
+      "newer-b",
+      "older",
+    ]);
+    expect(await repository.get("corrupt")).toBeUndefined();
+    expect(await repository.get(older.id)).toEqual(older);
 
-    await repository.delete(pattern.id);
-    expect(await repository.get(pattern.id)).toBeUndefined();
+    await repository.delete(older.id);
+    expect(await repository.get(older.id)).toBeUndefined();
   });
 
-  it("does not allow built-in patterns to be written", async () => {
+  it("rejects built-in records, built-in ID collisions, and invalid IDs", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
     const repository = new DexiePatternRepository(database.customPatterns);
 
-    await expect(repository.put(basicRockPattern)).rejects.toThrow(
-      "Only valid custom patterns can be saved.",
+    await expect(
+      repository.put(basicRockPattern as CustomDrumPattern),
+    ).rejects.toThrow("Only valid custom patterns can be saved.");
+    await expect(
+      repository.put(createCustomPattern(basicRockPattern.id)),
+    ).rejects.toThrow("Only valid custom patterns can be saved.");
+    await expect(repository.get(" ")).rejects.toThrow("Pattern ID is invalid.");
+    await expect(repository.delete("x".repeat(129))).rejects.toThrow(
+      "Pattern ID is invalid.",
     );
   });
 

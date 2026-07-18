@@ -2,10 +2,13 @@ import Dexie from "dexie";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { gDEmCProgression } from "@/data/chord-progressions";
+import { basicPopPattern } from "@/data/strumming-patterns";
 import { WebBandDatabase } from "@/db/database";
 import type {
   CustomChordProgression,
+  CustomStrummingPattern,
   PracticePreset,
+  PracticeSession,
 } from "@/types/persistence";
 
 let databaseName: string | null = null;
@@ -64,12 +67,88 @@ describe("WebBandDatabase migrations", () => {
     const migrated = new WebBandDatabase(databaseName);
     await migrated.open();
 
-    expect(migrated.verno).toBe(2);
+    expect(migrated.verno).toBe(3);
     expect(await migrated.chordProgressions.get(progression.id)).toEqual(
       progression,
     );
     expect(await migrated.practicePresets.get(preset.id)).toEqual(preset);
     expect(await migrated.favoriteChordProgressions.toArray()).toEqual([]);
+    migrated.close();
+  });
+
+  it("retains version 2 session and strumming rows while adding version 3 indexes", async () => {
+    databaseName = `web-band-v3-migration-${crypto.randomUUID()}`;
+    const timestamp = "2026-07-18T12:00:00.000Z";
+    const session: PracticeSession = {
+      category: "rock",
+      createdAt: timestamp,
+      durationSeconds: 120,
+      endedAt: "2026-07-18T12:02:00.000Z",
+      endingBpm: 100,
+      id: "v2-session",
+      patternId: "basic-rock",
+      patternName: "Basic Rock",
+      practiceMode: "drums",
+      startedAt: timestamp,
+      startingBpm: 90,
+      timeSignature: "4/4",
+      updatedAt: timestamp,
+    };
+    const strummingPattern: CustomStrummingPattern = {
+      ...structuredClone(basicPopPattern),
+      createdAt: timestamp,
+      id: "v2-strumming",
+      isBuiltIn: false,
+      name: "Version two strumming",
+      updatedAt: timestamp,
+    };
+    const corruptLegacySession = {
+      createdAt: timestamp,
+      data: { duration: "unknown" },
+      id: "legacy-corrupt-session",
+      updatedAt: timestamp,
+    };
+    const versionTwo = new Dexie(databaseName);
+    versionTwo.version(1).stores({
+      chordProgressions: "id, updatedAt",
+      customPatterns: "id, category, difficulty, updatedAt",
+      favoritePatterns: "patternId, createdAt",
+      practicePresets: "id, updatedAt",
+      practiceSessions: "id, createdAt, updatedAt",
+      strummingPatterns: "id, updatedAt",
+    });
+    versionTwo.version(2).stores({
+      chordProgressions: "id, updatedAt",
+      customPatterns: "id, category, difficulty, updatedAt",
+      favoriteChordProgressions: "progressionId, createdAt",
+      favoritePatterns: "patternId, createdAt",
+      practicePresets: "id, updatedAt",
+      practiceSessions: "id, createdAt, updatedAt",
+      strummingPatterns: "id, updatedAt",
+    });
+    await versionTwo.open();
+    await versionTwo
+      .table("practiceSessions")
+      .bulkPut([session, corruptLegacySession]);
+    await versionTwo.table("strummingPatterns").put(strummingPattern);
+    versionTwo.close();
+
+    const migrated = new WebBandDatabase(databaseName);
+    await migrated.open();
+
+    expect(migrated.verno).toBe(3);
+    expect(await migrated.practiceSessions.get(session.id)).toEqual(session);
+    expect(
+      await migrated.table("practiceSessions").get(corruptLegacySession.id),
+    ).toEqual(corruptLegacySession);
+    expect(await migrated.strummingPatterns.get(strummingPattern.id)).toEqual(
+      strummingPattern,
+    );
+    expect(
+      migrated.practiceSessions.schema.indexes.map(({ name }) => name),
+    ).toEqual(
+      expect.arrayContaining(["startedAt", "patternId", "practiceMode"]),
+    );
     migrated.close();
   });
 });

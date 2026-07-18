@@ -1,6 +1,13 @@
 "use client";
 
-import { FilterX, LibraryBig, Search, SlidersHorizontal } from "lucide-react";
+import {
+  FilterX,
+  LibraryBig,
+  Plus,
+  Search,
+  SlidersHorizontal,
+} from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -153,9 +160,18 @@ export function PatternBrowser() {
             syncopated challenges.
           </p>
         </div>
-        <p className="border-border bg-surface text-muted-strong rounded-xl border px-4 py-3 text-sm font-bold tabular-nums">
-          {visiblePatterns.length} of {patterns.length} patterns
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition-colors"
+            href="/editor"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            Create pattern
+          </Link>
+          <p className="border-border bg-surface text-muted-strong rounded-xl border px-4 py-3 text-sm font-bold tabular-nums">
+            {visiblePatterns.length} of {patterns.length} patterns
+          </p>
+        </div>
       </header>
 
       <section
@@ -289,7 +305,7 @@ export function PatternBrowser() {
               isPreviewing={
                 previewPatternId === pattern.id && status !== "stopped"
               }
-              key={pattern.id}
+              key={`${pattern.isBuiltIn ? "built-in" : "custom"}:${pattern.id}`}
               onFavorite={() => void favoritePattern(pattern.id)}
               onOpen={() => openPattern(pattern.id)}
               onPreview={() => void previewPattern(pattern.id)}

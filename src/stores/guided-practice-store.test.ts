@@ -17,6 +17,32 @@ beforeEach(() => {
 });
 
 describe("guided practice store", () => {
+  it("replaces and persists all backup settings in one store update", () => {
+    const settings = {
+      ...createDefaultGuidedPracticeValues(),
+      chordTrainer: {
+        progression: structuredClone(cGAmFProgression),
+        repeat: false,
+        showCountdown: false,
+      },
+      mode: "chords" as const,
+    };
+    const listener = vi.fn();
+    const unsubscribe = useGuidedPracticeStore.subscribe(listener);
+
+    expect(useGuidedPracticeStore.getState().replaceSettings(settings)).toBe(
+      true,
+    );
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(useGuidedPracticeStore.getState()).toMatchObject(settings);
+    expect(
+      JSON.parse(
+        window.localStorage.getItem(GUIDED_PRACTICE_STORAGE_KEY) ?? "null",
+      ),
+    ).toMatchObject({ mode: "chords", version: 1 });
+    unsubscribe();
+  });
+
   it("persists and hydrates versioned editable configurations", () => {
     const store = useGuidedPracticeStore.getState();
     store.setChordTrainerConfiguration({

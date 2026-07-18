@@ -5,6 +5,7 @@ import type { CountInMeasures } from "@/types/audio";
 interface PracticeNoticesProps {
   countInMeasures: CountInMeasures;
   errorMessage: string | null;
+  noticeMessage?: string | null;
   onDismiss: () => void;
   showOnboarding: boolean;
 }
@@ -12,6 +13,7 @@ interface PracticeNoticesProps {
 export function PracticeNotices({
   countInMeasures,
   errorMessage,
+  noticeMessage = null,
   onDismiss,
   showOnboarding,
 }: PracticeNoticesProps) {
@@ -50,6 +52,16 @@ export function PracticeNotices({
           role="alert"
         >
           {errorMessage}
+        </p>
+      ) : null}
+
+      {noticeMessage ? (
+        <p
+          aria-live="polite"
+          className="border-accent/20 bg-accent/7 text-muted-strong rounded-xl border p-4 text-sm"
+          role="status"
+        >
+          {noticeMessage}
         </p>
       ) : null}
     </>

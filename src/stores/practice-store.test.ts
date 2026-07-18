@@ -12,6 +12,31 @@ beforeEach(() => {
 });
 
 describe("practice store preset configuration", () => {
+  it("replaces and persists the complete settings snapshot", () => {
+    const settings = {
+      ...structuredClone(defaultPracticeSettings),
+      bpm: 121,
+      masterVolume: 0.4,
+      selectedPatternId: "one-drop",
+      wakeLockEnabled: false,
+    };
+
+    expect(usePracticeStore.getState().replaceSettings(settings)).toBe(true);
+    settings.mixer.kick.volume = 0;
+    expect(usePracticeStore.getState()).toMatchObject({
+      bpm: 121,
+      masterVolume: 0.4,
+      selectedPatternId: "one-drop",
+      wakeLockEnabled: false,
+    });
+    expect(usePracticeStore.getState().mixer.kick.volume).not.toBe(0);
+    expect(
+      JSON.parse(
+        window.localStorage.getItem("web-band-practice-settings-v2") ?? "null",
+      ),
+    ).toMatchObject({ bpm: 121, selectedPatternId: "one-drop" });
+  });
+
   it("applies every base preset field atomically and persists it", () => {
     const configuration: PracticePresetConfiguration = {
       bpm: 128,

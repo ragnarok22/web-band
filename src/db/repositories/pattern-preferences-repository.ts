@@ -1,4 +1,4 @@
-const RECENT_PATTERNS_KEY = "web-band-recent-patterns-v1";
+export const RECENT_PATTERNS_KEY = "web-band-recent-patterns-v1";
 const MAX_RECENT_PATTERNS = 20;
 
 export function loadRecentPatternIds(): string[] {
@@ -32,6 +32,16 @@ export function saveRecentPatternIds(patternIds: readonly string[]): boolean {
       RECENT_PATTERNS_KEY,
       JSON.stringify(patternIds.slice(0, MAX_RECENT_PATTERNS)),
     );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function clearRecentPatternIds(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.localStorage.removeItem(RECENT_PATTERNS_KEY);
     return true;
   } catch {
     return false;

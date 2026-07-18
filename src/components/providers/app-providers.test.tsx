@@ -5,7 +5,10 @@ import { AppProviders } from "@/components/providers/app-providers";
 import { storageService } from "@/db/storage-service";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
+import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
+import { useHistorySettingsStore } from "@/stores/history-settings-store";
 import { usePatternStore } from "@/stores/pattern-store";
+import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { useStorageStore } from "@/stores/storage-store";
@@ -27,6 +30,16 @@ beforeEach(async () => {
     isHydrated: false,
     presets: [],
     recentPresetIds: [],
+  });
+  usePracticeHistoryStore.setState({
+    errorMessage: null,
+    isHydrated: false,
+    isLoading: false,
+    sessions: [],
+  });
+  useHistorySettingsStore.setState({
+    ...defaultHistorySettings,
+    hasHydrated: false,
   });
   useStorageStore.setState({
     isInitialized: false,
@@ -61,11 +74,35 @@ describe("app providers", () => {
       expect(usePatternStore.getState().isHydrated).toBe(true);
       expect(useChordProgressionStore.getState().isHydrated).toBe(true);
       expect(usePracticePresetStore.getState().isHydrated).toBe(true);
+      expect(usePracticeHistoryStore.getState().isHydrated).toBe(true);
     });
     expect(useStorageStore.getState().warning).toContain(
       "Practice can continue",
     );
     expect(usePracticeStore.getState().bpm).toBe(137);
     expect(useGuidedPracticeStore.getState().mode).toBe("tempoTrainer");
+    expect(useHistorySettingsStore.getState().hasHydrated).toBe(true);
+  });
+
+  it("includes practice history in repository-failure recovery", async () => {
+    vi.spyOn(
+      storageService.practiceSessionRepository,
+      "list",
+    ).mockRejectedValueOnce(new Error("history read failed"));
+
+    render(
+      <AppProviders>
+        <div>Application</div>
+      </AppProviders>,
+    );
+
+    await waitFor(() => {
+      expect(useStorageStore.getState().mode).toBe("memory");
+      expect(usePracticeHistoryStore.getState().isHydrated).toBe(true);
+      expect(usePracticeHistoryStore.getState().errorMessage).toBeNull();
+    });
+    expect(useStorageStore.getState().warning).toContain(
+      "Practice can continue",
+    );
   });
 });

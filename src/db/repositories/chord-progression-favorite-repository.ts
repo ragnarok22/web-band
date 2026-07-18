@@ -1,6 +1,6 @@
 import type { EntityTable } from "dexie";
 
-import { isCanonicalUtcIsoTimestamp } from "@/lib/persistence-validation";
+import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type { FavoriteChordProgressionRecord } from "@/types/persistence";
 
 export interface ChordProgressionFavoriteRepository {
@@ -90,11 +90,10 @@ export class MemoryChordProgressionFavoriteRepository implements ChordProgressio
   }
 
   async list(): Promise<string[]> {
-    return sortFavoriteRecords(
-      Array.from(this.records.values())
-        .filter(isFavoriteRecord)
-        .map((record) => structuredClone(record)),
-    ).map((record) => record.progressionId);
+    return Array.from(this.records.values())
+      .filter(isFavoriteRecord)
+      .map((record) => record.progressionId)
+      .sort((left, right) => left.localeCompare(right));
   }
 
   async remove(progressionId: string): Promise<void> {

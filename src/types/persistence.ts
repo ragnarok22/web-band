@@ -5,8 +5,13 @@ import type {
 } from "@/types/audio";
 import type {
   ChordProgression,
+  ChordTrainerConfiguration,
   GuidedPracticeConfiguration,
+  PracticeMode,
+  StrummingPattern,
+  TempoTrainerConfiguration,
 } from "@/types/practice";
+import type { DrumPattern } from "@/types/pattern";
 
 export type PersistenceMode = "indexed-db" | "memory";
 
@@ -14,6 +19,18 @@ export interface PersistenceStatus {
   mode: PersistenceMode;
   warning: string | null;
 }
+
+export type CustomDrumPattern = DrumPattern & {
+  isBuiltIn: false;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CustomStrummingPattern = StrummingPattern & {
+  isBuiltIn: false;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export interface FavoritePatternRecord {
   patternId: string;
@@ -42,6 +59,18 @@ export interface PracticeSettings {
   selectedPatternId: string;
   swing: number;
   wakeLockEnabled: boolean;
+}
+
+export interface GuidedPracticeSettings {
+  mode: PracticeMode;
+  tempoTrainer: TempoTrainerConfiguration;
+  chordTrainer: ChordTrainerConfiguration;
+  strummingPattern: StrummingPattern;
+}
+
+export interface HistorySettings {
+  enabled: boolean;
+  minimumDurationSeconds: number;
 }
 
 export interface PracticePresetConfiguration {
@@ -75,3 +104,61 @@ export type CustomChordProgression = ChordProgression & {
   createdAt: string;
   updatedAt: string;
 };
+
+export interface PracticeSession {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  durationSeconds: number;
+  patternId: string;
+  patternName: string;
+  category: string;
+  startingBpm: number;
+  endingBpm: number;
+  timeSignature: string;
+  practiceMode: PracticeMode;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PersistenceSnapshot {
+  customPatterns: CustomDrumPattern[];
+  favoritePatternIds: string[];
+  customChordProgressions: CustomChordProgression[];
+  favoriteChordProgressionIds: string[];
+  customStrummingPatterns: CustomStrummingPattern[];
+  practicePresets: PracticePreset[];
+  practiceSessions: PracticeSession[];
+}
+
+export interface BackupSettings {
+  practice: PracticeSettings;
+  guidedPractice: GuidedPracticeSettings;
+  history: HistorySettings;
+}
+
+export interface BackupDataV1 extends PersistenceSnapshot {
+  settings: BackupSettings;
+}
+
+export interface BackupEnvelopeV1 {
+  app: "web-band";
+  version: 1;
+  exportedAt: string;
+  data: BackupDataV1;
+}
+
+export type BackupEnvelope = BackupEnvelopeV1;
+export type VersionedBackupEnvelope = BackupEnvelopeV1;
+
+export type ImportMode = "merge" | "replace";
+
+export type ImportCollectionCounts = {
+  [Key in keyof PersistenceSnapshot]: number;
+};
+
+export interface ImportSummary {
+  mode: ImportMode;
+  imported: ImportCollectionCounts;
+  totalImported: number;
+}

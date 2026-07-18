@@ -21,6 +21,7 @@ interface ChordProgressionStore {
   create: (input: ChordProgressionInput) => Promise<CustomChordProgression>;
   delete: (progressionId: string) => Promise<void>;
   hydrate: () => Promise<void>;
+  refreshAfterImport: () => Promise<void>;
   toggleFavorite: (progressionId: string) => Promise<void>;
   update: (
     progressionId: string,
@@ -121,6 +122,7 @@ export const useChordProgressionStore = create<ChordProgressionStore>(
       }
     },
     isHydrated: false,
+    refreshAfterImport: async () => get().hydrate(),
     toggleFavorite: async (progressionId) => {
       await storageService.initialize();
       const repository = storageService.chordProgressionFavoriteRepository;

@@ -1,6 +1,6 @@
 import type { EntityTable } from "dexie";
 
-import { isCanonicalUtcIsoTimestamp } from "@/lib/persistence-validation";
+import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type { FavoritePatternRecord } from "@/types/persistence";
 
 export interface FavoriteRepository {
@@ -59,7 +59,9 @@ export class MemoryFavoriteRepository implements FavoriteRepository {
   }
 
   async list(): Promise<string[]> {
-    return Array.from(this.patternIds);
+    return Array.from(this.patternIds).sort((left, right) =>
+      left.localeCompare(right),
+    );
   }
 
   async remove(patternId: string): Promise<void> {

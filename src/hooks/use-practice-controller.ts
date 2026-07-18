@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { builtInPatterns, getPatternById } from "@/data/patterns";
+import {
+  saveOnboardingDismissal,
+  shouldShowOnboarding,
+} from "@/db/repositories/onboarding-preferences-repository";
 import { usePracticeShortcuts } from "@/hooks/use-practice-shortcuts";
+import { usePracticeHistoryRecorder } from "@/hooks/use-practice-history-recorder";
 import { usePracticeTimer } from "@/hooks/use-practice-timer";
 import { useTapTempo } from "@/hooks/use-tap-tempo";
 import { useWakeLock } from "@/hooks/use-wake-lock";
@@ -31,17 +36,6 @@ import type {
   PracticePreset,
   PracticePresetConfiguration,
 } from "@/types/persistence";
-
-const ONBOARDING_KEY = "web-band-onboarding-dismissed";
-
-function shouldShowOnboarding(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(ONBOARDING_KEY) !== "true";
-  } catch {
-    return true;
-  }
-}
 
 function syncMixer(): void {
   getAudioEngine().setMixer(usePracticeStore.getState().mixer);
@@ -118,6 +112,7 @@ export function usePracticeController() {
     name: string;
   } | null>(null);
   const [masterMuted, setMasterMuted] = useState(false);
+  const [historyNotice, setHistoryNotice] = useState<string | null>(null);
   const [patternAnnouncement, setPatternAnnouncement] = useState("");
   const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -151,6 +146,17 @@ export function usePracticeController() {
       : null;
   const elapsedSeconds = usePracticeTimer(status);
   const wakeLockStatus = useWakeLock(wakeLockEnabled, status);
+
+  usePracticeHistoryRecorder({
+    bpm,
+    guidedPractice,
+    onSaveError: () =>
+      setHistoryNotice(
+        "This session could not be added to practice history. Playback was not interrupted.",
+      ),
+    pattern,
+    status,
+  });
 
   function changeBpm(value: number): void {
     const nextBpm = clampBpm(value, bpm);
@@ -216,11 +222,7 @@ export function usePracticeController() {
   }
 
   function dismissOnboarding(): void {
-    try {
-      window.localStorage.setItem(ONBOARDING_KEY, "true");
-    } catch {
-      // The hint can still be dismissed for the current page when storage is blocked.
-    }
+    saveOnboardingDismissal();
     setShowOnboarding(false);
   }
 
@@ -410,6 +412,7 @@ export function usePracticeController() {
     focusButtonRef,
     guidedPractice,
     humanization,
+    historyNotice,
     isFocusMode,
     loadPreset,
     loadedPresetName,

@@ -16,10 +16,11 @@ import type {
   StrummingPattern,
   TempoTrainerConfiguration,
 } from "@/types/practice";
+import type { GuidedPracticeSettings } from "@/types/persistence";
 
 export const GUIDED_PRACTICE_STORAGE_KEY = "web-band-guided-practice-v1";
 
-interface GuidedPracticeValues {
+export interface GuidedPracticeValues {
   mode: PracticeMode;
   tempoTrainer: TempoTrainerConfiguration;
   chordTrainer: ChordTrainerConfiguration;
@@ -30,6 +31,7 @@ interface GuidedPracticeStore extends GuidedPracticeValues {
   isHydrated: boolean;
   applyConfiguration: (configuration: GuidedPracticeConfiguration) => void;
   hydrate: () => void;
+  replaceSettings: (settings: GuidedPracticeSettings) => boolean;
   setChordTrainerConfiguration: (
     configuration: ChordTrainerConfiguration,
   ) => void;
@@ -179,6 +181,19 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
       },
       hydrate: () => set({ ...loadGuidedPracticeValues(), isHydrated: true }),
       isHydrated: false,
+      replaceSettings: (settings) => {
+        if (
+          !isPracticeMode(settings.mode) ||
+          !isTempoTrainerConfiguration(settings.tempoTrainer) ||
+          !isChordTrainerConfiguration(settings.chordTrainer) ||
+          !isStrummingPattern(settings.strummingPattern)
+        ) {
+          throw new Error("Guided practice settings are invalid.");
+        }
+        const next = structuredClone(settings);
+        set(next);
+        return saveGuidedPracticeValues(next);
+      },
       setChordTrainerConfiguration: (chordTrainer) => {
         if (!isChordTrainerConfiguration(chordTrainer)) {
           throw new Error("Chord trainer configuration is invalid.");

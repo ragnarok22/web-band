@@ -25,6 +25,7 @@ interface PracticeStore extends PracticeSettings {
   hydrate: () => void;
   resetBpm: (bpm: number) => void;
   resetMixer: () => void;
+  replaceSettings: (settings: PracticeSettings) => boolean;
   setBpm: (bpm: number) => void;
   setCountInMeasures: (measures: CountInMeasures) => void;
   setFillFrequency: (frequency: FillFrequency) => void;
@@ -84,6 +85,11 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
     hydrate: () => set({ ...loadPracticeSettings(), hasHydrated: true }),
     resetBpm: (bpm) => update({ bpm: clampBpm(bpm) }),
     resetMixer: () => update({}, createDefaultMixerSettings()),
+    replaceSettings: (settings) => {
+      const next = structuredClone(settings);
+      set(next);
+      return savePracticeSettings(next);
+    },
     setBpm: (bpm) => update({ bpm: clampBpm(bpm) }),
     setCountInMeasures: (countInMeasures) => update({ countInMeasures }),
     setFillFrequency: (fillFrequency) => update({ fillFrequency }),
