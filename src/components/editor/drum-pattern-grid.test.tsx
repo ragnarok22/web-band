@@ -54,6 +54,24 @@ function ResizableGridHarness() {
 }
 
 describe("drum pattern grid", () => {
+  it("includes playhead state in cell names without a live region", () => {
+    const pattern = createDefaultPatternDraft([], {
+      now: () => "2026-07-18T12:00:00.000Z",
+    });
+    render(
+      <DrumPatternGrid
+        activeStep={0}
+        onChange={() => undefined}
+        pattern={pattern}
+      />,
+    );
+
+    const cell = screen.getByRole("button", {
+      name: /Kick, measure 1, column 1,.*playhead active/,
+    });
+    expect(cell.closest("[aria-live]")).toBeNull();
+  });
+
   it("cycles a touch-safe native cell button with keyboard support", async () => {
     const user = userEvent.setup();
     render(<GridHarness />);

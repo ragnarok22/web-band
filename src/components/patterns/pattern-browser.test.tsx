@@ -148,5 +148,8 @@ describe("pattern browser", () => {
     expect(screen.getByRole("heading", { name: "My Pattern" })).toHaveClass(
       "break-words",
     );
+    expect(
+      screen.getByRole("heading", { name: "My Pattern" }).closest("article"),
+    ).toHaveClass("[content-visibility:auto]");
   });
 });
