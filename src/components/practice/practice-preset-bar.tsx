@@ -95,7 +95,7 @@ export function PracticePresetBar({
           type="button"
         >
           <Save aria-hidden="true" className="size-4" />
-          Save setup
+          Save current setup
         </button>
         <button
           aria-label="Open presets"

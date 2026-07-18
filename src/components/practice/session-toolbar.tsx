@@ -56,13 +56,13 @@ export function SessionToolbar({
         Focus
       </button>
       <button
-        aria-label="Show keyboard shortcuts"
+        aria-label="Open Shortcuts"
         className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors"
         onClick={onShortcuts}
         type="button"
       >
         <Keyboard aria-hidden="true" className="size-4" />
-        Keys
+        Shortcuts
       </button>
       <button
         aria-pressed={wakeLockEnabled}

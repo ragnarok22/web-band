@@ -1,6 +1,6 @@
 # Web Band Rhythm Practice
 
-Web Band is a browser-based drum and rhythm practice companion for guitarists. The completed foundation, audio-engine, pattern-system, practice-feature, guided-practice, and creation-and-persistence phases provide a focused practice room, a 44-pattern groove library, accurate Tone.js scheduling, synchronized guidance, custom groove creation, a local practice journal, and portable backups.
+Web Band is a browser-based drum and rhythm practice companion for guitarists. The completed application provides a focused practice room, a 44-pattern groove library, accurate Tone.js scheduling, synchronized guidance, custom groove creation, a local practice journal, portable backups, offline support, and accessible dark and light themes.
 
 Every drum sound is synthesized in real time with the Web Audio API. The project contains no recorded drum samples, MP3 files, WAV files, external audio assets, backend, authentication, analytics, or cloud services.
 
@@ -22,7 +22,7 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Meter-aware generated fills every 4, 8, or 16 measures or at controlled random intervals.
 - Compact six-group mixer with volume, mute, solo, reset, and perceptual master-volume control.
 - Optional Screen Wake Lock during active practice.
-- Keyboard shortcuts for transport, BPM, tap tempo, focus mode, and master mute.
+- Keyboard shortcuts for play/pause, stop, pattern changes, BPM, tap tempo, focus mode, and master mute.
 - Tempo training with ascending or descending targets, measure- or seconds-based intervals, configurable increments, and optional target stop.
 - Chord progression training with current/next chord guidance, countdowns, five built-in progressions, favorites, and a custom progression editor.
 - Strumming guidance with down, up, mute, rest, hold, and accent cues across seven built-in 4/4, 3/4, and 6/8 patterns.
@@ -35,10 +35,10 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Versioned IndexedDB initialization through Dexie.
 - Runtime in-memory storage fallback with readable-data recovery, one retry, and a nonblocking warning.
 - Versioned `localStorage` persistence for practice and mixer preferences.
+- Warm dark, light, and system color themes plus an explicit reduced-motion preference.
+- Skip navigation, visible keyboard focus, destructive-action focus recovery, safe-area-aware navigation, and stacked nonblocking notices.
 - Installable PWA with offline practice, pattern library, editor, history, and settings routes plus an update notification.
 - Responsive layouts tested at 320px, mobile, and desktop widths.
-
-The remaining final-quality work is tracked in `PLANING.md`.
 
 ## Requirements
 
@@ -69,7 +69,7 @@ pnpm lint           # ESLint
 pnpm typecheck      # Generate Next route types and run strict TypeScript
 pnpm test           # Vitest unit and component tests
 pnpm test:coverage  # Vitest with V8 coverage
-pnpm test:e2e       # Desktop and mobile Playwright flows
+pnpm test:e2e       # Chromium, Firefox, WebKit, and mobile Playwright flows
 pnpm test:pwa       # Production-build offline PWA verification
 ```
 
@@ -114,13 +114,14 @@ Components do not access IndexedDB directly. They initialize and consume storage
 2. The engine creates one reusable instrument manager and master signal path.
 3. The scheduler registers an optional meter-aware count-in and one continuous sixteenth-note pattern and guidance pulse on `Tone.getTransport()`.
 4. Tone's callback time is passed directly to Web Audio nodes for sample-accurate scheduling.
-5. `Tone.getDraw().schedule()` publishes visual steps at the audible time.
+5. `Tone.getDraw().schedule()` publishes visual steps at the audible time and never owns semantic transport state.
 6. Queued pattern changes replace the active pattern at the next measure and may change meter or subdivision without rebuilding the transport loop.
 7. Swing updates Tone Transport directly; humanization and fills alter individual scheduled hits without changing the transport grid.
-8. The guided-practice controller derives tempo, chord, and strumming positions from that same pulse; tempo changes and target stops occur on musical boundaries.
+8. The guided-practice controller derives tempo, chord, and strumming positions from that same pulse; cancellable Tone context-clock callbacks publish semantic state and target stops without depending on animation frames.
 9. Six retained kit buses apply channel volume, mute, and solo automation without rebuilding voices or schedules.
-10. Pause preserves transport position. Stop clears owned schedules, resets position, and silences active voices.
-11. Disposal stops sources, disconnects one-shot and shared nodes, removes context listeners, and cancels draw work.
+10. Repeat callbacks carry stable source-tick positions so Tone lookahead events replay correctly after pause, including during swing or BPM changes.
+11. Pause preserves transport position. Stop clears owned schedules, resets position, and silences active voices.
+12. Disposal stops sources, runs each cleanup exactly once, disconnects one-shot and shared nodes, removes context listeners, and cancels visual and semantic work.
 
 The instrument modules use the following synthesis:
 
@@ -185,7 +186,7 @@ The versioned key `web-band-practice-settings-v2` stores:
 - Six mixer channel settings.
 - Wake Lock preference.
 
-The repository reads the legacy `web-band-practice-settings-v1` shape and fills the Phase 4 fields with safe defaults. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its minimum meaningful duration. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
+The repository reads the legacy `web-band-practice-settings-v1` shape and fills the Phase 4 fields with safe defaults. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its minimum meaningful duration. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. `web-band-appearance-v1` stores the device-only dark, light, or system theme choice and explicit reduced-motion preference. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
 
 Values are parsed defensively and clamped before use. Corrupted settings fall back to Basic Rock at 90 BPM and 80% volume.
 
@@ -235,6 +236,8 @@ Recommended:
 - iOS Safari 16.4 or newer for installed PWA behavior.
 - HTTPS in production, which is required for service workers outside localhost.
 
+The automated browser matrix runs the complete 15-flow suite in Chromium, Firefox, WebKit, and mobile Chromium. Synthesized timbre and installed-PWA behavior should still receive listening and device checks before a public release.
+
 Graceful degradation:
 
 - Missing Web Audio shows an audio initialization error.
@@ -254,7 +257,7 @@ Playwright runs the real browser audio engine and verifies:
 - User-initiated audio startup.
 - Count-in to groove transition.
 - Configurable count-in, groove feel, fill, and mixer persistence.
-- Space-bar start and active-session stop behavior.
+- Space-bar play, pause, and resume behavior plus Escape stop and arrow-key pattern changes.
 - Focus-mode entry and exit.
 - Live BPM changes.
 - Pause, Resume, and Stop.
@@ -268,14 +271,14 @@ Playwright runs the real browser audio engine and verifies:
 - Pattern-only download, removal, import, and reload persistence.
 - Meaningful practice-session recording, journal persistence, and deletion.
 - JSON backup download, validation, merge, clear, restore, and reload persistence.
-- Reload persistence on desktop and mobile profiles.
+- Reload persistence across Chromium, Firefox, WebKit, and mobile Chromium profiles.
 - Production service-worker control and offline loading for every local-first route.
 
 The Web Audio implementation remains real in production. Unit component tests mock only the engine boundary where browser audio is unavailable in jsdom.
 
 ## Known Limitations
 
-- Custom strumming-pattern editing and theme selection remain future work.
+- Custom strumming-pattern editing remains future work.
 - Wake Lock depends on browser support and a secure context.
 - Fills are generic meter-aware practice fills rather than category-specific arrangements.
 - Chord symbols are text guidance only; Web Band does not synthesize guitar chords.
@@ -285,4 +288,6 @@ The Web Audio implementation remains real in production. Unit component tests mo
 
 ## Future Improvements
 
-The final planned phase covers broader accessibility and browser verification, responsive polish, performance review, error handling, and cross-browser audio tuning as listed in `PLANING.md`.
+- Add custom strumming-pattern creation and sharing.
+- Add category-specific fill arrangements and optional alternate synthesis characters.
+- Continue physical-device listening checks, especially installed iOS PWA audio and Wake Lock behavior.

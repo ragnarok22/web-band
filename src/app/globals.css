@@ -30,10 +30,10 @@ html[data-theme="light"] {
   --foreground: #211d18;
   --muted: #6f675d;
   --muted-strong: #514a42;
-  --accent: #a96205;
-  --accent-strong: #854c00;
+  --accent: #925100;
+  --accent-strong: #743f00;
   --accent-ink: #fff8e8;
-  --secondary-accent: #b54a31;
+  --secondary-accent: #a8412c;
   --success: #2f7a49;
   --danger: #a63f2e;
   --border: rgba(33, 29, 24, 0.12);

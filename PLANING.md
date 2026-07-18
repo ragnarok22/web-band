@@ -1624,7 +1624,7 @@ Implement the application in this order.
 - Import and export.
 - Storage migration and fallback handling.
 
-## Phase 7: Final quality
+## ✅ Phase 7: Final quality
 
 - Accessibility.
 - Responsive polish.
