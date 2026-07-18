@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BpmControls } from "@/components/practice/bpm-controls";
 import { CountInControl } from "@/components/practice/count-in-control";
 import { GrooveControls } from "@/components/practice/groove-controls";
+import { GuidedPracticePanel } from "@/components/practice/guided-practice-panel";
 import { isSessionActive } from "@/lib/audio-status";
 import type {
   AudioEngineStatus,
@@ -11,6 +12,7 @@ import type {
   FillFrequency,
 } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
+import type { PracticeMode } from "@/types/practice";
 
 interface PracticeSettingsProps {
   bpm: number;
@@ -24,6 +26,7 @@ interface PracticeSettingsProps {
   onHumanizationChange: (amount: number) => void;
   onSwingChange: (amount: number) => void;
   onTapTempo: () => void;
+  practiceMode: PracticeMode;
   status: AudioEngineStatus;
   swing: number;
   timeSignature: TimeSignature;
@@ -41,18 +44,26 @@ export function PracticeSettings({
   onHumanizationChange,
   onSwingChange,
   onTapTempo,
+  practiceMode,
   status,
   swing,
   timeSignature,
 }: PracticeSettingsProps) {
   return (
-    <aside className="order-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-      <BpmControls
-        bpm={bpm}
-        defaultBpm={defaultBpm}
-        onChange={onBpmChange}
-        onTap={onTapTempo}
+    <aside className="order-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+      <GuidedPracticePanel
+        activeTimeSignature={timeSignature}
+        sessionDisabled={isSessionActive(status)}
       />
+
+      {practiceMode === "tempoTrainer" ? null : (
+        <BpmControls
+          bpm={bpm}
+          defaultBpm={defaultBpm}
+          onChange={onBpmChange}
+          onTap={onTapTempo}
+        />
+      )}
 
       <CountInControl
         disabled={isSessionActive(status)}
@@ -71,7 +82,7 @@ export function PracticeSettings({
       />
 
       <Link
-        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 lg:col-span-1"
+        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 xl:col-span-1"
         href="/patterns"
       >
         <LibraryBig aria-hidden="true" className="size-4" />

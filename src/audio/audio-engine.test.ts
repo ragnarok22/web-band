@@ -19,6 +19,7 @@ function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
     bpm: 90,
     countInMeasures,
     fillFrequency: null,
+    guidedPractice: { mode: "drums" },
     humanization: 0,
     masterVolume: 0.8,
     mixer: createDefaultMixerSettings(),
@@ -29,10 +30,13 @@ function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
 
 class FakeAudioRuntime implements AudioRuntime {
   readonly callbacks: RuntimeCallback[] = [];
+  readonly drawCallbacks: Array<() => void> = [];
   readonly setBpmCalls: Array<{ bpm: number; smooth: boolean }> = [];
+  readonly setBpmAtTimeCalls: Array<{ bpm: number; time: number }> = [];
   readonly setSwingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
     [];
   contextState: AudioContextState = "running";
+  deferDraws = false;
   state: RuntimeTransportState = "stopped";
   startError: Error | null = null;
   startPromise: Promise<void> | null = null;
@@ -56,7 +60,11 @@ class FakeAudioRuntime implements AudioRuntime {
   }
   resetTransport(): void {}
   scheduleDraw(callback: () => void): void {
-    callback();
+    if (this.deferDraws) {
+      this.drawCallbacks.push(callback);
+    } else {
+      callback();
+    }
   }
   scheduleRepeat(callback: RuntimeCallback): number {
     this.callbacks.push(callback);
@@ -64,6 +72,9 @@ class FakeAudioRuntime implements AudioRuntime {
   }
   setBpm(bpm: number, smooth: boolean): void {
     this.setBpmCalls.push({ bpm, smooth });
+  }
+  setBpmAtTime(bpm: number, time: number): void {
+    this.setBpmAtTimeCalls.push({ bpm, time });
   }
   setSwing(amount: number, subdivision: "8n" | "16n"): void {
     this.setSwingCalls.push({ amount, subdivision });
@@ -119,8 +130,12 @@ describe("audio engine", () => {
     expect(useAudioStore.getState().status).toBe("paused");
     expect(instruments.stop).toHaveBeenCalled();
 
-    await engine.play(playbackConfiguration());
+    const callbackCount = runtime.callbacks.length;
+    const bpmCallCount = runtime.setBpmCalls.length;
+    await engine.play({ ...playbackConfiguration(), bpm: 140 });
     expect(useAudioStore.getState().status).toBe("playing");
+    expect(runtime.callbacks).toHaveLength(callbackCount);
+    expect(runtime.setBpmCalls).toHaveLength(bpmCallCount);
 
     engine.stop();
     expect(useAudioStore.getState().status).toBe("stopped");
@@ -208,5 +223,165 @@ describe("audio engine", () => {
     await engine.play(configuration);
 
     expect(instruments.setMixer).toHaveBeenCalledWith(configuration.mixer);
+  });
+
+  it("starts tempo training at its start BPM and ignores manual BPM changes", async () => {
+    const runtime = new FakeAudioRuntime();
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    const configuration = {
+      ...playbackConfiguration(0),
+      bpm: 140,
+      guidedPractice: {
+        mode: "tempoTrainer" as const,
+        tempoTrainer: {
+          endBpm: 64,
+          increment: 2,
+          interval: { measures: 1, type: "measures" as const },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: false,
+        },
+      },
+    };
+
+    await engine.play(configuration);
+    engine.setBpm(180);
+
+    expect(runtime.setBpmCalls).toEqual([{ bpm: 60, smooth: false }]);
+    for (let step = 0; step <= 16; step += 1) {
+      runtime.callbacks[0]?.(5 + step / 4);
+    }
+    expect(runtime.setBpmAtTimeCalls).toEqual([{ bpm: 62, time: 9 }]);
+  });
+
+  it("restores only reset-on-stop tempo trainers to their starting BPM", async () => {
+    const runtime = new FakeAudioRuntime();
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    const tempoTrainer = {
+      endBpm: 100,
+      increment: 5,
+      interval: { measures: 1, type: "measures" as const },
+      resetToStartingBpmOnStop: true,
+      startBpm: 70,
+      stopAtTarget: false,
+    };
+
+    await engine.play({
+      ...playbackConfiguration(0),
+      guidedPractice: { mode: "tempoTrainer", tempoTrainer },
+    });
+    engine.stop();
+    expect(runtime.setBpmCalls).toEqual([
+      { bpm: 70, smooth: false },
+      { bpm: 70, smooth: false },
+    ]);
+
+    await engine.play({
+      ...playbackConfiguration(0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          ...tempoTrainer,
+          resetToStartingBpmOnStop: false,
+        },
+      },
+    });
+    engine.stop();
+    expect(runtime.setBpmCalls).toHaveLength(3);
+  });
+
+  it("stops at target only when the audible Draw callback runs", async () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    await engine.play({
+      ...playbackConfiguration(0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 62,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: true,
+        },
+      },
+    });
+
+    for (let step = 0; step <= 16; step += 1) {
+      runtime.callbacks[0]?.(step / 4);
+    }
+    expect(runtime.state).toBe("started");
+
+    runtime.drawCallbacks.forEach((draw) => draw());
+    expect(runtime.state).toBe("stopped");
+    expect(useAudioStore.getState().status).toBe("stopped");
+  });
+
+  it("stops after resuming when pause cancels a pending target Draw", async () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    await engine.play({
+      ...playbackConfiguration(0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 62,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: true,
+        },
+      },
+    });
+
+    for (let step = 0; step <= 16; step += 1) {
+      runtime.callbacks[0]?.(step / 4);
+    }
+    const canceledDraws = [...runtime.drawCallbacks];
+    engine.pause();
+    canceledDraws.forEach((draw) => draw());
+    expect(runtime.state).toBe("paused");
+
+    await engine.play(playbackConfiguration(0));
+    runtime.callbacks[0]?.(17 / 4);
+    runtime.drawCallbacks.slice(canceledDraws.length).forEach((draw) => draw());
+
+    expect(runtime.state).toBe("stopped");
+    expect(useAudioStore.getState().status).toBe("stopped");
+  });
+
+  it("does not let stale target Draw callbacks stop a new session", async () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    await engine.play({
+      ...playbackConfiguration(0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 62,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: true,
+        },
+      },
+    });
+    for (let step = 0; step <= 16; step += 1) {
+      runtime.callbacks[0]?.(step / 4);
+    }
+    engine.stop();
+
+    await engine.play(playbackConfiguration(0));
+    expect(runtime.state).toBe("started");
+    runtime.drawCallbacks.forEach((draw) => draw());
+
+    expect(runtime.state).toBe("started");
+    expect(useAudioStore.getState().status).toBe("playing");
   });
 });

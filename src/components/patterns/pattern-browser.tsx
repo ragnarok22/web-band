@@ -104,6 +104,7 @@ export function PatternBrowser() {
         bpm: pattern.defaultBpm,
         countInMeasures: settings.countInMeasures,
         fillFrequency: settings.fillFrequency,
+        guidedPractice: { mode: "drums" },
         humanization: settings.humanization,
         masterVolume,
         mixer: settings.mixer,

@@ -23,17 +23,22 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
   isHydrated: false,
   recentPatternIds: [],
   hydrate: async () => {
-    await storageService.initialize();
-    const [customPatterns, favoritePatternIds] = await Promise.all([
-      storageService.patternRepository.list(),
-      storageService.favoriteRepository.list(),
-    ]);
-    set({
-      customPatterns,
-      favoritePatternIds,
-      isHydrated: true,
-      recentPatternIds: loadRecentPatternIds(),
-    });
+    try {
+      await storageService.initialize();
+      const [customPatterns, favoritePatternIds] = await Promise.all([
+        storageService.patternRepository.list(),
+        storageService.favoriteRepository.list(),
+      ]);
+      set({
+        customPatterns,
+        favoritePatternIds,
+        isHydrated: true,
+        recentPatternIds: loadRecentPatternIds(),
+      });
+    } catch (error) {
+      set({ isHydrated: true });
+      throw error;
+    }
   },
   markRecent: (patternId) => {
     const recentPatternIds = [

@@ -18,6 +18,14 @@ describe("favorite repository", () => {
 
     await repository.add("basic-rock");
     await repository.add("one-drop");
+    await database.favoritePatterns.put({
+      createdAt: "2026-07-18T14:00:00.000+02:00",
+      patternId: "offset-timestamp",
+    });
+    await database.favoritePatterns.put({
+      createdAt: "2026-07-18T12:00:00Z",
+      patternId: "noncanonical-timestamp",
+    });
     expect(new Set(await repository.list())).toEqual(
       new Set(["one-drop", "basic-rock"]),
     );

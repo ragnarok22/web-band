@@ -4,34 +4,57 @@ import { Minimize2, Play, Square } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
+import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
+import { PracticeNotices } from "@/components/practice/practice-notices";
 import { formatPracticeDuration } from "@/hooks/use-practice-timer";
-import { isSessionActive } from "@/lib/audio-status";
+import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
 import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
+import type { GuidedPracticeConfiguration } from "@/types/practice";
 
 interface FocusModeProps {
   bpm: number;
+  configuration: GuidedPracticeConfiguration;
   countInMeasures: CountInMeasures;
   elapsedSeconds: number;
+  errorMessage: string | null;
+  onDismissNotice: () => void;
   onExit: () => void;
   onPlay: () => void;
   onStop: () => void;
   pattern: DrumPattern;
+  showOnboarding: boolean;
   status: AudioEngineStatus;
 }
 
 export function FocusMode({
   bpm,
+  configuration,
   countInMeasures,
   elapsedSeconds,
+  errorMessage,
+  onDismissNotice,
   onExit,
   onPlay,
   onStop,
   pattern,
+  showOnboarding,
   status,
 }: FocusModeProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const active = isSessionActive(status);
+  const snapshot = useGuidanceSnapshot();
+  const canResume = status === "paused" || status === "suspended";
+  const canStop =
+    status === "initializing" ||
+    status === "counting-in" ||
+    status === "playing";
+  const displayedBpm =
+    configuration.mode === "tempoTrainer"
+      ? snapshot?.mode === "tempoTrainer"
+        ? snapshot.position.currentBpm
+        : configuration.tempoTrainer.startBpm
+      : bpm;
+  const transportLabel = canResume ? "Resume" : canStop ? "Stop" : "Play";
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -69,7 +92,7 @@ export function FocusMode({
               Tempo
             </p>
             <p className="text-foreground mt-2 text-6xl font-black tracking-[-0.06em] tabular-nums sm:text-8xl">
-              {bpm}
+              {displayedBpm}
             </p>
             <p className="text-muted text-xs font-bold">BPM</p>
           </div>
@@ -83,23 +106,33 @@ export function FocusMode({
           </div>
         </div>
 
+        <GuidedPracticeDisplay
+          configuration={configuration}
+          timeSignature={pattern.timeSignature}
+        />
         <BeatVisualizer
           countInMeasures={countInMeasures}
           pattern={pattern}
           status={status}
         />
+        <PracticeNotices
+          countInMeasures={countInMeasures}
+          errorMessage={errorMessage}
+          onDismiss={onDismissNotice}
+          showOnboarding={showOnboarding}
+        />
 
         <button
-          className={`mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] ${active ? "bg-surface-elevated text-foreground border-border border" : "bg-accent text-accent-ink"}`}
-          onClick={active ? onStop : onPlay}
+          className={`mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] ${canStop ? "bg-surface-elevated text-foreground border-border border" : "bg-accent text-accent-ink"}`}
+          onClick={canStop ? onStop : onPlay}
           type="button"
         >
-          {active ? (
+          {canStop ? (
             <Square aria-hidden="true" className="size-6 fill-current" />
           ) : (
             <Play aria-hidden="true" className="size-7 fill-current" />
           )}
-          {active ? "Stop" : "Play"}
+          {transportLabel}
         </button>
       </div>
     </main>

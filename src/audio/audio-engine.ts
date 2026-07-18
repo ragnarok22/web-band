@@ -14,11 +14,13 @@ import type {
   MixerSettings,
 } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
+import type { GuidedPracticeConfiguration } from "@/types/practice";
 
 export interface PlaybackConfiguration {
   bpm: number;
   countInMeasures: CountInMeasures;
   fillFrequency: FillFrequency;
+  guidedPractice: GuidedPracticeConfiguration;
   humanization: number;
   masterVolume: number;
   mixer: MixerSettings;
@@ -39,6 +41,7 @@ export type InstrumentFactory = (
 ) => ManagedInstruments;
 
 export class AudioEngine {
+  private activeGuidedPractice: GuidedPracticeConfiguration | null = null;
   private currentPhase: "count-in" | "pattern" | null = null;
   private instruments: ManagedInstruments | null = null;
   private lifecycleGeneration = 0;
@@ -70,16 +73,6 @@ export class AudioEngine {
         if (!this.isLifecycleCurrent(generation)) return;
       }
 
-      this.setBpm(
-        configuration.bpm,
-        this.runtime.getTransportState() !== "stopped",
-      );
-      this.setMasterVolume(configuration.masterVolume);
-      this.setMixer(configuration.mixer);
-      this.setFillFrequency(configuration.fillFrequency);
-      this.setHumanization(configuration.humanization);
-      this.setSwing(configuration.swing);
-
       if (this.runtime.getTransportState() === "paused") {
         this.runtime.startTransport();
         useAudioStore
@@ -99,11 +92,23 @@ export class AudioEngine {
         return;
       }
 
+      const startingBpm =
+        configuration.guidedPractice.mode === "tempoTrainer"
+          ? configuration.guidedPractice.tempoTrainer.startBpm
+          : configuration.bpm;
+      this.runtime.setBpm(clampBpm(startingBpm), false);
+      this.setMasterVolume(configuration.masterVolume);
+      this.setMixer(configuration.mixer);
+      this.setFillFrequency(configuration.fillFrequency);
+      this.setHumanization(configuration.humanization);
+      this.setSwing(configuration.swing);
       this.runtime.stopTransport();
       this.runtime.resetTransport();
       this.patternScheduler?.schedule(configuration.pattern, {
+        bpm: startingBpm,
         countInMeasures: configuration.countInMeasures,
         fillFrequency: configuration.fillFrequency,
+        guidedPractice: configuration.guidedPractice,
         humanization: configuration.humanization,
         onPatternStarted: () => {
           if (
@@ -115,8 +120,18 @@ export class AudioEngine {
           this.currentPhase = "pattern";
           useAudioStore.getState().setStatus("playing");
         },
+        onTargetStop: () => {
+          if (
+            !this.isLifecycleCurrent(generation) ||
+            this.runtime.getTransportState() !== "started"
+          ) {
+            return;
+          }
+          this.stop();
+        },
         swing: configuration.swing,
       });
+      this.activeGuidedPractice = configuration.guidedPractice;
       this.currentPhase =
         configuration.countInMeasures === 0 ? "pattern" : "count-in";
       useAudioStore
@@ -148,18 +163,31 @@ export class AudioEngine {
   }
 
   stop(): void {
+    const resetBpm =
+      this.activeGuidedPractice?.mode === "tempoTrainer" &&
+      this.activeGuidedPractice.tempoTrainer.resetToStartingBpmOnStop
+        ? this.activeGuidedPractice.tempoTrainer.startBpm
+        : null;
     this.lifecycleGeneration += 1;
     this.runtime.stopTransport();
     this.runtime.resetTransport();
     this.patternScheduler?.clear();
     this.instruments?.stop();
     this.currentPhase = null;
+    this.activeGuidedPractice = null;
+    if (resetBpm !== null) {
+      this.runtime.setBpm(clampBpm(resetBpm), false);
+    }
 
     useAudioStore.getState().setStatus("stopped");
   }
 
   setBpm(bpm: number, smooth = true): void {
-    this.runtime.setBpm(clampBpm(bpm), smooth);
+    if (this.activeGuidedPractice?.mode === "tempoTrainer") return;
+
+    const nextBpm = clampBpm(bpm);
+    this.runtime.setBpm(nextBpm, smooth);
+    this.patternScheduler?.setBpm(nextBpm);
   }
 
   setMasterVolume(volume: number): void {
@@ -194,8 +222,11 @@ export class AudioEngine {
       return false;
     }
 
-    this.patternScheduler.changePattern(pattern, onPatternChanged, immediate);
-    return true;
+    return this.patternScheduler.changePattern(
+      pattern,
+      onPatternChanged,
+      immediate,
+    );
   }
 
   dispose(): void {

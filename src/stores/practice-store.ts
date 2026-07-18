@@ -7,15 +7,20 @@ import {
 } from "@/db/repositories/settings-repository";
 import { clampBpm } from "@/lib/musical-time";
 import { clampUnit, createDefaultMixerSettings } from "@/lib/mixer";
+import { isPracticePresetConfiguration } from "@/lib/practice-validation";
 import type {
   CountInMeasures,
   FillFrequency,
   MixerGroup,
   MixerSettings,
 } from "@/types/audio";
-import type { PracticeSettings } from "@/types/persistence";
+import type {
+  PracticePresetConfiguration,
+  PracticeSettings,
+} from "@/types/persistence";
 
 interface PracticeStore extends PracticeSettings {
+  applyConfiguration: (configuration: PracticePresetConfiguration) => void;
   hasHydrated: boolean;
   hydrate: () => void;
   resetBpm: (bpm: number) => void;
@@ -62,6 +67,19 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
 
   return {
     ...defaultPracticeSettings,
+    applyConfiguration: (configuration) => {
+      if (!isPracticePresetConfiguration(configuration)) {
+        throw new Error("Practice preset configuration is invalid.");
+      }
+      update({
+        bpm: configuration.bpm,
+        countInMeasures: configuration.countInMeasures,
+        fillFrequency: configuration.fillFrequency,
+        humanization: configuration.humanization,
+        selectedPatternId: configuration.patternId,
+        swing: configuration.swing,
+      });
+    },
     hasHydrated: false,
     hydrate: () => set({ ...loadPracticeSettings(), hasHydrated: true }),
     resetBpm: (bpm) => update({ bpm: clampBpm(bpm) }),

@@ -21,6 +21,7 @@ export interface AudioRuntime {
     duration?: string,
   ): number;
   setBpm(bpm: number, smooth: boolean): void;
+  setBpmAtTime(bpm: number, time: number): void;
   setSwing(amount: number, subdivision: RuntimeSwingSubdivision): void;
   setTimeSignature(numerator: number, denominator: number): void;
   startAudio(): Promise<void>;
@@ -88,6 +89,10 @@ export class ToneAudioRuntime implements AudioRuntime {
     } else {
       bpmSignal.value = bpm;
     }
+  }
+
+  setBpmAtTime(bpm: number, time: number): void {
+    Tone.getTransport().bpm.setValueAtTime(bpm, time);
   }
 
   setSwing(amount: number, subdivision: RuntimeSwingSubdivision): void {

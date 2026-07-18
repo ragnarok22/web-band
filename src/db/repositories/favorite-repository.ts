@@ -1,11 +1,25 @@
 import type { EntityTable } from "dexie";
 
+import { isCanonicalUtcIsoTimestamp } from "@/lib/persistence-validation";
 import type { FavoritePatternRecord } from "@/types/persistence";
 
 export interface FavoriteRepository {
   add(patternId: string): Promise<void>;
   list(): Promise<string[]>;
   remove(patternId: string): Promise<void>;
+}
+
+function isFavoriteRecord(value: unknown): value is FavoritePatternRecord {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.patternId === "string" &&
+    record.patternId.trim() !== "" &&
+    isCanonicalUtcIsoTimestamp(record.createdAt)
+  );
 }
 
 export class DexieFavoriteRepository implements FavoriteRepository {
@@ -21,8 +35,15 @@ export class DexieFavoriteRepository implements FavoriteRepository {
   }
 
   async list(): Promise<string[]> {
-    const records = await this.table.orderBy("createdAt").reverse().toArray();
-    return records.map((record) => record.patternId);
+    const records = await this.table.toArray();
+    return records
+      .filter(isFavoriteRecord)
+      .sort(
+        (left, right) =>
+          right.createdAt.localeCompare(left.createdAt) ||
+          left.patternId.localeCompare(right.patternId),
+      )
+      .map((record) => record.patternId);
   }
 
   async remove(patternId: string): Promise<void> {

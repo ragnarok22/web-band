@@ -9,16 +9,22 @@ import {
   PatternScheduler,
   type PatternInstrumentPlayer,
 } from "@/audio/pattern-scheduler";
+import { GuidanceTimeline } from "@/audio/guidance-timeline";
 import { VisualTimeline } from "@/audio/visual-timeline";
 import { basicRockPattern } from "@/data/patterns/rock";
+import { utilityPatterns } from "@/data/patterns/utility";
+import { basicPopPattern } from "@/data/strumming-patterns";
+import type { GuidanceFrame } from "@/types/practice";
 
 function schedulerOptions(
   onPatternStarted = vi.fn(),
   countInMeasures: 0 | 1 | 2 | 4 = 1,
 ) {
   return {
+    bpm: 90,
     countInMeasures,
     fillFrequency: null,
+    guidedPractice: { mode: "drums" },
     humanization: 0,
     onPatternStarted,
     swing: 0,
@@ -36,6 +42,7 @@ class FakeAudioRuntime implements AudioRuntime {
   readonly cleared: number[] = [];
   readonly drawCallbacks: Array<() => void> = [];
   readonly repeats: ScheduledRepeat[] = [];
+  readonly scheduledBpmChanges: Array<{ bpm: number; time: number }> = [];
   readonly swingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
     [];
   bpm = 90;
@@ -81,6 +88,10 @@ class FakeAudioRuntime implements AudioRuntime {
   setBpm(bpm: number): void {
     this.bpm = bpm;
   }
+  setBpmAtTime(bpm: number, time: number): void {
+    this.bpm = bpm;
+    this.scheduledBpmChanges.push({ bpm, time });
+  }
   setSwing(amount: number, subdivision: "8n" | "16n"): void {
     this.swingCalls.push({ amount, subdivision });
   }
@@ -102,10 +113,17 @@ describe("pattern scheduler", () => {
       triggerCountIn: vi.fn(),
     };
     const timeline = new VisualTimeline();
+    const guidedTimeline = new GuidanceTimeline();
     const visuals = vi.fn();
     timeline.subscribe(visuals);
     const onPatternStarted = vi.fn();
-    const scheduler = new PatternScheduler(runtime, instruments, timeline);
+    const scheduler = new PatternScheduler(
+      runtime,
+      instruments,
+      timeline,
+      Math.random,
+      guidedTimeline,
+    );
 
     scheduler.schedule(basicRockPattern, schedulerOptions(onPatternStarted));
 
@@ -197,10 +215,17 @@ describe("pattern scheduler", () => {
       triggerCountIn: vi.fn(),
     };
     const timeline = new VisualTimeline();
+    const guidedTimeline = new GuidanceTimeline();
     const visuals = vi.fn();
     timeline.subscribe(visuals);
     const onPatternStarted = vi.fn();
-    const scheduler = new PatternScheduler(runtime, instruments, timeline);
+    const scheduler = new PatternScheduler(
+      runtime,
+      instruments,
+      timeline,
+      Math.random,
+      guidedTimeline,
+    );
 
     scheduler.schedule(basicRockPattern, schedulerOptions(onPatternStarted));
     const countInCallback = runtime.repeats[0]?.callback;
@@ -215,6 +240,7 @@ describe("pattern scheduler", () => {
     expect(instruments.trigger).toHaveBeenCalledTimes(2);
     expect(onPatternStarted).not.toHaveBeenCalled();
     expect(visuals).not.toHaveBeenCalled();
+    expect(guidedTimeline.getSnapshot()).toBeNull();
   });
 
   it("starts immediately when count-in is disabled", () => {
@@ -302,5 +328,333 @@ describe("pattern scheduler", () => {
     callback?.(7);
 
     expect(trigger).toHaveBeenCalledWith("crash", 7, 0.9);
+  });
+
+  it("does not advance guidance during count-in", () => {
+    const runtime = new FakeAudioRuntime();
+    const guidedTimeline = new GuidanceTimeline();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      Math.random,
+      guidedTimeline,
+    );
+    scheduler.schedule(basicRockPattern, schedulerOptions());
+
+    runtime.repeats[0]?.callback(1);
+    runtime.repeats[0]?.callback(2);
+    expect(guidedTimeline.getSnapshot()).toBeNull();
+
+    runtime.repeats[1]?.callback(3);
+    expect(guidedTimeline.getSnapshot()).toMatchObject({
+      absoluteSixteenth: 0,
+      elapsedSeconds: 0,
+      measure: 1,
+    });
+  });
+
+  it("publishes all sixteenth strum ticks over an eighth-note drum pattern", () => {
+    const runtime = new FakeAudioRuntime();
+    const guidedTimeline = new GuidanceTimeline();
+    const frames: GuidanceFrame[] = [];
+    guidedTimeline.subscribe((frame) => {
+      if (frame) frames.push(frame);
+    });
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      Math.random,
+      guidedTimeline,
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      guidedPractice: {
+        mode: "strumming",
+        strummingPattern: basicPopPattern,
+      },
+    });
+
+    const callback = runtime.repeats[0]?.callback;
+    for (let step = 0; step < 16; step += 1) callback?.(step / 10);
+
+    expect(
+      frames.map((frame) =>
+        frame.mode === "strumming" ? frame.position.stepIndex : -1,
+      ),
+    ).toEqual(Array.from({ length: 16 }, (_, index) => index));
+  });
+
+  it("sets tempo changes exactly at the scheduler callback time", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      bpm: 120,
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 64,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: false,
+        },
+      },
+    });
+
+    const callback = runtime.repeats[0]?.callback;
+    for (let step = 0; step <= 16; step += 1) callback?.(10 + step / 4);
+
+    expect(runtime.scheduledBpmChanges).toEqual([{ bpm: 62, time: 14 }]);
+  });
+
+  it("retains guided state across visual cancellation and resets it on clear", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const guidedTimeline = new GuidanceTimeline();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      Math.random,
+      guidedTimeline,
+    );
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+    const callback = runtime.repeats[0]?.callback;
+
+    for (let step = 0; step < 4; step += 1) callback?.(step);
+    scheduler.cancelPendingVisuals();
+    runtime.drawCallbacks.forEach((draw) => draw());
+    expect(guidedTimeline.getSnapshot()).toBeNull();
+
+    runtime.deferDraws = false;
+    callback?.(4);
+    expect(guidedTimeline.getSnapshot()).toMatchObject({
+      absoluteSixteenth: 4,
+    });
+    scheduler.clear();
+    expect(guidedTimeline.getSnapshot()).toBeNull();
+
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+    runtime.repeats.at(-1)?.callback(5);
+    expect(guidedTimeline.getSnapshot()).toMatchObject({
+      absoluteSixteenth: 0,
+    });
+  });
+
+  it("keeps guidance continuous when the drum pattern cursor resets", () => {
+    const runtime = new FakeAudioRuntime();
+    const guidedTimeline = new GuidanceTimeline();
+    const frames: GuidanceFrame[] = [];
+    guidedTimeline.subscribe((frame) => {
+      if (frame) frames.push(frame);
+    });
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      Math.random,
+      guidedTimeline,
+    );
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+    const callback = runtime.repeats[0]?.callback;
+    callback?.(0);
+    scheduler.changePattern(
+      { ...basicRockPattern, id: "guided-next", name: "Guided next" },
+      vi.fn(),
+    );
+    for (let step = 1; step <= 16; step += 1) callback?.(step);
+
+    expect(frames.map((frame) => frame.absoluteSixteenth)).toEqual(
+      Array.from({ length: 17 }, (_, index) => index),
+    );
+  });
+
+  it("signals target stop once from an audible Draw callback", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const onTargetStop = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 62,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: true,
+        },
+      },
+      onTargetStop,
+    });
+    const callback = runtime.repeats[0]?.callback;
+    for (let step = 0; step <= 20; step += 1) callback?.(step);
+
+    expect(onTargetStop).not.toHaveBeenCalled();
+    runtime.drawCallbacks.forEach((draw) => draw());
+    expect(onTargetStop).toHaveBeenCalledOnce();
+  });
+
+  it("publishes target guidance without scheduling the target downbeat", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferDraws = true;
+    const trigger = vi.fn();
+    const onTargetStop = vi.fn();
+    const guidedTimeline = new GuidanceTimeline();
+    const frames: GuidanceFrame[] = [];
+    guidedTimeline.subscribe((frame) => {
+      if (frame) frames.push(frame);
+    });
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      Math.random,
+      guidedTimeline,
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      guidedPractice: {
+        mode: "tempoTrainer",
+        tempoTrainer: {
+          endBpm: 62,
+          increment: 2,
+          interval: { measures: 1, type: "measures" },
+          resetToStartingBpmOnStop: false,
+          startBpm: 60,
+          stopAtTarget: true,
+        },
+      },
+      onTargetStop,
+    });
+    const callback = runtime.repeats[0]?.callback;
+    for (let step = 0; step < 16; step += 1) callback?.(step / 4);
+    trigger.mockClear();
+
+    callback?.(4);
+
+    expect(trigger).not.toHaveBeenCalled();
+    expect(onTargetStop).not.toHaveBeenCalled();
+    runtime.drawCallbacks.forEach((draw) => draw());
+    expect(frames.at(-1)).toMatchObject({
+      absoluteSixteenth: 16,
+      position: { currentBpm: 62, isAtTarget: true },
+    });
+    expect(onTargetStop).toHaveBeenCalledOnce();
+  });
+
+  it("rejects equal tempo trainer endpoints before scheduling playback", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+
+    expect(() =>
+      scheduler.schedule(basicRockPattern, {
+        ...schedulerOptions(),
+        guidedPractice: {
+          mode: "tempoTrainer",
+          tempoTrainer: {
+            endBpm: 90,
+            increment: 2,
+            interval: { measures: 1, type: "measures" },
+            resetToStartingBpmOnStop: false,
+            startBpm: 90,
+            stopAtTarget: true,
+          },
+        },
+      }),
+    ).toThrow("must be different");
+    expect(runtime.repeats).toHaveLength(0);
+  });
+
+  it("rejects only immediate cross-meter pattern changes while active", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    const onPatternChanged = vi.fn();
+    const sameMeterPattern = {
+      ...basicRockPattern,
+      id: "same-meter-rock",
+      name: "Same meter rock",
+    };
+    const sixEightPattern = utilityPatterns.find(
+      (pattern) => pattern.id === "simple-six-eight",
+    );
+    expect(sixEightPattern).toBeDefined();
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+
+    expect(
+      scheduler.changePattern(sixEightPattern!, onPatternChanged, true),
+    ).toBe(false);
+    expect(onPatternChanged).not.toHaveBeenCalled();
+    expect(
+      scheduler.changePattern(sameMeterPattern, onPatternChanged, true),
+    ).toBe(true);
+    expect(onPatternChanged).toHaveBeenCalledWith(sameMeterPattern);
+  });
+
+  it("rejects incompatible guided meter changes without applying them", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      guidedPractice: {
+        chordTrainer: {
+          progression: {
+            id: "meter-chord",
+            isBuiltIn: false,
+            name: "Meter chord",
+            steps: [
+              {
+                chord: "C",
+                duration: 1,
+                durationUnit: "measures",
+                id: "c",
+              },
+            ],
+          },
+          repeat: true,
+          showCountdown: false,
+        },
+        mode: "chords",
+      },
+    });
+    const onPatternChanged = vi.fn();
+    const sixEightPattern = utilityPatterns.find(
+      (pattern) => pattern.id === "simple-six-eight",
+    );
+    expect(sixEightPattern).toBeDefined();
+
+    expect(scheduler.changePattern(sixEightPattern!, onPatternChanged)).toBe(
+      false,
+    );
+    for (let step = 0; step <= 16; step += 1) {
+      runtime.repeats[0]?.callback(step);
+    }
+    expect(onPatternChanged).not.toHaveBeenCalled();
   });
 });

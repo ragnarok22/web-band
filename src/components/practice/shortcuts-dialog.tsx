@@ -3,6 +3,8 @@
 import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
+import { usePracticeModal } from "@/hooks/use-practice-modal";
+
 interface ShortcutsDialogProps {
   onClose: () => void;
   open: boolean;
@@ -20,6 +22,7 @@ const shortcuts = [
 
 export function ShortcutsDialog({ onClose, open }: ShortcutsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  usePracticeModal(open);
 
   useEffect(() => {
     const dialog = dialogRef.current;

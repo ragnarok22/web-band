@@ -44,11 +44,14 @@ export class MemoryPatternRepository implements PatternRepository {
   }
 
   async get(patternId: string): Promise<DrumPattern | undefined> {
-    return this.patterns.get(patternId);
+    const pattern = this.patterns.get(patternId);
+    return pattern ? structuredClone(pattern) : undefined;
   }
 
   async list(): Promise<DrumPattern[]> {
-    return Array.from(this.patterns.values());
+    return Array.from(this.patterns.values(), (pattern) =>
+      structuredClone(pattern),
+    );
   }
 
   async put(pattern: DrumPattern): Promise<void> {

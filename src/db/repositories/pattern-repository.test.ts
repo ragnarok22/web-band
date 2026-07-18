@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { basicRockPattern } from "@/data/patterns/rock";
 import { WebBandDatabase } from "@/db/database";
-import { DexiePatternRepository } from "@/db/repositories/pattern-repository";
+import {
+  DexiePatternRepository,
+  MemoryPatternRepository,
+} from "@/db/repositories/pattern-repository";
 import type { DrumPattern } from "@/types/pattern";
 
 let database: WebBandDatabase | null = null;
@@ -47,6 +50,24 @@ describe("Dexie pattern repository", () => {
 
     await expect(repository.put(basicRockPattern)).rejects.toThrow(
       "Only valid custom patterns can be saved.",
+    );
+  });
+
+  it("deep-clones patterns returned from memory", async () => {
+    const repository = new MemoryPatternRepository();
+    const pattern = createCustomPattern();
+
+    await repository.put(pattern);
+    const firstRead = await repository.get(pattern.id);
+    firstRead!.hits[0]!.velocity = 0;
+    expect((await repository.get(pattern.id))?.hits[0]?.velocity).toBe(
+      pattern.hits[0]?.velocity,
+    );
+
+    const firstList = await repository.list();
+    firstList[0]!.recommendedBpmRange.min = 200;
+    expect((await repository.list())[0]?.recommendedBpmRange.min).toBe(
+      pattern.recommendedBpmRange.min,
     );
   });
 });

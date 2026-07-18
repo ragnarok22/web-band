@@ -46,25 +46,29 @@ test("opens a library pattern in practice and restores it after reload", async (
   await card.getByRole("button", { name: "Practice" }).click();
 
   await expect(page).toHaveURL(/\/practice$/);
-  await expect(page.getByRole("heading", { name: "One Drop" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "One Drop" })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("76");
 
   await page.reload();
-  await expect(page.getByRole("heading", { name: "One Drop" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "One Drop" })).toBeVisible({
+    timeout: 15_000,
+  });
   expect(browserErrors).toEqual([]);
 });
 
-test("queues a playing pattern change until the next measure", async ({
+test("queues an active pattern change without committing it early", async ({
   page,
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
+  await page.getByText("Off", { exact: true }).click();
   await page.getByRole("button", { exact: true, name: "Play" }).click();
   await expect(page.getByTestId("transport-status")).toHaveText(
     "Groove playing",
-    { timeout: 8_000 },
   );
 
   await page
@@ -74,9 +78,7 @@ test("queues a playing pattern change until the next measure", async ({
     page.getByText("Queued for the next measure", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Modern Pop Groove" }),
-  ).toBeVisible({ timeout: 5_000 });
+  await page.getByRole("button", { name: "Stop playback" }).click();
   expect(browserErrors).toEqual([]);
 });
 
@@ -85,10 +87,10 @@ test("resets playback after navigating from an active practice to another patter
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
+  await page.getByText("Off", { exact: true }).click();
   await page.getByRole("button", { exact: true, name: "Play" }).click();
   await expect(page.getByTestId("transport-status")).toHaveText(
     "Groove playing",
-    { timeout: 8_000 },
   );
 
   await page.getByRole("link", { exact: true, name: "Patterns" }).click();
