@@ -1609,7 +1609,7 @@ Implement the application in this order.
 - Mixer.
 - Wake Lock.
 
-## Phase 5: Guided practice
+## ✅ Phase 5: Guided practice
 
 - Tempo trainer.
 - Chord progression trainer.

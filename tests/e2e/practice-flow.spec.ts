@@ -170,3 +170,34 @@ test("persists and restores a guided tempo practice preset", async ({
   ).toBeVisible();
   expect(browserErrors).toEqual([]);
 });
+
+test("advances the tempo trainer on a musical boundary", async ({ page }) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.goto("/practice");
+  const practiceMode = page.getByRole("radiogroup", {
+    name: "Practice mode",
+  });
+
+  await practiceMode
+    .getByRole("radio", { name: /Tempo/ })
+    .locator("..")
+    .click();
+  await page.getByText("Off", { exact: true }).click();
+  await page.getByRole("spinbutton", { name: "Start BPM" }).fill("200");
+  await page.getByRole("spinbutton", { name: "Target BPM" }).fill("205");
+  await page.getByRole("spinbutton", { name: "Change by" }).fill("5");
+  await page.getByRole("spinbutton", { name: "Interval length" }).fill("1");
+  await page.getByRole("checkbox", { name: "Stop at target" }).uncheck();
+
+  await expect(page.getByTestId("trainer-current-bpm")).toContainText("200");
+  await page.getByRole("button", { exact: true, name: "Play" }).click();
+  await expect(page.getByTestId("trainer-current-bpm")).toContainText("205", {
+    timeout: 5_000,
+  });
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
+
+  await page.getByRole("button", { name: "Stop playback" }).click();
+  expect(browserErrors).toEqual([]);
+});

@@ -12,7 +12,10 @@ import { isSessionActive } from "@/lib/audio-status";
 import { isStrummingPatternMeterCompatible } from "@/lib/guided-practice";
 import { clampBpm } from "@/lib/musical-time";
 import { arePracticePresetConfigurationsEqual } from "@/lib/practice-preset";
-import { validatePracticePresetConfiguration } from "@/lib/practice-validation";
+import {
+  validateGuidedPracticeConfiguration,
+  validatePracticePresetConfiguration,
+} from "@/lib/practice-validation";
 import { validatePattern } from "@/lib/pattern-validation";
 import { useAudioStore } from "@/stores/audio-store";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
@@ -42,6 +45,41 @@ function shouldShowOnboarding(): boolean {
 
 function syncMixer(): void {
   getAudioEngine().setMixer(usePracticeStore.getState().mixer);
+}
+
+function changeMixerVolume(group: MixerGroup, volume: number): void {
+  usePracticeStore.getState().setMixerVolume(group, volume);
+  syncMixer();
+}
+
+function changeMixerMuted(group: MixerGroup, muted: boolean): void {
+  usePracticeStore.getState().setMixerMuted(group, muted);
+  syncMixer();
+}
+
+function changeMixerSolo(group: MixerGroup, solo: boolean): void {
+  usePracticeStore.getState().setMixerSolo(group, solo);
+  syncMixer();
+}
+
+function restoreMixer(): void {
+  usePracticeStore.getState().resetMixer();
+  syncMixer();
+}
+
+function changeSwing(amount: number): void {
+  usePracticeStore.getState().setSwing(amount);
+  getAudioEngine().setSwing(amount);
+}
+
+function changeHumanization(amount: number): void {
+  usePracticeStore.getState().setHumanization(amount);
+  getAudioEngine().setHumanization(amount);
+}
+
+function changeFillFrequency(frequency: FillFrequency): void {
+  usePracticeStore.getState().setFillFrequency(frequency);
+  getAudioEngine().setFillFrequency(frequency);
 }
 
 export function usePracticeController() {
@@ -177,41 +215,6 @@ export function usePracticeController() {
     });
   }
 
-  function changeMixerVolume(group: MixerGroup, volume: number): void {
-    usePracticeStore.getState().setMixerVolume(group, volume);
-    syncMixer();
-  }
-
-  function changeMixerMuted(group: MixerGroup, muted: boolean): void {
-    usePracticeStore.getState().setMixerMuted(group, muted);
-    syncMixer();
-  }
-
-  function changeMixerSolo(group: MixerGroup, solo: boolean): void {
-    usePracticeStore.getState().setMixerSolo(group, solo);
-    syncMixer();
-  }
-
-  function restoreMixer(): void {
-    usePracticeStore.getState().resetMixer();
-    syncMixer();
-  }
-
-  function changeSwing(amount: number): void {
-    usePracticeStore.getState().setSwing(amount);
-    getAudioEngine().setSwing(amount);
-  }
-
-  function changeHumanization(amount: number): void {
-    usePracticeStore.getState().setHumanization(amount);
-    getAudioEngine().setHumanization(amount);
-  }
-
-  function changeFillFrequency(frequency: FillFrequency): void {
-    usePracticeStore.getState().setFillFrequency(frequency);
-    getAudioEngine().setFillFrequency(frequency);
-  }
-
   function dismissOnboarding(): void {
     try {
       window.localStorage.setItem(ONBOARDING_KEY, "true");
@@ -222,6 +225,26 @@ export function usePracticeController() {
   }
 
   async function play(): Promise<void> {
+    const guidedValidation =
+      validateGuidedPracticeConfiguration(guidedPractice);
+    if (!guidedValidation.success) {
+      useAudioStore
+        .getState()
+        .setError(
+          `Guided practice is invalid: ${guidedValidation.errors.join(" ")}`,
+        );
+      return;
+    }
+    if (
+      guidedPractice.mode === "tempoTrainer" &&
+      guidedPractice.tempoTrainer.startBpm ===
+        guidedPractice.tempoTrainer.endBpm
+    ) {
+      useAudioStore
+        .getState()
+        .setError("Starting and target BPM must be different.");
+      return;
+    }
     if (
       guidedPractice.mode === "strumming" &&
       !isStrummingPatternMeterCompatible(

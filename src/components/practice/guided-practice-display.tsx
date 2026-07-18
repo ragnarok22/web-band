@@ -141,7 +141,10 @@ export function GuidedPracticeDisplay({
             <p className="text-muted text-xs font-extrabold uppercase">
               Current tempo
             </p>
-            <p className="text-accent mt-1 text-4xl font-black tabular-nums">
+            <p
+              className="text-accent mt-1 text-4xl font-black tabular-nums"
+              data-testid="trainer-current-bpm"
+            >
               {position.currentBpm}
               <span className="ml-1 text-xs tracking-wider">BPM</span>
             </p>

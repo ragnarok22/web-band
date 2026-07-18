@@ -32,6 +32,7 @@ export function TempoTrainerPanel({
     configuration.interval.type === "measures"
       ? configuration.interval.measures
       : configuration.interval.seconds;
+  const hasMatchingTempos = configuration.startBpm === configuration.endBpm;
 
   function updateNumber(
     field: NumericField,
@@ -209,6 +210,11 @@ export function TempoTrainerPanel({
           role="alert"
         >
           {invalidDraft.message}
+        </p>
+      ) : null}
+      {hasMatchingTempos ? (
+        <p className="text-danger mt-2 text-sm font-bold" role="alert">
+          Starting and target BPM must be different.
         </p>
       ) : null}
 
