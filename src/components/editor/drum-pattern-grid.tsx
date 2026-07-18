@@ -1,7 +1,7 @@
 "use client";
 
 import { Clipboard, ClipboardPaste, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useState, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
 
 import { HitPropertiesDialog } from "@/components/editor/hit-properties-dialog";
 import {
@@ -33,6 +33,14 @@ interface CellAddress {
   step: number;
 }
 
+interface GridInteractionState {
+  advancedCell: CellAddress | null;
+  focusedCell: CellAddress;
+  selected: CellAddress | null;
+  structureKey: string;
+  targetMeasure: number;
+}
+
 const instrumentLabels: Record<DrumInstrument, string> = {
   clap: "Clap",
   closedHat: "Closed hat",
@@ -53,50 +61,76 @@ export function DrumPatternGrid({
   onChange,
   pattern,
 }: DrumPatternGridProps) {
-  const [selected, setSelected] = useState<CellAddress | null>(null);
-  const [advancedCell, setAdvancedCell] = useState<CellAddress | null>(null);
-  const [focusedCell, setFocusedCell] = useState<CellAddress>({
-    instrument: editorInstruments[0],
-    step: 0,
-  });
-  const [clipboard, setClipboard] = useState<MeasureClipboard | null>(null);
-  const [targetMeasure, setTargetMeasure] = useState(0);
-  const [announcement, setAnnouncement] = useState("");
   const stepsPerBar = getStepsPerBar(
     pattern.timeSignature,
     pattern.subdivision,
   );
   const stepsPerBeat = pattern.subdivision / pattern.timeSignature.denominator;
   const stepCount = getPatternStepCount(pattern);
+  const structureKey = `${pattern.bars}:${stepCount}`;
+  const [interactionState, setInteractionState] =
+    useState<GridInteractionState>(() => ({
+      advancedCell: null,
+      focusedCell: { instrument: editorInstruments[0], step: 0 },
+      selected: null,
+      structureKey,
+      targetMeasure: 0,
+    }));
+  const [clipboard, setClipboard] = useState<MeasureClipboard | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const currentInteractionState =
+    interactionState.structureKey === structureKey
+      ? interactionState
+      : {
+          advancedCell:
+            interactionState.advancedCell &&
+            interactionState.advancedCell.step < stepCount
+              ? interactionState.advancedCell
+              : null,
+          focusedCell: {
+            ...interactionState.focusedCell,
+            step: Math.min(interactionState.focusedCell.step, stepCount - 1),
+          },
+          selected:
+            interactionState.selected &&
+            interactionState.selected.step < stepCount
+              ? interactionState.selected
+              : null,
+          structureKey,
+          targetMeasure: Math.min(
+            interactionState.targetMeasure,
+            pattern.bars - 1,
+          ),
+        };
+  if (currentInteractionState !== interactionState) {
+    setInteractionState(currentInteractionState);
+  }
+  const { advancedCell, focusedCell, selected, targetMeasure } =
+    currentInteractionState;
   const beatLabels = getBeatLabels(pattern);
   const hitsByCell = new Map(
     pattern.hits.map((hit) => [`${hit.instrument}:${hit.step}`, hit]),
   );
   const safeTargetMeasure = Math.min(targetMeasure, pattern.bars - 1);
 
-  useEffect(() => {
-    setTargetMeasure((current) => Math.min(current, pattern.bars - 1));
-    setSelected((current) =>
-      current && current.step < stepCount ? current : null,
-    );
-    setAdvancedCell((current) =>
-      current && current.step < stepCount ? current : null,
-    );
-    setFocusedCell((current) => ({
-      ...current,
-      step: Math.min(current.step, stepCount - 1),
-    }));
-  }, [pattern.bars, stepCount]);
+  function updateInteractionState(
+    changes: Partial<Omit<GridInteractionState, "structureKey">>,
+  ): void {
+    setInteractionState({
+      ...currentInteractionState,
+      ...changes,
+      structureKey,
+    });
+  }
 
   function selectAndCycle(instrument: DrumInstrument, step: number): void {
-    setSelected({ instrument, step });
+    updateInteractionState({ selected: { instrument, step } });
     onChange(cyclePatternCell(pattern, instrument, step));
   }
 
   function openAdvanced(instrument: DrumInstrument, step: number): void {
     const address = { instrument, step };
-    setSelected(address);
-    setAdvancedCell(address);
+    updateInteractionState({ advancedCell: address, selected: address });
   }
 
   function copyMeasure(): void {
@@ -125,7 +159,7 @@ export function DrumPatternGrid({
     );
     if (!address) return;
     event.preventDefault();
-    setFocusedCell(address);
+    updateInteractionState({ focusedCell: address });
     document.getElementById(cellId(address))?.focus();
   }
 
@@ -134,60 +168,21 @@ export function DrumPatternGrid({
       aria-labelledby="pattern-grid-heading"
       className="border-border bg-surface overflow-hidden rounded-2xl border"
     >
-      <header className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <div>
-          <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
-            Step sequencer
-          </p>
-          <h2 className="mt-1 text-xl font-black" id="pattern-grid-heading">
-            Build the pocket
-          </h2>
-          <p className="text-muted mt-1 text-xs">
-            Tap a cell to cycle 70, 85, and 100 percent velocity.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="text-muted text-[0.62rem] font-extrabold tracking-wider uppercase">
-            Target measure
-            <select
-              aria-label="Target measure"
-              className="border-border bg-surface-elevated text-foreground mt-1 block min-h-11 rounded-xl border px-3 text-sm font-bold"
-              disabled={disabled}
-              onChange={(event) => setTargetMeasure(Number(event.target.value))}
-              value={safeTargetMeasure}
-            >
-              {Array.from({ length: pattern.bars }, (_, index) => (
-                <option key={index} value={index}>
-                  Measure {index + 1}
-                </option>
-              ))}
-            </select>
-          </label>
-          <GridAction
-            label="Copy measure"
-            onClick={copyMeasure}
-            disabled={disabled}
-          >
-            <Clipboard aria-hidden="true" className="size-4" />
-          </GridAction>
-          <GridAction
-            label="Paste measure"
-            onClick={pasteMeasure}
-            disabled={disabled || !clipboard}
-          >
-            <ClipboardPaste aria-hidden="true" className="size-4" />
-          </GridAction>
-          <GridAction
-            label="Edit selected hit properties"
-            onClick={() => {
-              if (selected) openAdvanced(selected.instrument, selected.step);
-            }}
-            disabled={disabled || !selected}
-          >
-            <SlidersHorizontal aria-hidden="true" className="size-4" />
-          </GridAction>
-        </div>
-      </header>
+      <GridToolbar
+        bars={pattern.bars}
+        canEditSelected={Boolean(selected)}
+        canPaste={Boolean(clipboard)}
+        disabled={disabled}
+        onCopy={copyMeasure}
+        onEditSelected={() => {
+          if (selected) openAdvanced(selected.instrument, selected.step);
+        }}
+        onPaste={pasteMeasure}
+        onTargetMeasureChange={(targetMeasure) =>
+          updateInteractionState({ targetMeasure })
+        }
+        targetMeasure={safeTargetMeasure}
+      />
 
       <p aria-live="polite" className="sr-only">
         {announcement}
@@ -301,7 +296,11 @@ export function DrumPatternGrid({
                         event.preventDefault();
                         openAdvanced(instrument, step);
                       }}
-                      onFocus={() => setFocusedCell({ instrument, step })}
+                      onFocus={() =>
+                        updateInteractionState({
+                          focusedCell: { instrument, step },
+                        })
+                      }
                       onKeyDown={(event) => moveFocus(event, instrument, step)}
                       tabIndex={!disabled && isFocused ? 0 : -1}
                       type="button"
@@ -326,7 +325,7 @@ export function DrumPatternGrid({
             `${advancedCell.instrument}:${advancedCell.step}`,
           )}
           instrument={advancedCell.instrument}
-          onClose={() => setAdvancedCell(null)}
+          onClose={() => updateInteractionState({ advancedCell: null })}
           onSave={(changes) => {
             if (advancedCell.step >= stepCount) return;
             onChange(
@@ -343,6 +342,81 @@ export function DrumPatternGrid({
         />
       ) : null}
     </section>
+  );
+}
+
+function GridToolbar({
+  bars,
+  canEditSelected,
+  canPaste,
+  disabled,
+  onCopy,
+  onEditSelected,
+  onPaste,
+  onTargetMeasureChange,
+  targetMeasure,
+}: {
+  bars: number;
+  canEditSelected: boolean;
+  canPaste: boolean;
+  disabled: boolean;
+  onCopy: () => void;
+  onEditSelected: () => void;
+  onPaste: () => void;
+  onTargetMeasureChange: (measure: number) => void;
+  targetMeasure: number;
+}) {
+  return (
+    <header className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div>
+        <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+          Step sequencer
+        </p>
+        <h2 className="mt-1 text-xl font-black" id="pattern-grid-heading">
+          Build the pocket
+        </h2>
+        <p className="text-muted mt-1 text-xs">
+          Tap a cell to cycle 70, 85, and 100 percent velocity.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="text-muted text-[0.62rem] font-extrabold tracking-wider uppercase">
+          Target measure
+          <select
+            aria-label="Target measure"
+            className="border-border bg-surface-elevated text-foreground mt-1 block min-h-11 rounded-xl border px-3 text-sm font-bold"
+            disabled={disabled}
+            onChange={(event) =>
+              onTargetMeasureChange(Number(event.target.value))
+            }
+            value={targetMeasure}
+          >
+            {Array.from({ length: bars }, (_, index) => (
+              <option key={index} value={index}>
+                Measure {index + 1}
+              </option>
+            ))}
+          </select>
+        </label>
+        <GridAction label="Copy measure" onClick={onCopy} disabled={disabled}>
+          <Clipboard aria-hidden="true" className="size-4" />
+        </GridAction>
+        <GridAction
+          label="Paste measure"
+          onClick={onPaste}
+          disabled={disabled || !canPaste}
+        >
+          <ClipboardPaste aria-hidden="true" className="size-4" />
+        </GridAction>
+        <GridAction
+          label="Edit selected hit properties"
+          onClick={onEditSelected}
+          disabled={disabled || !canEditSelected}
+        >
+          <SlidersHorizontal aria-hidden="true" className="size-4" />
+        </GridAction>
+      </div>
+    </header>
   );
 }
 
