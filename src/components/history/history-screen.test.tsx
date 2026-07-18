@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -123,5 +123,41 @@ describe("history screen", () => {
     expect(
       await screen.findByRole("heading", { name: "No sessions yet" }),
     ).toBeVisible();
+  });
+
+  it("keeps destructive failures visible inside the open dialog", async () => {
+    const user = userEvent.setup();
+    usePracticeHistoryStore.setState({
+      deleteOne: vi
+        .fn()
+        .mockRejectedValue(new Error("Journal storage is locked.")),
+      sessions: [session("one", "Basic Rock", "2026-07-18T18:00:00.000Z", 60)],
+    });
+    render(<HistoryScreen />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Delete Basic Rock session" }),
+    );
+    const dialog = screen.getByRole("dialog", { name: "Delete this session?" });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Delete session" }),
+    );
+
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Journal storage is locked.",
+    );
+  });
+
+  it("contains long historical pattern names at narrow widths", () => {
+    const longName = "A".repeat(100);
+    usePracticeHistoryStore.setState({
+      sessions: [session("long", longName, "2026-07-18T18:00:00.000Z", 60)],
+    });
+    render(<HistoryScreen />);
+
+    const heading = screen.getByRole("heading", { name: longName });
+    expect(heading).toHaveClass("truncate");
+    expect(heading.closest("li")).toHaveClass("[content-visibility:auto]");
   });
 });

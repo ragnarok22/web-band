@@ -32,7 +32,7 @@ export function HistoryScreen() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[82rem] px-4 py-8 sm:px-7 sm:py-12 lg:px-10 lg:py-16">
+    <main className="mx-auto min-h-screen w-full max-w-[82rem] overflow-x-clip px-4 py-8 sm:px-7 sm:py-12 lg:px-10 lg:py-16">
       <header className="border-border relative overflow-hidden border-b pb-9 sm:pb-12">
         <span
           aria-hidden="true"

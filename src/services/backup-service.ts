@@ -9,6 +9,7 @@ import {
   snapshotFromBackup,
 } from "@/lib/backup-envelope";
 import { validateBackupEnvelope } from "@/lib/persistence-validation";
+import { executeStorageOperation } from "@/lib/storage-execution";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
 import {
   createDefaultGuidedPracticeValues,
@@ -45,7 +46,9 @@ type BackupStorage = Pick<
 export interface BackupServiceDependencies {
   applySettings: (settings: BackupSettings) => boolean;
   clearAppPreferences: () => boolean;
+  clearRecentPatterns: () => boolean;
   downloadEnvelope: (envelope: BackupEnvelope) => void;
+  executeStorageOperation: <T>(operation: () => Promise<T>) => Promise<T>;
   getSettings: () => BackupSettings;
   refreshStores: () => Promise<void>;
   storage: BackupStorage;
@@ -92,25 +95,35 @@ function getCurrentSettings(): BackupSettings {
 }
 
 function applyCurrentSettings(settings: BackupSettings): boolean {
-  const practiceSaved = usePracticeStore
-    .getState()
-    .replaceSettings(settings.practice);
-  const guidedSaved = useGuidedPracticeStore
-    .getState()
-    .replaceSettings(settings.guidedPractice);
-  const historySaved = useHistorySettingsStore
-    .getState()
-    .replaceSettings(settings.history);
-  return practiceSaved && guidedSaved && historySaved;
+  const operations = [
+    () => usePracticeStore.getState().replaceSettings(settings.practice),
+    () =>
+      useGuidedPracticeStore
+        .getState()
+        .replaceSettings(settings.guidedPractice),
+    () => useHistorySettingsStore.getState().replaceSettings(settings.history),
+  ];
+  let persisted = true;
+  for (const operation of operations) {
+    try {
+      persisted = operation() && persisted;
+    } catch {
+      persisted = false;
+    }
+  }
+  return persisted;
 }
 
 async function refreshCurrentStores(): Promise<void> {
-  await Promise.all([
+  const results = await Promise.allSettled([
     usePatternStore.getState().refreshAfterImport(),
     useChordProgressionStore.getState().refreshAfterImport(),
     usePracticePresetStore.getState().refreshAfterImport(),
     usePracticeHistoryStore.getState().refreshAfterImport(),
   ]);
+  if (results.some(({ status }) => status === "rejected")) {
+    throw new Error("Some stores could not be refreshed.");
+  }
 }
 
 function clearCurrentPreferences(): boolean {
@@ -122,7 +135,9 @@ function clearCurrentPreferences(): boolean {
 const defaultDependencies: BackupServiceDependencies = {
   applySettings: applyCurrentSettings,
   clearAppPreferences: clearCurrentPreferences,
+  clearRecentPatterns: clearRecentPatternIds,
   downloadEnvelope: downloadBackupEnvelope,
+  executeStorageOperation,
   getSettings: getCurrentSettings,
   refreshStores: refreshCurrentStores,
   storage: storageService,
@@ -132,8 +147,9 @@ export class BackupService {
   constructor(private readonly dependencies = defaultDependencies) {}
 
   async createCurrentBackup(): Promise<BackupEnvelope> {
-    await this.dependencies.storage.initialize();
-    const snapshot = await this.dependencies.storage.exportSnapshot();
+    const snapshot = await this.dependencies.executeStorageOperation(() =>
+      this.dependencies.storage.exportSnapshot(),
+    );
     return createBackupEnvelope(snapshot, this.dependencies.getSettings());
   }
 
@@ -159,43 +175,91 @@ export class BackupService {
     const envelope = structuredClone(value as BackupEnvelope);
 
     if (mode === "replace") await this.exportCurrentBackup();
-    await this.dependencies.storage.initialize();
-    const summary = await this.dependencies.storage.importSnapshot(
-      snapshotFromBackup(envelope),
-      mode,
+    const summary = await this.dependencies.executeStorageOperation(() =>
+      this.dependencies.storage.importSnapshot(
+        snapshotFromBackup(envelope),
+        mode,
+      ),
     );
-    const settingsPersisted = this.dependencies.applySettings(
-      envelope.data.settings,
-    );
-    await this.dependencies.refreshStores();
+    const issues: string[] = [];
+    if (mode === "replace") {
+      try {
+        if (!this.dependencies.clearRecentPatterns()) {
+          issues.push("recent pattern preferences could not be cleared");
+        }
+      } catch {
+        issues.push("recent pattern preferences could not be cleared");
+      }
+    }
+
+    let settingsPersisted = false;
+    try {
+      settingsPersisted = this.dependencies.applySettings(
+        envelope.data.settings,
+      );
+    } catch {
+      settingsPersisted = false;
+    }
+    if (!settingsPersisted) {
+      issues.push("some app settings could not be saved for the next visit");
+    }
+    try {
+      await this.dependencies.refreshStores();
+    } catch {
+      issues.push("app data could not be fully refreshed");
+    }
 
     return {
       ...summary,
       settingsPersisted,
-      warning: settingsPersisted
-        ? null
-        : "Your data was imported, but some app settings could not be saved for the next visit.",
+      warning:
+        issues.length === 0
+          ? null
+          : `Your data was imported, but ${issues.join("; ")}.`,
     };
   }
 
   async clearAllLocalData(): Promise<ClearLocalDataCompletion> {
     await this.exportCurrentBackup();
-    await this.dependencies.storage.initialize();
-    await this.dependencies.storage.importSnapshot(emptySnapshot, "replace");
-    const settingsPersisted = this.dependencies.applySettings({
-      guidedPractice: createDefaultGuidedPracticeValues(),
-      history: structuredClone(defaultHistorySettings),
-      practice: structuredClone(defaultPracticeSettings),
-    });
-    const preferencesCleared = this.dependencies.clearAppPreferences();
-    await this.dependencies.refreshStores();
+    await this.dependencies.executeStorageOperation(() =>
+      this.dependencies.storage.importSnapshot(emptySnapshot, "replace"),
+    );
+    const issues: string[] = [];
+    let settingsPersisted = false;
+    try {
+      settingsPersisted = this.dependencies.applySettings({
+        guidedPractice: createDefaultGuidedPracticeValues(),
+        history: structuredClone(defaultHistorySettings),
+        practice: structuredClone(defaultPracticeSettings),
+      });
+    } catch {
+      settingsPersisted = false;
+    }
+    if (!settingsPersisted) {
+      issues.push("some default settings could not be saved");
+    }
+    let preferencesCleared = false;
+    try {
+      preferencesCleared = this.dependencies.clearAppPreferences();
+    } catch {
+      preferencesCleared = false;
+    }
+    if (!preferencesCleared) {
+      issues.push("some app preferences could not be cleared");
+    }
+    try {
+      await this.dependencies.refreshStores();
+    } catch {
+      issues.push("app data could not be fully refreshed");
+    }
     const persisted = settingsPersisted && preferencesCleared;
     return {
       cleared: true,
       settingsPersisted: persisted,
-      warning: persisted
-        ? null
-        : "Local data was cleared, but some default settings could not be saved for the next visit.",
+      warning:
+        issues.length === 0
+          ? null
+          : `Local data was cleared, but ${issues.join("; ")}.`,
     };
   }
 }

@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 import { getBuiltInChordProgression } from "@/data/chord-progressions";
 import { storageService } from "@/db/storage-service";
+import { isCustomChordProgression } from "@/lib/practice-validation";
+import { executeStorageOperation } from "@/lib/storage-execution";
 import type { CustomChordProgression } from "@/types/persistence";
 import type { ChordStep } from "@/types/practice";
 
@@ -53,6 +55,12 @@ function createProgression(
   };
 }
 
+function assertValidProgression(progression: CustomChordProgression): void {
+  if (!isCustomChordProgression(progression)) {
+    throw new Error("Only valid custom chord progressions can be saved.");
+  }
+}
+
 export const useChordProgressionStore = create<ChordProgressionStore>(
   (set, get) => ({
     copyBuiltIn: async (progressionId, name) => {
@@ -68,8 +76,10 @@ export const useChordProgressionStore = create<ChordProgressionStore>(
           id: crypto.randomUUID(),
         })),
       });
-      await storageService.initialize();
-      await storageService.chordProgressionRepository.put(progression);
+      assertValidProgression(progression);
+      await executeStorageOperation(() =>
+        storageService.chordProgressionRepository.put(progression),
+      );
       set({
         customProgressions: sortProgressions([
           progression,
@@ -80,8 +90,10 @@ export const useChordProgressionStore = create<ChordProgressionStore>(
     },
     create: async (input) => {
       const progression = createProgression(input);
-      await storageService.initialize();
-      await storageService.chordProgressionRepository.put(progression);
+      assertValidProgression(progression);
+      await executeStorageOperation(() =>
+        storageService.chordProgressionRepository.put(progression),
+      );
       set({
         customProgressions: sortProgressions([
           progression,
@@ -96,8 +108,9 @@ export const useChordProgressionStore = create<ChordProgressionStore>(
         throw new Error("Custom chord progression was not found.");
       }
 
-      await storageService.initialize();
-      await storageService.deleteCustomChordProgression(progressionId);
+      await executeStorageOperation(() =>
+        storageService.deleteCustomChordProgression(progressionId),
+      );
       set({
         customProgressions: get().customProgressions.filter(
           ({ id }) => id !== progressionId,
@@ -122,16 +135,20 @@ export const useChordProgressionStore = create<ChordProgressionStore>(
       }
     },
     isHydrated: false,
-    refreshAfterImport: async () => get().hydrate(),
+    refreshAfterImport: async () =>
+      executeStorageOperation(() => get().hydrate()),
     toggleFavorite: async (progressionId) => {
-      await storageService.initialize();
-      const repository = storageService.chordProgressionFavoriteRepository;
-      if (get().favoriteProgressionIds.includes(progressionId)) {
-        await repository.remove(progressionId);
-      } else {
-        await repository.add(progressionId);
-      }
-      set({ favoriteProgressionIds: await repository.list() });
+      const isFavorite = get().favoriteProgressionIds.includes(progressionId);
+      const favoriteProgressionIds = await executeStorageOperation(async () => {
+        const repository = storageService.chordProgressionFavoriteRepository;
+        if (isFavorite) {
+          await repository.remove(progressionId);
+        } else {
+          await repository.add(progressionId);
+        }
+        return repository.list();
+      });
+      set({ favoriteProgressionIds });
     },
     update: async (progressionId, changes) => {
       const current = get().customProgressions.find(
@@ -149,8 +166,10 @@ export const useChordProgressionStore = create<ChordProgressionStore>(
           : { steps: structuredClone(changes.steps) }),
         updatedAt: new Date().toISOString(),
       };
-      await storageService.initialize();
-      await storageService.chordProgressionRepository.put(progression);
+      assertValidProgression(progression);
+      await executeStorageOperation(() =>
+        storageService.chordProgressionRepository.put(progression),
+      );
       set({
         customProgressions: sortProgressions(
           get().customProgressions.map((candidate) =>

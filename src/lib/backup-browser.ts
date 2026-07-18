@@ -24,5 +24,5 @@ export function downloadBackupEnvelope(envelope: BackupEnvelope): void {
   anchor.download = backupFileName(envelope.exportedAt);
   anchor.href = url;
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }

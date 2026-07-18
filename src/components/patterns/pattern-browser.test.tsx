@@ -89,6 +89,31 @@ describe("pattern browser", () => {
     );
   });
 
+  it("gates library actions until custom patterns hydrate", () => {
+    usePatternStore.setState({ isHydrated: false });
+    render(<PatternBrowser />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Loading your groove library",
+    );
+    expect(screen.queryByRole("link", { name: "Create pattern" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Preview/ })).toBeNull();
+  });
+
+  it("surfaces pattern preview failures", async () => {
+    const user = userEvent.setup();
+    engine.play.mockRejectedValueOnce(new Error("Audio device disconnected."));
+    render(<PatternBrowser />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Preview Basic Rock" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Audio device disconnected.",
+    );
+  });
+
   it("links create, built-in duplicate, and custom edit actions", () => {
     const customPattern: CustomDrumPattern = {
       bars: 1,
@@ -120,5 +145,8 @@ describe("pattern browser", () => {
       screen.getByRole("link", { name: "Edit My Pattern" }),
     ).toHaveAttribute("href", "/editor?pattern=my-pattern");
     expect(screen.getByText("Your pattern")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "My Pattern" })).toHaveClass(
+      "break-words",
+    );
   });
 });

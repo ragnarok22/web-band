@@ -23,7 +23,9 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await page
     .getByRole("textbox", { name: "Description" })
     .fill("A portable local groove for backup testing.");
-  await page.getByRole("button", { name: "Kick, step 1, empty" }).click();
+  await page
+    .getByRole("button", { name: /Kick, measure 1, column 1,.*empty/ })
+    .click();
   await page.getByRole("button", { name: "Save pattern" }).click();
   await expect(page.getByText("Pattern saved locally.")).toBeVisible();
 

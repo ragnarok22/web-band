@@ -27,6 +27,7 @@ export function PracticeScreen() {
         elapsedSeconds={practice.elapsedSeconds}
         errorMessage={practice.errorMessage}
         historyNotice={practice.historyNotice}
+        isReady={practice.isReady}
         onDismissNotice={practice.dismissOnboarding}
         onExit={practice.exitFocusMode}
         onPlay={() => void practice.play()}
@@ -95,6 +96,7 @@ export function PracticeScreen() {
           />
 
           <TransportPanel
+            isReady={practice.isReady}
             onPause={practice.pause}
             onPlay={() => void practice.play()}
             onStop={practice.stop}

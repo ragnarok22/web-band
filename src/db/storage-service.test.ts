@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { basicRockPattern } from "@/data/patterns";
 import { basicPopPattern } from "@/data/strumming-patterns";
+import { WebBandDatabase } from "@/db/database";
 import { StorageService } from "@/db/storage-service";
 import type {
   CustomChordProgression,
@@ -166,6 +167,21 @@ describe("storage service", () => {
     service.close();
   });
 
+  it("exports IndexedDB through one readonly transaction spanning all tables", async () => {
+    const transaction = vi.spyOn(WebBandDatabase.prototype, "transaction");
+    const service = new StorageService();
+    await service.initialize(`web-band-test-${crypto.randomUUID()}`);
+
+    await service.exportSnapshot();
+
+    const readonlyCalls = transaction.mock.calls.filter(
+      ([mode]) => mode === "r",
+    );
+    expect(readonlyCalls).toHaveLength(1);
+    expect(readonlyCalls[0]?.[1]).toHaveLength(7);
+    service.close();
+  });
+
   it("merges IndexedDB snapshots with equal-ID upserts and no duplicates", async () => {
     const service = new StorageService();
     await service.initialize(`web-band-test-${crypto.randomUUID()}`);
@@ -263,7 +279,7 @@ describe("storage service", () => {
     service.close();
   });
 
-  it("recovers from a repository failure after opening IndexedDB", async () => {
+  it("recovers readable data from a repository failure after opening IndexedDB", async () => {
     const service = new StorageService();
     expect(
       await service.initialize(`web-band-test-${crypto.randomUUID()}`),
@@ -272,6 +288,8 @@ describe("storage service", () => {
     const chordProgressionFavorites =
       service.chordProgressionFavoriteRepository;
     const practicePresets = service.practicePresetRepository;
+    const preservedPattern = createPattern("preserved-pattern");
+    await service.patternRepository.put(preservedPattern);
     vi.spyOn(practicePresets, "list").mockRejectedValueOnce(
       new Error("repository read failed"),
     );
@@ -279,7 +297,7 @@ describe("storage service", () => {
     await expect(practicePresets.list()).rejects.toThrow(
       "repository read failed",
     );
-    const status = service.recoverFromRepositoryFailure();
+    const status = await service.recoverFromIndexedDbFailure();
 
     expect(status.mode).toBe("memory");
     expect(status.warning).toContain("Practice can continue");
@@ -289,6 +307,9 @@ describe("storage service", () => {
       chordProgressionFavorites,
     );
     expect(service.practicePresetRepository).not.toBe(practicePresets);
+    expect(await service.patternRepository.get(preservedPattern.id)).toEqual(
+      preservedPattern,
+    );
     expect(await service.initialize()).toEqual(status);
     service.close();
   });

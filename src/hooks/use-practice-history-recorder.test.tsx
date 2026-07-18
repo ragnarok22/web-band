@@ -17,10 +17,15 @@ interface RecorderProps {
   status: AudioEngineStatus;
 }
 
-function useRecorder(props: RecorderProps, onSaveError: () => void) {
+function useRecorder(
+  props: RecorderProps,
+  onSaveError: () => void,
+  onSaveSuccess: () => void = vi.fn(),
+) {
   usePracticeHistoryRecorder({
     ...props,
     onSaveError,
+    onSaveSuccess,
     pattern: basicRockPattern,
   });
 }
@@ -29,6 +34,7 @@ describe("practice history recorder", () => {
   let now = 0;
   const record = vi.fn<(session: PracticeSession) => Promise<void>>();
   const onSaveError = vi.fn();
+  const onSaveSuccess = vi.fn();
 
   beforeEach(() => {
     now = 0;
@@ -45,6 +51,7 @@ describe("practice history recorder", () => {
     });
     usePracticeHistoryStore.setState({ record });
     onSaveError.mockReset();
+    onSaveSuccess.mockReset();
   });
 
   afterEach(() => {
@@ -73,7 +80,7 @@ describe("practice history recorder", () => {
     expect(record).not.toHaveBeenCalled();
   });
 
-  it("excludes paused time and saves on stop", async () => {
+  it("excludes count-in and paused time and saves on stop", async () => {
     useHistorySettingsStore.setState({ minimumDurationSeconds: 0 });
     const { rerender } = renderHook(
       (props: RecorderProps) => useRecorder(props, onSaveError),
@@ -95,18 +102,26 @@ describe("practice history recorder", () => {
     rerender({ bpm: 90, guidedPractice: { mode: "drums" }, status: "paused" });
     now = 50_000;
     rerender({ bpm: 94, guidedPractice: { mode: "drums" }, status: "playing" });
-    now = 55_900;
+    now = 53_000;
+    rerender({
+      bpm: 95,
+      guidedPractice: { mode: "drums" },
+      status: "suspended",
+    });
+    now = 54_000;
+    rerender({ bpm: 95, guidedPractice: { mode: "drums" }, status: "playing" });
+    now = 56_900;
     rerender({ bpm: 96, guidedPractice: { mode: "drums" }, status: "stopped" });
 
     await act(async () => Promise.resolve());
     expect(record).toHaveBeenCalledOnce();
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({
-        durationSeconds: 15,
+        durationSeconds: 5,
         endingBpm: 96,
         patternName: "Basic Rock",
         practiceMode: "drums",
-        startingBpm: 90,
+        startingBpm: 94,
         timeSignature: "4/4",
       }),
     );
@@ -219,5 +234,34 @@ describe("practice history recorder", () => {
       await Promise.resolve();
     });
     expect(onSaveError).toHaveBeenCalledOnce();
+  });
+
+  it("reports a later successful save so stale notices can clear", async () => {
+    useHistorySettingsStore.setState({ minimumDurationSeconds: 0 });
+    record
+      .mockRejectedValueOnce(new Error("database unavailable"))
+      .mockResolvedValueOnce(undefined);
+    const { rerender } = renderHook(
+      (props: RecorderProps) => useRecorder(props, onSaveError, onSaveSuccess),
+      {
+        initialProps: {
+          bpm: 90,
+          guidedPractice: { mode: "drums" },
+          status: "playing",
+        },
+      },
+    );
+    now = 2_000;
+    rerender({ bpm: 90, guidedPractice: { mode: "drums" }, status: "stopped" });
+    await act(async () => Promise.resolve());
+    expect(onSaveError).toHaveBeenCalledOnce();
+
+    now = 3_000;
+    rerender({ bpm: 90, guidedPractice: { mode: "drums" }, status: "playing" });
+    now = 5_000;
+    rerender({ bpm: 90, guidedPractice: { mode: "drums" }, status: "stopped" });
+    await act(async () => Promise.resolve());
+
+    expect(onSaveSuccess).toHaveBeenCalledOnce();
   });
 });

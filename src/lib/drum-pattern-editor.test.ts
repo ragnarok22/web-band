@@ -148,6 +148,47 @@ describe("drum pattern editor helpers", () => {
     );
   });
 
+  it("resolves scaled paste collisions without duplicate instrument cells", () => {
+    const draft = createDefaultPatternDraft([], { now: () => timestamp });
+    const pasted = pastePatternMeasure(
+      { ...draft, subdivision: 8 },
+      0,
+      {
+        hits: [
+          {
+            flam: false,
+            instrument: "kick",
+            probability: 0.8,
+            step: 0,
+            timingOffset: 0.02,
+            velocity: 0.7,
+          },
+          {
+            flam: true,
+            instrument: "kick",
+            probability: 0.5,
+            step: 1,
+            timingOffset: -0.03,
+            velocity: 1,
+          },
+        ],
+        stepCount: 16,
+      },
+      () => "merged",
+    );
+
+    expect(pasted.hits).toHaveLength(1);
+    expect(pasted.hits[0]).toMatchObject({
+      flam: true,
+      instrument: "kick",
+      probability: 0.8,
+      step: 0,
+      timingOffset: -0.03,
+      velocity: 1,
+    });
+    expect(validateCustomDrumPattern(pasted).success).toBe(true);
+  });
+
   it("creates and clamps advanced hit properties", () => {
     const draft = createDefaultPatternDraft([], { now: () => timestamp });
     const updated = updateAdvancedHit(
@@ -163,5 +204,14 @@ describe("drum pattern editor helpers", () => {
       timingOffset: -0.1,
       velocity: 1,
     });
+
+    expect(
+      updateAdvancedHit(draft, "rim", 99, {
+        flam: false,
+        probability: 1,
+        timingOffset: 0,
+        velocity: 1,
+      }),
+    ).toBe(draft);
   });
 });

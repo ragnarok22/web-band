@@ -195,6 +195,14 @@ describe("practice validation", () => {
     expect(
       validateCustomChordProgression({
         ...customProgression,
+        id: gDEmCProgression.id,
+      }).errors,
+    ).toContain(
+      "Custom chord progression ID conflicts with a built-in progression.",
+    );
+    expect(
+      validateCustomChordProgression({
+        ...customProgression,
         createdAt: undefined,
       }).success,
     ).toBe(false);

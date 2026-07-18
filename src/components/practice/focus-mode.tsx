@@ -19,6 +19,7 @@ interface FocusModeProps {
   elapsedSeconds: number;
   errorMessage: string | null;
   historyNotice: string | null;
+  isReady: boolean;
   onDismissNotice: () => void;
   onExit: () => void;
   onPlay: () => void;
@@ -35,6 +36,7 @@ export function FocusMode({
   elapsedSeconds,
   errorMessage,
   historyNotice,
+  isReady,
   onDismissNotice,
   onExit,
   onPlay,
@@ -56,7 +58,13 @@ export function FocusMode({
         ? snapshot.position.currentBpm
         : configuration.tempoTrainer.startBpm
       : bpm;
-  const transportLabel = canResume ? "Resume" : canStop ? "Stop" : "Play";
+  const transportLabel = canResume
+    ? "Resume"
+    : canStop
+      ? "Stop"
+      : isReady
+        ? "Play"
+        : "Loading setup";
 
   useEffect(() => {
     headingRef.current?.focus();
@@ -127,6 +135,7 @@ export function FocusMode({
 
         <button
           className={`mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] ${canStop ? "bg-surface-elevated text-foreground border-border border" : "bg-accent text-accent-ink"}`}
+          disabled={!isReady && !canStop}
           onClick={canStop ? onStop : onPlay}
           type="button"
         >

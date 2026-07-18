@@ -10,7 +10,13 @@ import { useAudioStore } from "@/stores/audio-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import type { CustomDrumPattern } from "@/types/persistence";
 
-const activeStatuses = new Set(["counting-in", "initializing", "playing"]);
+const activeStatuses = new Set([
+  "counting-in",
+  "initializing",
+  "paused",
+  "playing",
+  "suspended",
+]);
 
 export function useEditorPlayback(pattern: CustomDrumPattern | null) {
   const status = useAudioStore((state) => state.status);

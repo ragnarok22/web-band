@@ -21,8 +21,12 @@ test("creates, opens, and persists a custom drum pattern", async ({ page }) => {
   await page
     .getByRole("textbox", { name: "Description" })
     .fill("A warm custom backbeat for evening practice.");
-  await page.getByRole("button", { name: "Kick, step 1, empty" }).click();
-  await page.getByRole("button", { name: "Snare, step 5, empty" }).click();
+  await page
+    .getByRole("button", { name: /Kick, measure 1, column 1,.*empty/ })
+    .click();
+  await page
+    .getByRole("button", { name: /Snare, measure 1, column 5,.*empty/ })
+    .click();
   await page.getByRole("button", { name: "Save pattern" }).click();
 
   await expect(page).toHaveURL(/\/editor\?pattern=custom-/);
@@ -43,7 +47,23 @@ test("creates, opens, and persists a custom drum pattern", async ({ page }) => {
     "Sunset Pocket",
   );
   await expect(
-    page.getByRole("button", { name: /Kick, step 1, 70 percent velocity/ }),
+    page.getByRole("button", {
+      name: /Kick, measure 1, column 1,.*70 percent velocity/,
+    }),
   ).toBeVisible();
   expect(browserErrors).toEqual([]);
+});
+
+test("keeps Stop available when the playing draft becomes invalid", async ({
+  page,
+}) => {
+  await page.goto("/editor");
+  await page.getByRole("button", { name: "Play draft" }).click();
+  const stop = page.getByRole("button", { name: "Stop" });
+  await expect(stop).toBeEnabled();
+
+  await page.getByRole("textbox", { name: "Pattern name" }).fill("");
+  await expect(stop).toBeEnabled();
+  await stop.click();
+  await expect(page.getByRole("button", { name: "Play draft" })).toBeDisabled();
 });

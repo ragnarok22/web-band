@@ -62,25 +62,46 @@ export function getPracticeSessionCount(
 export function getMostUsedPattern(
   sessions: readonly PracticeSession[],
 ): MostUsedPattern | null {
-  const patterns = new Map<string, MostUsedPattern>();
+  const patterns = new Map<
+    string,
+    MostUsedPattern & { latestSessionId: string; latestStartedAt: string }
+  >();
   for (const session of sessions) {
     const current = patterns.get(session.patternId);
+    const hasNewerName =
+      !current ||
+      session.startedAt > current.latestStartedAt ||
+      (session.startedAt === current.latestStartedAt &&
+        session.id > current.latestSessionId);
     patterns.set(session.patternId, {
       durationSeconds:
         (current?.durationSeconds ?? 0) + session.durationSeconds,
+      latestSessionId: hasNewerName
+        ? session.id
+        : (current?.latestSessionId ?? session.id),
+      latestStartedAt: hasNewerName
+        ? session.startedAt
+        : (current?.latestStartedAt ?? session.startedAt),
       patternId: session.patternId,
-      patternName: session.patternName,
+      patternName: hasNewerName
+        ? session.patternName
+        : (current?.patternName ?? session.patternName),
     });
   }
 
-  return (
-    Array.from(patterns.values()).sort(
-      (left, right) =>
-        right.durationSeconds - left.durationSeconds ||
-        left.patternName.localeCompare(right.patternName) ||
-        left.patternId.localeCompare(right.patternId),
-    )[0] ?? null
-  );
+  const leader = Array.from(patterns.values()).sort(
+    (left, right) =>
+      right.durationSeconds - left.durationSeconds ||
+      left.patternId.localeCompare(right.patternId) ||
+      left.patternName.localeCompare(right.patternName),
+  )[0];
+  return leader
+    ? {
+        durationSeconds: leader.durationSeconds,
+        patternId: leader.patternId,
+        patternName: leader.patternName,
+      }
+    : null;
 }
 
 export function getMostUsedBpmRange(
@@ -88,7 +109,10 @@ export function getMostUsedBpmRange(
 ): MostUsedBpmRange | null {
   const ranges = new Map<number, number>();
   for (const session of sessions) {
-    const minimumBpm = Math.floor(session.startingBpm / 20) * 20;
+    const representativeBpm = Math.round(
+      (session.startingBpm + session.endingBpm) / 2,
+    );
+    const minimumBpm = Math.floor(representativeBpm / 20) * 20;
     ranges.set(
       minimumBpm,
       (ranges.get(minimumBpm) ?? 0) + session.durationSeconds,

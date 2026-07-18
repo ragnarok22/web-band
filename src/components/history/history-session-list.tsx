@@ -38,7 +38,10 @@ export function HistorySessionList({
             </div>
             <ul className="space-y-3">
               {group.sessions.map((session) => (
-                <li key={session.id}>
+                <li
+                  className="[contain-intrinsic-size:auto_8rem] [content-visibility:auto]"
+                  key={session.id}
+                >
                   <HistorySessionCard onDelete={onDelete} session={session} />
                 </li>
               ))}

@@ -46,7 +46,7 @@ export function DataBackupPanel({
     setErrorMessage(null);
     try {
       await actions.exportCurrentBackup();
-      setAnnouncement("Backup downloaded.");
+      setAnnouncement("Backup download started.");
     } catch (error) {
       setErrorMessage(
         messageFromError(error, "Your backup could not be created."),

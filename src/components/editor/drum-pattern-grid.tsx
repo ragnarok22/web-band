@@ -1,7 +1,7 @@
 "use client";
 
 import { Clipboard, ClipboardPaste, SlidersHorizontal, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 
 import { HitPropertiesDialog } from "@/components/editor/hit-properties-dialog";
 import {
@@ -55,6 +55,10 @@ export function DrumPatternGrid({
 }: DrumPatternGridProps) {
   const [selected, setSelected] = useState<CellAddress | null>(null);
   const [advancedCell, setAdvancedCell] = useState<CellAddress | null>(null);
+  const [focusedCell, setFocusedCell] = useState<CellAddress>({
+    instrument: editorInstruments[0],
+    step: 0,
+  });
   const [clipboard, setClipboard] = useState<MeasureClipboard | null>(null);
   const [targetMeasure, setTargetMeasure] = useState(0);
   const [announcement, setAnnouncement] = useState("");
@@ -68,6 +72,21 @@ export function DrumPatternGrid({
   const hitsByCell = new Map(
     pattern.hits.map((hit) => [`${hit.instrument}:${hit.step}`, hit]),
   );
+  const safeTargetMeasure = Math.min(targetMeasure, pattern.bars - 1);
+
+  useEffect(() => {
+    setTargetMeasure((current) => Math.min(current, pattern.bars - 1));
+    setSelected((current) =>
+      current && current.step < stepCount ? current : null,
+    );
+    setAdvancedCell((current) =>
+      current && current.step < stepCount ? current : null,
+    );
+    setFocusedCell((current) => ({
+      ...current,
+      step: Math.min(current.step, stepCount - 1),
+    }));
+  }, [pattern.bars, stepCount]);
 
   function selectAndCycle(instrument: DrumInstrument, step: number): void {
     setSelected({ instrument, step });
@@ -81,16 +100,33 @@ export function DrumPatternGrid({
   }
 
   function copyMeasure(): void {
-    setClipboard(copyPatternMeasure(pattern, targetMeasure));
-    setAnnouncement(`Copied measure ${targetMeasure + 1}.`);
+    setClipboard(copyPatternMeasure(pattern, safeTargetMeasure));
+    setAnnouncement(`Copied measure ${safeTargetMeasure + 1}.`);
   }
 
   function pasteMeasure(): void {
     if (!clipboard) return;
-    onChange(pastePatternMeasure(pattern, targetMeasure, clipboard));
+    onChange(pastePatternMeasure(pattern, safeTargetMeasure, clipboard));
     setAnnouncement(
-      `Pasted measure ${targetMeasure + 1}, replacing its existing hits.`,
+      `Pasted measure ${safeTargetMeasure + 1}, replacing its existing hits.`,
     );
+  }
+
+  function moveFocus(
+    event: KeyboardEvent<HTMLButtonElement>,
+    instrument: DrumInstrument,
+    step: number,
+  ): void {
+    const address = getKeyboardDestination(
+      event.key,
+      instrument,
+      step,
+      stepCount,
+    );
+    if (!address) return;
+    event.preventDefault();
+    setFocusedCell(address);
+    document.getElementById(cellId(address))?.focus();
   }
 
   return (
@@ -118,7 +154,7 @@ export function DrumPatternGrid({
               className="border-border bg-surface-elevated text-foreground mt-1 block min-h-11 rounded-xl border px-3 text-sm font-bold"
               disabled={disabled}
               onChange={(event) => setTargetMeasure(Number(event.target.value))}
-              value={targetMeasure}
+              value={safeTargetMeasure}
             >
               {Array.from({ length: pattern.bars }, (_, index) => (
                 <option key={index} value={index}>
@@ -156,15 +192,24 @@ export function DrumPatternGrid({
       <p aria-live="polite" className="sr-only">
         {announcement}
       </p>
-      <div
-        aria-label="Drum pattern steps"
-        className="max-h-[70dvh] overflow-auto overscroll-contain"
-        role="region"
-        tabIndex={0}
-      >
-        <div className="min-w-max pb-2">
-          <div className="border-border bg-background/80 sticky top-0 z-20 flex border-b">
-            <div className="border-border bg-background sticky left-0 z-30 flex w-36 shrink-0 items-center border-r px-3 text-[0.62rem] font-extrabold tracking-wider uppercase sm:w-40">
+      <div className="w-full overflow-x-auto overflow-y-visible overscroll-x-contain">
+        <div
+          aria-colcount={stepCount + 1}
+          aria-label="Drum pattern steps"
+          aria-rowcount={editorInstruments.length + 1}
+          className="min-w-max pb-2"
+          role="grid"
+        >
+          <div
+            aria-rowindex={1}
+            className="border-border bg-background/80 sticky top-0 z-20 flex border-b"
+            role="row"
+          >
+            <div
+              aria-colindex={1}
+              className="border-border bg-background sticky left-0 z-30 flex w-36 shrink-0 items-center border-r px-3 text-[0.62rem] font-extrabold tracking-wider uppercase sm:w-40"
+              role="columnheader"
+            >
               Instrument
             </div>
             {Array.from({ length: stepCount }, (_, step) => {
@@ -172,8 +217,10 @@ export function DrumPatternGrid({
               const stepInBar = step % stepsPerBar;
               return (
                 <div
+                  aria-colindex={step + 2}
                   className={`flex h-12 w-11 shrink-0 flex-col items-center justify-center border-r text-[0.62rem] font-bold tabular-nums ${boundaryClass(step, stepsPerBar, stepsPerBeat)}`}
                   key={step}
+                  role="columnheader"
                 >
                   {stepInBar === 0 ? (
                     <span className="text-accent">M{measure + 1}</span>
@@ -186,9 +233,18 @@ export function DrumPatternGrid({
             })}
           </div>
 
-          {editorInstruments.map((instrument) => (
-            <div className="flex" key={instrument}>
-              <div className="border-border bg-surface sticky left-0 z-10 flex w-36 shrink-0 items-center justify-between border-r border-b pl-3 sm:w-40">
+          {editorInstruments.map((instrument, instrumentIndex) => (
+            <div
+              aria-rowindex={instrumentIndex + 2}
+              className="flex"
+              key={instrument}
+              role="row"
+            >
+              <div
+                aria-colindex={1}
+                className="border-border bg-surface sticky left-0 z-10 flex w-36 shrink-0 items-center justify-between border-r border-b pl-3 sm:w-40"
+                role="rowheader"
+              >
                 <span className="truncate pr-1 text-xs font-extrabold sm:text-sm">
                   {instrumentLabels[instrument]}
                 </span>
@@ -212,34 +268,51 @@ export function DrumPatternGrid({
                 const hit = hitsByCell.get(`${instrument}:${step}`);
                 const isSelected =
                   selected?.instrument === instrument && selected.step === step;
+                const isFocused =
+                  focusedCell.instrument === instrument &&
+                  focusedCell.step === step;
                 return (
-                  <button
-                    aria-label={cellLabel(
-                      instrumentLabels[instrument],
-                      step,
-                      hit,
-                    )}
-                    aria-pressed={Boolean(hit)}
-                    className={`group flex size-11 shrink-0 items-center justify-center border-r border-b transition-colors ${boundaryClass(step, stepsPerBar, stepsPerBeat)} ${
-                      activeStep === step
-                        ? "bg-accent/20"
-                        : "hover:bg-surface-hover"
-                    } ${isSelected ? "ring-accent ring-2 ring-inset" : ""}`}
-                    disabled={disabled}
+                  <div
+                    aria-colindex={step + 2}
+                    aria-selected={isSelected}
+                    className="size-11 shrink-0"
                     key={step}
-                    onClick={() => selectAndCycle(instrument, step)}
-                    onContextMenu={(event) => {
-                      event.preventDefault();
-                      openAdvanced(instrument, step);
-                    }}
-                    type="button"
+                    role="gridcell"
                   >
-                    {hit ? (
-                      <HitMark hit={hit} />
-                    ) : (
-                      <span aria-hidden="true">.</span>
-                    )}
-                  </button>
+                    <button
+                      aria-label={cellLabel(
+                        instrumentLabels[instrument],
+                        step,
+                        stepsPerBar,
+                        beatLabels[step % stepsPerBar] || ".",
+                        hit,
+                        activeStep === step,
+                      )}
+                      aria-pressed={Boolean(hit)}
+                      className={`group flex size-full items-center justify-center border-r border-b transition-colors ${boundaryClass(step, stepsPerBar, stepsPerBeat)} ${
+                        activeStep === step
+                          ? "bg-accent/20"
+                          : "hover:bg-surface-hover"
+                      } ${isSelected ? "ring-accent ring-2 ring-inset" : ""}`}
+                      disabled={disabled}
+                      id={cellId({ instrument, step })}
+                      onClick={() => selectAndCycle(instrument, step)}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        openAdvanced(instrument, step);
+                      }}
+                      onFocus={() => setFocusedCell({ instrument, step })}
+                      onKeyDown={(event) => moveFocus(event, instrument, step)}
+                      tabIndex={!disabled && isFocused ? 0 : -1}
+                      type="button"
+                    >
+                      {hit ? (
+                        <HitMark hit={hit} />
+                      ) : (
+                        <span aria-hidden="true">.</span>
+                      )}
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -255,6 +328,7 @@ export function DrumPatternGrid({
           instrument={advancedCell.instrument}
           onClose={() => setAdvancedCell(null)}
           onSave={(changes) => {
+            if (advancedCell.step >= stepCount) return;
             onChange(
               updateAdvancedHit(
                 pattern,
@@ -282,14 +356,63 @@ function boundaryClass(
   return "border-l border-l-border";
 }
 
-function cellLabel(label: string, step: number, hit?: DrumHit): string {
-  if (!hit) return `${label}, step ${step + 1}, empty`;
+function cellLabel(
+  label: string,
+  step: number,
+  stepsPerBar: number,
+  beatLabel: string,
+  hit: DrumHit | undefined,
+  isPlayhead: boolean,
+): string {
+  const measure = Math.floor(step / stepsPerBar) + 1;
+  const column = (step % stepsPerBar) + 1;
+  const position = `${label}, measure ${measure}, column ${column}, beat ${beatLabel}`;
+  const playhead = isPlayhead ? "playhead active" : "playhead inactive";
+  if (!hit) return `${position}, empty, ${playhead}`;
   const details = [
     `${Math.round(hit.velocity * 100)} percent velocity`,
     `${Math.round((hit.probability ?? 1) * 100)} percent probability`,
   ];
   if (hit.flam) details.push("flam");
-  return `${label}, step ${step + 1}, ${details.join(", ")}`;
+  return `${position}, ${details.join(", ")}, ${playhead}`;
+}
+
+function cellId({ instrument, step }: CellAddress): string {
+  return `drum-grid-${instrument}-${step}`;
+}
+
+function getKeyboardDestination(
+  key: string,
+  instrument: DrumInstrument,
+  step: number,
+  stepCount: number,
+): CellAddress | null {
+  const instrumentIndex = editorInstruments.indexOf(instrument);
+  switch (key) {
+    case "ArrowLeft":
+      return { instrument, step: Math.max(0, step - 1) };
+    case "ArrowRight":
+      return { instrument, step: Math.min(stepCount - 1, step + 1) };
+    case "ArrowUp":
+      return {
+        instrument: editorInstruments[Math.max(0, instrumentIndex - 1)]!,
+        step,
+      };
+    case "ArrowDown":
+      return {
+        instrument:
+          editorInstruments[
+            Math.min(editorInstruments.length - 1, instrumentIndex + 1)
+          ]!,
+        step,
+      };
+    case "Home":
+      return { instrument, step: 0 };
+    case "End":
+      return { instrument, step: stepCount - 1 };
+    default:
+      return null;
+  }
 }
 
 function HitMark({ hit }: { hit: DrumHit }) {

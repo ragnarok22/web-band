@@ -55,6 +55,7 @@ export function PatternBrowser() {
     (state) => state.setSelectedPatternId,
   );
   const customPatterns = usePatternStore((state) => state.customPatterns);
+  const isHydrated = usePatternStore((state) => state.isHydrated);
   const favoritePatternIds = usePatternStore(
     (state) => state.favoritePatternIds,
   );
@@ -78,6 +79,8 @@ export function PatternBrowser() {
 
   useEffect(() => () => disposeAudioEngine(), []);
 
+  if (!isHydrated) return <PatternBrowserLoading />;
+
   function updateFilter<Key extends keyof PatternFilters>(
     key: Key,
     value: PatternFilters[Key],
@@ -86,6 +89,7 @@ export function PatternBrowser() {
   }
 
   async function previewPattern(patternId: string): Promise<void> {
+    if (!usePatternStore.getState().isHydrated) return;
     const pattern = patterns.find((candidate) => candidate.id === patternId);
     if (!pattern) return;
 
@@ -118,12 +122,19 @@ export function PatternBrowser() {
         pattern,
         swing: settings.swing,
       });
-    } catch {
+    } catch (error) {
       setPreviewPatternId(null);
+      setErrorMessage(
+        error instanceof Error && error.message
+          ? error.message
+          : useAudioStore.getState().errorMessage ||
+              "Pattern preview audio could not start.",
+      );
     }
   }
 
   function openPattern(patternId: string): void {
+    if (!usePatternStore.getState().isHydrated) return;
     const pattern = patterns.find((candidate) => candidate.id === patternId);
     if (!pattern) return;
     disposeAudioEngine();
@@ -134,6 +145,7 @@ export function PatternBrowser() {
   }
 
   async function favoritePattern(patternId: string): Promise<void> {
+    if (!usePatternStore.getState().isHydrated) return;
     setErrorMessage(null);
     try {
       await toggleFavorite(patternId);
@@ -145,7 +157,7 @@ export function PatternBrowser() {
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[92rem] px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
+    <main className="mx-auto min-h-screen w-full max-w-[92rem] overflow-x-clip px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
       <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-accent mb-3 flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
@@ -323,6 +335,16 @@ export function PatternBrowser() {
           </p>
         </section>
       )}
+    </main>
+  );
+}
+
+function PatternBrowserLoading() {
+  return (
+    <main className="text-muted flex min-h-screen items-center justify-center px-5 text-center text-sm font-extrabold tracking-wider uppercase">
+      <p aria-live="polite" role="status">
+        Loading your groove library
+      </p>
     </main>
   );
 }

@@ -5,6 +5,7 @@ import { audioStatusCopy } from "@/lib/audio-status";
 import type { AudioEngineStatus } from "@/types/audio";
 
 interface TransportPanelProps {
+  isReady?: boolean;
   onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
@@ -12,6 +13,7 @@ interface TransportPanelProps {
 }
 
 export function TransportPanel({
+  isReady = true,
   onPause,
   onPlay,
   onStop,
@@ -23,11 +25,16 @@ export function TransportPanel({
         onPause={onPause}
         onPlay={onPlay}
         onStop={onStop}
+        playDisabled={!isReady}
         status={status}
       />
       <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
         <CircleDot aria-hidden="true" className="text-accent size-3" />
-        <span data-testid="transport-status">{audioStatusCopy[status]}</span>
+        <span data-testid="transport-status">
+          {isReady
+            ? audioStatusCopy[status]
+            : "Loading your saved practice setup..."}
+        </span>
       </div>
     </div>
   );

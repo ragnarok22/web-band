@@ -20,6 +20,7 @@ export function ConfirmationDialog({
   onConfirm,
 }: ConfirmationDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
 
   useEffect(() => {
@@ -30,10 +31,16 @@ export function ConfirmationDialog({
 
   async function confirm(): Promise<void> {
     setIsWorking(true);
+    setErrorMessage(null);
     try {
       await onConfirm();
       dialogRef.current?.close();
-    } catch {
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error && error.message
+          ? error.message
+          : "The action could not be completed.",
+      );
       setIsWorking(false);
     }
   }
@@ -53,10 +60,23 @@ export function ConfirmationDialog({
         <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
           Please confirm
         </p>
-        <h2 className="mt-2 text-2xl font-black" id="confirmation-heading">
+        <h2
+          className="mt-2 text-2xl font-black [overflow-wrap:anywhere] break-words"
+          id="confirmation-heading"
+        >
           {heading}
         </h2>
-        <p className="text-muted mt-3 leading-6">{description}</p>
+        <p className="text-muted mt-3 leading-6 [overflow-wrap:anywhere] break-words">
+          {description}
+        </p>
+        {errorMessage ? (
+          <p
+            className="border-danger/30 bg-danger/10 mt-4 rounded-xl border p-3 text-sm"
+            role="alert"
+          >
+            {errorMessage}
+          </p>
+        ) : null}
         <div className="mt-6 flex justify-end gap-2">
           <button
             className="border-border text-muted-strong min-h-11 rounded-xl border px-4 text-sm font-extrabold"

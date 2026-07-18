@@ -34,6 +34,15 @@ import {
   MemoryStrummingPatternRepository,
   type StrummingPatternRepository,
 } from "@/db/repositories/strumming-pattern-repository";
+import {
+  isCustomDrumPattern,
+  isCustomStrummingPattern,
+  isPracticeSession,
+} from "@/lib/persistence-validation";
+import {
+  isCustomChordProgression,
+  isPracticePreset,
+} from "@/lib/practice-validation";
 import type {
   ImportCollectionCounts,
   ImportMode,
@@ -64,6 +73,29 @@ function createMemoryRepositories(): MemoryRepositories {
     practicePresets: new MemoryPracticePresetRepository(),
     practiceSessions: new MemoryPracticeSessionRepository(),
     strummingPatterns: new MemoryStrummingPatternRepository(),
+  };
+}
+
+function isReadableId(value: unknown): value is string {
+  return (
+    typeof value === "string" && value.trim() !== "" && value.length <= 128
+  );
+}
+
+function validatedSnapshot(snapshot: PersistenceSnapshot): PersistenceSnapshot {
+  return {
+    customChordProgressions: snapshot.customChordProgressions.filter(
+      isCustomChordProgression,
+    ),
+    customPatterns: snapshot.customPatterns.filter(isCustomDrumPattern),
+    customStrummingPatterns: snapshot.customStrummingPatterns.filter(
+      isCustomStrummingPattern,
+    ),
+    favoriteChordProgressionIds:
+      snapshot.favoriteChordProgressionIds.filter(isReadableId),
+    favoritePatternIds: snapshot.favoritePatternIds.filter(isReadableId),
+    practicePresets: snapshot.practicePresets.filter(isPracticePreset),
+    practiceSessions: snapshot.practiceSessions.filter(isPracticeSession),
   };
 }
 
@@ -151,6 +183,7 @@ export class StorageService {
   private practiceSessions: PracticeSessionRepository =
     new MemoryPracticeSessionRepository();
   private repository: PatternRepository = new MemoryPatternRepository();
+  private recoveryPromise: Promise<PersistenceStatus> | null = null;
   private status: PersistenceStatus = { mode: "memory", warning: null };
   private strummingPatterns: StrummingPatternRepository =
     new MemoryStrummingPatternRepository();
@@ -197,33 +230,53 @@ export class StorageService {
   }
 
   async exportSnapshot(): Promise<PersistenceSnapshot> {
-    const [
-      customPatterns,
-      favoritePatternIds,
-      customChordProgressions,
-      favoriteChordProgressionIds,
-      customStrummingPatterns,
-      practicePresets,
-      practiceSessions,
-    ] = await Promise.all([
-      this.repository.list(),
-      this.favorites.list(),
-      this.chordProgressions.list(),
-      this.chordProgressionFavorites.list(),
-      this.strummingPatterns.list(),
-      this.practicePresets.list(),
-      this.practiceSessions.list(),
-    ]);
+    const readSnapshot = async (): Promise<PersistenceSnapshot> => {
+      const [
+        customPatterns,
+        favoritePatternIds,
+        customChordProgressions,
+        favoriteChordProgressionIds,
+        customStrummingPatterns,
+        practicePresets,
+        practiceSessions,
+      ] = await Promise.all([
+        this.repository.list(),
+        this.favorites.list(),
+        this.chordProgressions.list(),
+        this.chordProgressionFavorites.list(),
+        this.strummingPatterns.list(),
+        this.practicePresets.list(),
+        this.practiceSessions.list(),
+      ]);
 
-    return structuredClone({
-      customChordProgressions,
-      customPatterns,
-      customStrummingPatterns,
-      favoriteChordProgressionIds,
-      favoritePatternIds,
-      practicePresets,
-      practiceSessions,
-    });
+      return {
+        customChordProgressions,
+        customPatterns,
+        customStrummingPatterns,
+        favoriteChordProgressionIds,
+        favoritePatternIds,
+        practicePresets,
+        practiceSessions,
+      };
+    };
+    const database = this.database;
+    const snapshot = database
+      ? await database.transaction(
+          "r",
+          [
+            database.customPatterns,
+            database.favoritePatterns,
+            database.chordProgressions,
+            database.favoriteChordProgressions,
+            database.strummingPatterns,
+            database.practicePresets,
+            database.practiceSessions,
+          ],
+          readSnapshot,
+        )
+      : await readSnapshot();
+
+    return structuredClone(validatedSnapshot(snapshot));
   }
 
   async importSnapshot(
@@ -250,13 +303,61 @@ export class StorageService {
     return createImportSummary(imported, mode);
   }
 
-  recoverFromRepositoryFailure(): PersistenceStatus {
+  async recoverFromIndexedDbFailure(): Promise<PersistenceStatus> {
+    if (this.status.mode !== "indexed-db") return this.status;
+    if (this.recoveryPromise) return this.recoveryPromise;
+
+    const recovery = this.switchToMemoryWithReadableData();
+    this.recoveryPromise = recovery;
+    try {
+      return await recovery;
+    } finally {
+      if (this.recoveryPromise === recovery) this.recoveryPromise = null;
+    }
+  }
+
+  private async switchToMemoryWithReadableData(): Promise<PersistenceStatus> {
+    let snapshot: PersistenceSnapshot;
+    try {
+      snapshot = await this.exportSnapshot();
+    } catch {
+      snapshot = await this.readReadableSnapshot();
+    }
+
     this.database?.close();
     this.database = null;
-    this.useFreshMemoryRepositories();
+    const repositories = createMemoryRepositories();
+    await this.populateMemoryRepositories(repositories, snapshot);
+    this.assignMemoryRepositories(repositories);
     this.status = { mode: "memory", warning: STORAGE_WARNING };
     this.initializePromise = Promise.resolve(this.status);
     return this.status;
+  }
+
+  private async readReadableSnapshot(): Promise<PersistenceSnapshot> {
+    const results = await Promise.allSettled([
+      this.repository.list(),
+      this.favorites.list(),
+      this.chordProgressions.list(),
+      this.chordProgressionFavorites.list(),
+      this.strummingPatterns.list(),
+      this.practicePresets.list(),
+      this.practiceSessions.list(),
+    ]);
+    const value = <T>(index: number): T[] => {
+      const result = results[index];
+      return result?.status === "fulfilled" ? (result.value as T[]) : [];
+    };
+
+    return validatedSnapshot({
+      customChordProgressions: value(2),
+      customPatterns: value(0),
+      customStrummingPatterns: value(4),
+      favoriteChordProgressionIds: value(3),
+      favoritePatternIds: value(1),
+      practicePresets: value(5),
+      practiceSessions: value(6),
+    });
   }
 
   private async importIntoDatabase(
@@ -438,6 +539,7 @@ export class StorageService {
     this.database?.close();
     this.database = null;
     this.initializePromise = null;
+    this.recoveryPromise = null;
     this.useFreshMemoryRepositories();
     this.status = { mode: "memory", warning: null };
   }

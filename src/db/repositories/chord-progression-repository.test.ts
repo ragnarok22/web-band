@@ -81,5 +81,8 @@ describe("chord progression repositories", () => {
     await expect(
       repository.put(gDEmCProgression as CustomChordProgression),
     ).rejects.toThrow("Only valid custom chord progressions can be saved.");
+    await expect(
+      repository.put(createProgression(gDEmCProgression.id)),
+    ).rejects.toThrow("Only valid custom chord progressions can be saved.");
   });
 });

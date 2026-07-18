@@ -1,3 +1,4 @@
+import { builtInChordProgressions } from "@/data/chord-progressions";
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type {
@@ -45,6 +46,9 @@ const MAX_CHORD_LENGTH = 32;
 const MAX_CHORD_STEPS = 64;
 const MAX_CHORD_DURATION = 64;
 const MAX_STRUM_STEPS = 48;
+const builtInChordProgressionIds = new Set(
+  builtInChordProgressions.map(({ id }) => id),
+);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -381,6 +385,14 @@ export function validateCustomChordProgression(
 
   if (value.isBuiltIn !== false)
     errors.push("Custom chord progression must not be built in.");
+  if (
+    typeof value.id === "string" &&
+    builtInChordProgressionIds.has(value.id)
+  ) {
+    errors.push(
+      "Custom chord progression ID conflicts with a built-in progression.",
+    );
+  }
   if (!isCanonicalUtcIsoTimestamp(value.createdAt))
     errors.push("Custom chord progression creation date is required.");
   if (!isCanonicalUtcIsoTimestamp(value.updatedAt))

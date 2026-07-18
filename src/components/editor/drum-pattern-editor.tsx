@@ -11,6 +11,7 @@ import { EditorHeader } from "@/components/editor/editor-header";
 import { PatternEditorFields } from "@/components/editor/pattern-editor-fields";
 import { builtInPatterns } from "@/data/patterns";
 import { useEditorPlayback } from "@/hooks/use-editor-playback";
+import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import {
   clearPattern,
   createDefaultPatternDraft,
@@ -144,6 +145,7 @@ function PatternEditorSession({
   const isDirty = Boolean(
     !sourcePatternId || JSON.stringify(draft) !== baseline,
   );
+  useUnsavedChangesGuard(isDirty);
 
   function changeDraft(pattern: CustomDrumPattern): void {
     setDraft(pattern);
@@ -200,7 +202,7 @@ function PatternEditorSession({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[100rem] px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
+    <main className="mx-auto min-h-screen w-full max-w-[100rem] overflow-x-clip px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
       <EditorHeader
         isDirty={isDirty}
         isPlaying={playback.isPlaying}
@@ -269,7 +271,7 @@ function PatternEditorSession({
 
       {errorMessage || playback.audioError ? (
         <p
-          className="border-danger/35 bg-danger/10 text-foreground fixed right-4 bottom-24 z-30 max-w-md rounded-xl border p-4 text-sm shadow-xl lg:bottom-5"
+          className="border-danger/35 bg-danger/10 text-foreground fixed right-4 bottom-24 z-30 max-w-[calc(100vw-2rem)] rounded-xl border p-4 text-sm [overflow-wrap:anywhere] break-words shadow-xl lg:bottom-5 lg:max-w-md"
           role="alert"
         >
           {errorMessage ?? playback.audioError}

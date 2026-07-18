@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { storageService } from "@/db/storage-service";
 import { isPracticeSession } from "@/lib/persistence-validation";
+import { executeStorageOperation } from "@/lib/storage-execution";
 import type { PracticeSession } from "@/types/persistence";
 
 interface PracticeHistoryStore {
@@ -72,8 +73,9 @@ export const usePracticeHistoryStore = create<PracticeHistoryStore>(
       clearAll: () =>
         enqueue(async () => {
           try {
-            await storageService.initialize();
-            await storageService.practiceSessionRepository.clear();
+            await executeStorageOperation(() =>
+              storageService.practiceSessionRepository.clear(),
+            );
             set({ errorMessage: null, sessions: [] });
           } catch (error) {
             set({
@@ -88,8 +90,9 @@ export const usePracticeHistoryStore = create<PracticeHistoryStore>(
       deleteOne: (sessionId) =>
         enqueue(async () => {
           try {
-            await storageService.initialize();
-            await storageService.practiceSessionRepository.delete(sessionId);
+            await executeStorageOperation(() =>
+              storageService.practiceSessionRepository.delete(sessionId),
+            );
             set({
               errorMessage: null,
               sessions: get().sessions.filter(({ id }) => id !== sessionId),
@@ -117,8 +120,9 @@ export const usePracticeHistoryStore = create<PracticeHistoryStore>(
         const snapshot = structuredClone(session);
         return enqueue(async () => {
           try {
-            await storageService.initialize();
-            await storageService.practiceSessionRepository.put(snapshot);
+            await executeStorageOperation(() =>
+              storageService.practiceSessionRepository.put(snapshot),
+            );
             set({
               errorMessage: null,
               sessions: sortSessions([
@@ -137,7 +141,7 @@ export const usePracticeHistoryStore = create<PracticeHistoryStore>(
           }
         });
       },
-      refreshAfterImport: hydrate,
+      refreshAfterImport: () => executeStorageOperation(hydrate),
       sessions: [],
     };
   },

@@ -113,7 +113,7 @@ export function BackupPreviewDialog({
               <span>
                 <strong className="block text-sm">Replace current data</strong>
                 <span className="text-muted mt-1 block text-xs leading-4">
-                  A safety backup downloads before replacement.
+                  A safety backup download is started before replacement.
                 </span>
               </span>
             </label>

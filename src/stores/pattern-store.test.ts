@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { basicRockPattern } from "@/data/patterns";
 import { storageService } from "@/db/storage-service";
+import { RECENT_PATTERNS_KEY } from "@/db/repositories/pattern-preferences-repository";
 import { usePatternStore } from "@/stores/pattern-store";
+import { usePracticePresetStore } from "@/stores/practice-preset-store";
+import { usePracticeStore } from "@/stores/practice-store";
 
 beforeEach(async () => {
   storageService.close();
@@ -100,5 +103,38 @@ describe("pattern store", () => {
     );
     expect(usePatternStore.getState().customPatterns).toContainEqual(created);
     expect(usePatternStore.getState().favoritePatternIds).toContain(created.id);
+  });
+
+  it("clears deleted pattern recents and selection but preserves preset snapshots", async () => {
+    const created = await usePatternStore.getState().create();
+    usePatternStore.getState().markRecent(created.id);
+    usePracticeStore.setState({ selectedPatternId: created.id });
+    const preset = {
+      configuration: {
+        bpm: 90,
+        countInMeasures: 1 as const,
+        fillFrequency: null,
+        guidedPractice: { mode: "drums" as const },
+        humanization: 0,
+        patternId: created.id,
+        swing: 0,
+      },
+      createdAt: "2026-07-18T12:00:00.000Z",
+      id: "historical-preset",
+      isFavorite: false,
+      lastUsedAt: null,
+      name: "Historical preset",
+      updatedAt: "2026-07-18T12:00:00.000Z",
+    };
+    usePracticePresetStore.setState({ presets: [preset] });
+
+    await usePatternStore.getState().delete(created.id);
+
+    expect(usePatternStore.getState().recentPatternIds).toEqual([]);
+    expect(window.localStorage.getItem(RECENT_PATTERNS_KEY)).toBe("[]");
+    expect(usePracticeStore.getState().selectedPatternId).toBe("basic-rock");
+    expect(
+      usePracticePresetStore.getState().presets[0]?.configuration.patternId,
+    ).toBe(created.id);
   });
 });

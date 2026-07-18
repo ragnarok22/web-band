@@ -149,6 +149,30 @@ describe("practice screen", () => {
     );
   });
 
+  it("does not play fallback audio before all practice stores hydrate", async () => {
+    const user = userEvent.setup();
+    usePracticeStore.setState({ hasHydrated: false });
+    useGuidedPracticeStore.setState({ isHydrated: false });
+    usePatternStore.setState({ isHydrated: false });
+    render(<PracticeScreen />);
+
+    expect(
+      screen.getByText("Loading your saved practice setup..."),
+    ).toBeVisible();
+    const play = screen.getByRole("button", { name: "Play" });
+    expect(play).toBeDisabled();
+    await user.click(play);
+    fireEvent.keyDown(window, { code: "Space", key: " " });
+    expect(engine.play).not.toHaveBeenCalled();
+
+    act(() => {
+      usePracticeStore.setState({ hasHydrated: true });
+      useGuidedPracticeStore.setState({ isHydrated: true });
+      usePatternStore.setState({ isHydrated: true });
+    });
+    expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+  });
+
   it("passes the current guided-practice snapshot to the audio engine", async () => {
     const user = userEvent.setup();
     useGuidedPracticeStore.setState({

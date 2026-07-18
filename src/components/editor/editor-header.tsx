@@ -54,7 +54,7 @@ export function EditorHeader({
           </span>
           <button
             className="border-border bg-surface-elevated text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold disabled:opacity-40"
-            disabled={!isValid || isSaving}
+            disabled={!isPlaying && (!isValid || isSaving)}
             onClick={onPlay}
             type="button"
           >

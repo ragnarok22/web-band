@@ -80,6 +80,7 @@ export function usePracticeController() {
   const status = useAudioStore((state) => state.status);
   const errorMessage = useAudioStore((state) => state.errorMessage);
   const bpm = usePracticeStore((state) => state.bpm);
+  const practiceHydrated = usePracticeStore((state) => state.hasHydrated);
   const countInMeasures = usePracticeStore((state) => state.countInMeasures);
   const fillFrequency = usePracticeStore((state) => state.fillFrequency);
   const humanization = usePracticeStore((state) => state.humanization);
@@ -91,6 +92,9 @@ export function usePracticeController() {
   const swing = usePracticeStore((state) => state.swing);
   const wakeLockEnabled = usePracticeStore((state) => state.wakeLockEnabled);
   const mode = useGuidedPracticeStore((state) => state.mode);
+  const guidedPracticeHydrated = useGuidedPracticeStore(
+    (state) => state.isHydrated,
+  );
   const tempoTrainer = useGuidedPracticeStore((state) => state.tempoTrainer);
   const chordTrainer = useGuidedPracticeStore((state) => state.chordTrainer);
   const strummingPattern = useGuidedPracticeStore(
@@ -106,6 +110,7 @@ export function usePracticeController() {
     (state) => state.isHydrated,
   );
   const customPatterns = usePatternStore((state) => state.customPatterns);
+  const patternsHydrated = usePatternStore((state) => state.isHydrated);
   const markRecent = usePatternStore((state) => state.markRecent);
   const [loadedPreset, setLoadedPreset] = useState<{
     configuration: PracticePresetConfiguration;
@@ -121,6 +126,8 @@ export function usePracticeController() {
   const patterns = [...builtInPatterns, ...customPatterns];
   const pattern = getPatternById(selectedPatternId, customPatterns);
   const active = isSessionActive(status);
+  const isReady =
+    practiceHydrated && guidedPracticeHydrated && patternsHydrated;
   const guidedPractice = getGuidedPracticeConfiguration({
     chordTrainer,
     mode,
@@ -154,6 +161,7 @@ export function usePracticeController() {
       setHistoryNotice(
         "This session could not be added to practice history. Playback was not interrupted.",
       ),
+    onSaveSuccess: () => setHistoryNotice(null),
     pattern,
     status,
   });
@@ -189,7 +197,7 @@ export function usePracticeController() {
   }, [setFocusMode]);
 
   usePracticeShortcuts({
-    disabled: shortcutsOpen || openModalCount > 0,
+    disabled: !isReady || shortcutsOpen || openModalCount > 0,
     onBpmChange: (amount) => {
       if (mode === "tempoTrainer")
         changeTrainerBpm(tempoTrainer.startBpm + amount);
@@ -227,6 +235,7 @@ export function usePracticeController() {
   }
 
   async function play(): Promise<void> {
+    if (!isReady) return;
     const guidedValidation =
       validateGuidedPracticeConfiguration(guidedPractice);
     if (!guidedValidation.success) {
@@ -414,6 +423,7 @@ export function usePracticeController() {
     humanization,
     historyNotice,
     isFocusMode,
+    isReady,
     loadPreset,
     loadedPresetName,
     masterMuted,

@@ -1,3 +1,4 @@
+import { builtInChordProgressions } from "@/data/chord-progressions";
 import { builtInPatterns } from "@/data/patterns";
 import { builtInStrummingPatterns } from "@/data/strumming-patterns";
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
@@ -39,6 +40,9 @@ const MAX_SESSION_DURATION_SECONDS = 86_400;
 const MAX_HISTORY_MINIMUM_DURATION_SECONDS = 3_600;
 
 const builtInPatternIds = new Set(builtInPatterns.map(({ id }) => id));
+const builtInChordProgressionIds = new Set(
+  builtInChordProgressions.map(({ id }) => id),
+);
 const builtInStrummingPatternIds = new Set(
   builtInStrummingPatterns.map(({ id }) => id),
 );
@@ -221,6 +225,18 @@ export function validateCustomDrumPattern(
       );
       if (!hasUniqueStrings(hitIds))
         errors.push("Custom drum pattern hit IDs must be valid and unique.");
+      const cells = value.hits.flatMap((hit) =>
+        isRecord(hit) &&
+        typeof hit.instrument === "string" &&
+        Number.isInteger(hit.step)
+          ? [`${hit.instrument}:${hit.step}`]
+          : [],
+      );
+      if (new Set(cells).size !== cells.length) {
+        errors.push(
+          "Custom drum pattern hits must use unique instrument cells.",
+        );
+      }
     }
   }
 
@@ -331,6 +347,17 @@ export function validatePracticeSession(
     !isIntegerInRange(value.durationSeconds, 1, MAX_SESSION_DURATION_SECONDS)
   ) {
     errors.push("Practice session duration is invalid.");
+  }
+  if (
+    typeof value.durationSeconds === "number" &&
+    isCanonicalUtcIsoTimestamp(value.startedAt) &&
+    isCanonicalUtcIsoTimestamp(value.endedAt) &&
+    value.durationSeconds >
+      Math.ceil(
+        (Date.parse(value.endedAt) - Date.parse(value.startedAt)) / 1_000,
+      )
+  ) {
+    errors.push("Practice session duration cannot exceed elapsed time.");
   }
   if (!hasBoundedText(value.patternId, MAX_ID_LENGTH))
     errors.push("Practice session pattern ID is invalid.");
@@ -607,6 +634,79 @@ export function validateBackupEnvelope(
       errors.push("Backup guided practice settings are invalid.");
     if (!validateHistorySettings(data.settings.history).success)
       errors.push("Backup history settings are invalid.");
+  }
+
+  const availablePatternIds = new Set(builtInPatternIds);
+  if (Array.isArray(data.customPatterns)) {
+    for (const pattern of data.customPatterns) {
+      if (validateCustomDrumPattern(pattern).success && isRecord(pattern)) {
+        availablePatternIds.add(pattern.id as string);
+      }
+    }
+  }
+  if (Array.isArray(data.favoritePatternIds)) {
+    for (const patternId of data.favoritePatternIds) {
+      if (
+        typeof patternId === "string" &&
+        !availablePatternIds.has(patternId)
+      ) {
+        errors.push(
+          `Favorite pattern ID ${patternId} is not included in this backup.`,
+        );
+      }
+    }
+  }
+  if (
+    isRecord(data.settings) &&
+    isRecord(data.settings.practice) &&
+    typeof data.settings.practice.selectedPatternId === "string" &&
+    !availablePatternIds.has(data.settings.practice.selectedPatternId)
+  ) {
+    errors.push(
+      `Practice settings pattern ID ${data.settings.practice.selectedPatternId} is not included in this backup.`,
+    );
+  }
+  if (Array.isArray(data.practicePresets)) {
+    for (const preset of data.practicePresets) {
+      const patternId =
+        isRecord(preset) && isRecord(preset.configuration)
+          ? preset.configuration.patternId
+          : undefined;
+      if (
+        validatePracticePreset(preset).success &&
+        isRecord(preset) &&
+        typeof patternId === "string" &&
+        !availablePatternIds.has(patternId)
+      ) {
+        errors.push(
+          `Practice preset ${String(preset.id)} pattern ID ${patternId} is not included in this backup.`,
+        );
+      }
+    }
+  }
+
+  const availableChordProgressionIds = new Set(builtInChordProgressionIds);
+  if (Array.isArray(data.customChordProgressions)) {
+    for (const progression of data.customChordProgressions) {
+      if (
+        validateCustomChordProgression(progression).success &&
+        isRecord(progression)
+      ) {
+        availableChordProgressionIds.add(progression.id as string);
+      }
+    }
+  }
+  if (Array.isArray(data.favoriteChordProgressionIds)) {
+    for (const progressionId of data.favoriteChordProgressionIds) {
+      if (
+        typeof progressionId === "string" &&
+        !availableChordProgressionIds.has(progressionId)
+      ) {
+        errors.push(
+          `Favorite chord progression ID ${progressionId} is not included in this backup.`,
+        );
+      }
+    }
   }
 
   return { errors, success: errors.length === 0 };

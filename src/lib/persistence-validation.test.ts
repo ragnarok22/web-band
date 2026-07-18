@@ -163,6 +163,12 @@ describe("persistence validation", () => {
         hits: [pattern.hits[0], { ...pattern.hits[0]! }],
       }).errors,
     ).toContain("Custom drum pattern hit IDs must be valid and unique.");
+    expect(
+      validateCustomDrumPattern({
+        ...pattern,
+        hits: [pattern.hits[0], { ...pattern.hits[0]!, id: "duplicate-cell" }],
+      }).errors,
+    ).toContain("Custom drum pattern hits must use unique instrument cells.");
   });
 
   it("validates bounded custom strumming patterns with canonical metadata", () => {
@@ -203,6 +209,19 @@ describe("persistence validation", () => {
     expect(
       validatePracticeSession({ ...session, extra: "field" }).errors,
     ).toContain("Practice session fields are invalid.");
+    expect(
+      validatePracticeSession({ ...session, durationSeconds: 60 }).success,
+    ).toBe(true);
+    expect(
+      validatePracticeSession({ ...session, durationSeconds: 121 }).errors,
+    ).toContain("Practice session duration cannot exceed elapsed time.");
+    expect(
+      validatePracticeSession({
+        ...session,
+        durationSeconds: 1,
+        endedAt: "2026-07-18T10:00:00.001Z",
+      }).success,
+    ).toBe(true);
 
     const settings = { enabled: true, minimumDurationSeconds: 30 };
     expect(validateHistorySettings(settings).success).toBe(true);
@@ -276,5 +295,72 @@ describe("persistence validation", () => {
     expect(validateBackupEnvelope(backup).errors).toContain(
       `Favorite pattern IDs cannot contain more than ${MAX_BACKUP_COLLECTION_RECORDS} records.`,
     );
+  });
+
+  it("requires standalone backup pattern references to resolve", () => {
+    const cases = [
+      {
+        expected:
+          "Favorite pattern ID missing-pattern is not included in this backup.",
+        mutate: (backup: BackupEnvelope) => {
+          backup.data.favoritePatternIds = ["missing-pattern"];
+        },
+      },
+      {
+        expected:
+          "Practice settings pattern ID missing-pattern is not included in this backup.",
+        mutate: (backup: BackupEnvelope) => {
+          backup.data.settings.practice.selectedPatternId = "missing-pattern";
+        },
+      },
+      {
+        expected:
+          "Practice preset preset-1 pattern ID missing-pattern is not included in this backup.",
+        mutate: (backup: BackupEnvelope) => {
+          backup.data.practicePresets[0]!.configuration.patternId =
+            "missing-pattern";
+        },
+      },
+    ];
+
+    for (const { expected, mutate } of cases) {
+      const backup = createBackup();
+      mutate(backup);
+      expect(validateBackupEnvelope(backup).errors).toContain(expected);
+    }
+  });
+
+  it("requires standalone favorite chord progression references to resolve", () => {
+    const backup = createBackup();
+    backup.data.favoriteChordProgressionIds = ["missing-progression"];
+
+    expect(validateBackupEnvelope(backup).errors).toContain(
+      "Favorite chord progression ID missing-progression is not included in this backup.",
+    );
+  });
+
+  it("rejects custom chord progressions that collide with built-in IDs", () => {
+    const backup = createBackup();
+    backup.data.customChordProgressions[0]!.id = gDEmCProgression.id;
+    backup.data.favoriteChordProgressionIds = [gDEmCProgression.id];
+
+    expect(validateBackupEnvelope(backup).errors).toContain(
+      "Custom chord progressions contains an invalid record.",
+    );
+  });
+
+  it("allows built-in references and historical session snapshots", () => {
+    const backup = createBackup();
+    backup.data.favoritePatternIds = [basicRockPattern.id];
+    backup.data.favoriteChordProgressionIds = [gDEmCProgression.id];
+    backup.data.practicePresets[0]!.configuration.patternId =
+      basicRockPattern.id;
+    backup.data.settings.practice.selectedPatternId = basicRockPattern.id;
+    backup.data.practiceSessions[0]!.patternId = "removed-historical-pattern";
+
+    expect(validateBackupEnvelope(backup)).toEqual({
+      errors: [],
+      success: true,
+    });
   });
 });

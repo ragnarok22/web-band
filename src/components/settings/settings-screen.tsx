@@ -165,7 +165,8 @@ export function SettingsScreen({
           </h2>
           <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
             Remove only Web Band data and settings from this browser. Other site
-            storage is left alone, and a backup downloads before deletion.
+            storage is left alone, and a backup download is started before
+            deletion.
           </p>
           <button
             className="border-danger/45 text-danger mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"

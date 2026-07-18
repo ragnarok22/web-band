@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -59,7 +59,9 @@ describe("drum pattern editor", () => {
 
     await user.type(name, "Sunset Pocket");
     await user.click(
-      screen.getByRole("button", { name: "Kick, step 1, empty" }),
+      screen.getByRole("button", {
+        name: /Kick, measure 1, column 1,.*empty/,
+      }),
     );
     await user.click(screen.getByRole("button", { name: "Save pattern" }));
 
@@ -100,6 +102,77 @@ describe("drum pattern editor", () => {
         existing.id,
         expect.objectContaining({ name: "Renamed Pattern" }),
       ),
+    );
+  });
+
+  it("keeps Stop enabled when an active draft becomes invalid", async () => {
+    const user = userEvent.setup();
+    render(<DrumPatternEditor />);
+
+    await user.click(await screen.findByRole("button", { name: "Play draft" }));
+    act(() => useAudioStore.setState({ status: "playing" }));
+    await user.clear(screen.getByRole("textbox", { name: "Pattern name" }));
+
+    const stop = screen.getByRole("button", { name: "Stop" });
+    expect(stop).toBeEnabled();
+    act(() => useAudioStore.setState({ status: "suspended" }));
+    expect(stop).toBeEnabled();
+    await user.click(stop);
+    expect(engine.stop).toHaveBeenCalledOnce();
+  });
+
+  it("keeps Stop enabled while a save is pending", async () => {
+    const user = userEvent.setup();
+    let finishSave!: (
+      pattern: ReturnType<typeof createDefaultPatternDraft>,
+    ) => void;
+    const create = vi.fn(
+      (pattern?: ReturnType<typeof createDefaultPatternDraft>) => {
+        if (!pattern) throw new Error("Expected the editor draft.");
+        return new Promise<typeof pattern>((resolve) => {
+          finishSave = resolve;
+        });
+      },
+    );
+    usePatternStore.setState({ create });
+    render(<DrumPatternEditor />);
+    act(() => useAudioStore.setState({ status: "playing" }));
+
+    await user.click(screen.getByRole("button", { name: "Save pattern" }));
+    expect(screen.getByRole("button", { name: "Stop" })).toBeEnabled();
+
+    const saved = create.mock.calls[0]![0]!;
+    await act(async () => finishSave(saved));
+  });
+
+  it("keeps a deletion failure visible inside the open confirmation", async () => {
+    const user = userEvent.setup();
+    const existing = createDefaultPatternDraft([], {
+      createId: () => "delete-failure",
+      now: () => "2026-07-18T12:00:00.000Z",
+    });
+    navigation.params.set("pattern", existing.id);
+    usePatternStore.setState({
+      customPatterns: [existing],
+      delete: vi
+        .fn()
+        .mockRejectedValue(new Error("Pattern storage is locked.")),
+    });
+    render(<DrumPatternEditor />);
+
+    await user.click(
+      await screen.findByRole("button", { name: "Delete pattern" }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: `Delete ${existing.name}?`,
+    });
+    await user.click(
+      within(dialog).getByRole("button", { name: "Delete pattern" }),
+    );
+
+    expect(dialog).toBeVisible();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Pattern storage is locked.",
     );
   });
 });

@@ -14,6 +14,7 @@ interface PracticeHistoryRecorderOptions {
   bpm: number;
   guidedPractice: GuidedPracticeConfiguration;
   onSaveError: () => void;
+  onSaveSuccess: () => void;
   pattern: DrumPattern;
   status: AudioEngineStatus;
 }
@@ -34,8 +35,8 @@ interface ActiveSession {
   startedAt: string;
 }
 
-function isAudiblePractice(status: AudioEngineStatus): boolean {
-  return status === "counting-in" || status === "playing";
+function isRecordedPractice(status: AudioEngineStatus): boolean {
+  return status === "playing";
 }
 
 function isFinalStatus(status: AudioEngineStatus): boolean {
@@ -48,6 +49,7 @@ export function usePracticeHistoryRecorder({
   bpm,
   guidedPractice,
   onSaveError,
+  onSaveSuccess,
   pattern,
   status,
 }: PracticeHistoryRecorderOptions): void {
@@ -55,6 +57,7 @@ export function usePracticeHistoryRecorder({
   const isMounted = useRef(true);
 
   const reportSaveError = useEffectEvent(onSaveError);
+  const reportSaveSuccess = useEffectEvent(onSaveSuccess);
 
   const finalize = useEffectEvent((now = performance.now()) => {
     const session = activeSession.current;
@@ -92,6 +95,9 @@ export function usePracticeHistoryRecorder({
     void usePracticeHistoryStore
       .getState()
       .record(record)
+      .then(() => {
+        if (isMounted.current) reportSaveSuccess();
+      })
       .catch(() => {
         if (isMounted.current) reportSaveError();
       });
@@ -110,7 +116,7 @@ export function usePracticeHistoryRecorder({
 
   useEffect(() => {
     const now = performance.now();
-    if (isAudiblePractice(status)) {
+    if (isRecordedPractice(status)) {
       if (!activeSession.current) {
         const startingBpm =
           guidedPractice.mode === "tempoTrainer"

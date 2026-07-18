@@ -4,12 +4,15 @@ import {
   loadRecentPatternIds,
   saveRecentPatternIds,
 } from "@/db/repositories/pattern-preferences-repository";
-import { builtInPatterns } from "@/data/patterns";
+import { basicRockPattern, builtInPatterns } from "@/data/patterns";
 import { storageService } from "@/db/storage-service";
 import {
   createDefaultPatternDraft,
   duplicatePatternDraft,
 } from "@/lib/drum-pattern-editor";
+import { isCustomDrumPattern } from "@/lib/persistence-validation";
+import { executeStorageOperation } from "@/lib/storage-execution";
+import { usePracticeStore } from "@/stores/practice-store";
 import type { CustomDrumPattern } from "@/types/persistence";
 
 export type PatternChanges = Partial<
@@ -72,22 +75,35 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
     ) {
       throw new Error("Pattern ID is already in use.");
     }
-    await storageService.initialize();
-    await storageService.patternRepository.put(pattern);
+    if (!isCustomDrumPattern(pattern)) {
+      throw new Error("Only valid custom patterns can be saved.");
+    }
+    await executeStorageOperation(() =>
+      storageService.patternRepository.put(pattern),
+    );
     set({ customPatterns: sortPatterns([pattern, ...get().customPatterns]) });
     return structuredClone(pattern);
   },
   customPatterns: [],
   delete: async (patternId) => {
     assertCustomTarget(patternId, get().customPatterns);
-    await storageService.initialize();
-    await storageService.deleteCustomPattern(patternId);
+    await executeStorageOperation(() =>
+      storageService.deleteCustomPattern(patternId),
+    );
+    const recentPatternIds = get().recentPatternIds.filter(
+      (id) => id !== patternId,
+    );
     set({
       customPatterns: get().customPatterns.filter(({ id }) => id !== patternId),
       favoritePatternIds: get().favoritePatternIds.filter(
         (id) => id !== patternId,
       ),
+      recentPatternIds,
     });
+    saveRecentPatternIds(recentPatternIds);
+    if (usePracticeStore.getState().selectedPatternId === patternId) {
+      usePracticeStore.getState().setSelectedPatternId(basicRockPattern.id);
+    }
   },
   duplicate: async (patternId) => {
     const current = get().customPatterns;
@@ -96,8 +112,9 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
       builtInPatterns.find(({ id }) => id === patternId);
     if (!source) throw new Error("Pattern to duplicate was not found.");
     const pattern = duplicatePatternDraft(source, unavailableIds(current));
-    await storageService.initialize();
-    await storageService.patternRepository.put(pattern);
+    await executeStorageOperation(() =>
+      storageService.patternRepository.put(pattern),
+    );
     set({ customPatterns: sortPatterns([pattern, ...get().customPatterns]) });
     return structuredClone(pattern);
   },
@@ -130,7 +147,8 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
     set({ recentPatternIds });
     saveRecentPatternIds(recentPatternIds);
   },
-  refreshAfterImport: async () => get().hydrate(),
+  refreshAfterImport: async () =>
+    executeStorageOperation(() => get().hydrate()),
   toggleFavorite: async (patternId) => {
     const previousIds = get().favoritePatternIds;
     const isFavorite = previousIds.includes(patternId);
@@ -140,12 +158,11 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
 
     set({ favoritePatternIds });
     try {
-      await storageService.initialize();
-      if (isFavorite) {
-        await storageService.favoriteRepository.remove(patternId);
-      } else {
-        await storageService.favoriteRepository.add(patternId);
-      }
+      await executeStorageOperation(() =>
+        isFavorite
+          ? storageService.favoriteRepository.remove(patternId)
+          : storageService.favoriteRepository.add(patternId),
+      );
     } catch {
       set({ favoritePatternIds: previousIds });
       throw new Error("Favorite could not be saved locally.");
@@ -161,8 +178,12 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
       isBuiltIn: false,
       updatedAt: new Date().toISOString(),
     };
-    await storageService.initialize();
-    await storageService.patternRepository.put(pattern);
+    if (!isCustomDrumPattern(pattern)) {
+      throw new Error("Only valid custom patterns can be saved.");
+    }
+    await executeStorageOperation(() =>
+      storageService.patternRepository.put(pattern),
+    );
     set({
       customPatterns: sortPatterns(
         get().customPatterns.map((candidate) =>

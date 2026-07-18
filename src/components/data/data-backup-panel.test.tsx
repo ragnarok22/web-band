@@ -128,6 +128,9 @@ describe("data backup panel", () => {
     await user.click(
       await screen.findByRole("radio", { name: /Replace current data/ }),
     );
+    expect(
+      screen.getByText(/safety backup download is started before replacement/i),
+    ).toBeVisible();
     const importButton = screen.getByRole("button", { name: "Import data" });
     expect(importButton).toBeDisabled();
     await user.click(
@@ -155,7 +158,7 @@ describe("data backup panel", () => {
 
     expect(backupActions.exportCurrentBackup).toHaveBeenCalledOnce();
     expect(await screen.findByRole("status")).toHaveTextContent(
-      "Backup downloaded",
+      "Backup download started",
     );
   });
 });

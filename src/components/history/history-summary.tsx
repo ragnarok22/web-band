@@ -104,7 +104,7 @@ export function HistorySummary({ sessions }: HistorySummaryProps) {
               </span>
               {label}
             </dt>
-            <dd className="text-foreground mt-6 text-2xl leading-tight font-black tracking-[-0.04em]">
+            <dd className="text-foreground mt-6 text-2xl leading-tight font-black tracking-[-0.04em] [overflow-wrap:anywhere] break-words">
               {value}
             </dd>
             <dd className="text-muted mt-2 text-xs font-semibold">{detail}</dd>

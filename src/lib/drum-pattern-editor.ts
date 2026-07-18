@@ -162,6 +162,7 @@ export function cyclePatternCell(
   step: number,
   createId: () => string = () => crypto.randomUUID(),
 ): CustomDrumPattern {
+  if (step < 0 || step >= getPatternStepCount(pattern)) return pattern;
   const existing = pattern.hits.find(
     (hit) => hit.instrument === instrument && hit.step === step,
   );
@@ -199,6 +200,7 @@ export function togglePatternCell(
   step: number,
   createId: () => string = () => crypto.randomUUID(),
 ): CustomDrumPattern {
+  if (step < 0 || step >= getPatternStepCount(pattern)) return pattern;
   const existing = pattern.hits.find(
     (hit) => hit.instrument === instrument && hit.step === step,
   );
@@ -267,17 +269,59 @@ export function pastePatternMeasure(
   const retained = pattern.hits.filter(
     (hit) => hit.step < start || hit.step >= start + stepCount,
   );
-  const pasted = clipboard.hits.map((hit) => ({
-    ...structuredClone(hit),
+  const scaled = new Map<
+    string,
+    { hit: Omit<DrumHit, "id">; sourceStep: number }
+  >();
+  for (const source of clipboard.hits) {
+    const hit = {
+      ...structuredClone(source),
+      step:
+        start +
+        Math.min(
+          stepCount - 1,
+          Math.floor((source.step / clipboard.stepCount) * stepCount),
+        ),
+    };
+    const key = `${hit.instrument}:${hit.step}`;
+    const current = scaled.get(key);
+    scaled.set(
+      key,
+      current
+        ? mergeScaledHits(current, { hit, sourceStep: source.step })
+        : { hit, sourceStep: source.step },
+    );
+  }
+  const pasted = Array.from(scaled.values(), ({ hit }) => ({
+    ...hit,
     id: createUniqueId("hit", ids, createId),
-    step:
-      start +
-      Math.min(
-        stepCount - 1,
-        Math.floor((hit.step / clipboard.stepCount) * stepCount),
-      ),
   }));
   return withHits(pattern, [...retained, ...pasted]);
+}
+
+function mergeScaledHits(
+  left: { hit: Omit<DrumHit, "id">; sourceStep: number },
+  right: { hit: Omit<DrumHit, "id">; sourceStep: number },
+): { hit: Omit<DrumHit, "id">; sourceStep: number } {
+  const leftProbability = left.hit.probability ?? 1;
+  const rightProbability = right.hit.probability ?? 1;
+  const strongest =
+    right.hit.velocity > left.hit.velocity ||
+    (right.hit.velocity === left.hit.velocity &&
+      (rightProbability > leftProbability ||
+        (rightProbability === leftProbability &&
+          right.sourceStep < left.sourceStep)))
+      ? right
+      : left;
+  return {
+    hit: {
+      ...strongest.hit,
+      flam: Boolean(left.hit.flam || right.hit.flam),
+      probability: Math.max(leftProbability, rightProbability),
+      velocity: Math.max(left.hit.velocity, right.hit.velocity),
+    },
+    sourceStep: strongest.sourceStep,
+  };
 }
 
 export function updateAdvancedHit(
@@ -287,6 +331,7 @@ export function updateAdvancedHit(
   changes: AdvancedHitChanges,
   createId: () => string = () => crypto.randomUUID(),
 ): CustomDrumPattern {
+  if (step < 0 || step >= getPatternStepCount(pattern)) return pattern;
   const existing = pattern.hits.find(
     (hit) => hit.instrument === instrument && hit.step === step,
   );

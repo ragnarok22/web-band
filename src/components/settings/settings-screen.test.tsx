@@ -62,6 +62,9 @@ describe("settings screen", () => {
     expect(
       screen.getByRole("dialog", { name: "Delete all local data?" }),
     ).toBeVisible();
+    expect(
+      screen.getByText(/safety backup download is started before deletion/i),
+    ).toBeVisible();
     const confirmButton = screen.getByRole("button", {
       name: "Delete local data",
     });

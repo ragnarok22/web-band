@@ -81,6 +81,29 @@ describe("chord progression store", () => {
     expect(useChordProgressionStore.getState().customProgressions).toEqual([]);
   });
 
+  it("rejects writes for custom progressions using built-in IDs", async () => {
+    const timestamp = "2026-07-18T12:00:00.000Z";
+    useChordProgressionStore.setState({
+      customProgressions: [
+        {
+          ...structuredClone(gDEmCProgression),
+          createdAt: timestamp,
+          isBuiltIn: false,
+          updatedAt: timestamp,
+        },
+      ],
+    });
+
+    await expect(
+      useChordProgressionStore
+        .getState()
+        .update(gDEmCProgression.id, { name: "Collision" }),
+    ).rejects.toThrow("Only valid custom chord progressions can be saved.");
+    expect(
+      await storageService.chordProgressionRepository.get(gDEmCProgression.id),
+    ).toBeUndefined();
+  });
+
   it("keeps store state intact when atomic deletion fails", async () => {
     const created = await useChordProgressionStore.getState().create({
       name: "Favorite progression",

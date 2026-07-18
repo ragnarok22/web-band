@@ -11,6 +11,7 @@ interface PracticeFocusSessionProps {
   elapsedSeconds: number;
   errorMessage: string | null;
   historyNotice: string | null;
+  isReady: boolean;
   onDismissNotice: () => void;
   onExit: () => void;
   onPlay: () => void;
@@ -29,6 +30,7 @@ export function PracticeFocusSession({
   elapsedSeconds,
   errorMessage,
   historyNotice,
+  isReady,
   onDismissNotice,
   onExit,
   onPlay,
@@ -48,6 +50,7 @@ export function PracticeFocusSession({
         elapsedSeconds={elapsedSeconds}
         errorMessage={errorMessage}
         historyNotice={historyNotice}
+        isReady={isReady}
         onDismissNotice={onDismissNotice}
         onExit={onExit}
         onPlay={onPlay}

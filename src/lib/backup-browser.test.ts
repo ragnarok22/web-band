@@ -35,14 +35,16 @@ afterEach(() => {
 });
 
 describe("backup browser adapter", () => {
-  it("downloads formatted JSON with the dated filename and JSON MIME type", () => {
+  it("starts a formatted JSON download and revokes its URL on a later task", () => {
+    vi.useFakeTimers();
     let downloadedBlob: Blob | undefined;
+    const revokeObjectURL = vi.fn();
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn((blob: Blob) => {
         downloadedBlob = blob;
         return "blob:backup";
       }),
-      revokeObjectURL: vi.fn(),
+      revokeObjectURL,
     });
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
@@ -56,6 +58,11 @@ describe("backup browser adapter", () => {
       download: backupFileName("2026-07-18T12:00:00.000Z"),
       href: "blob:backup",
     });
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+
+    vi.runOnlyPendingTimers();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:backup");
+    vi.useRealTimers();
   });
 
   it("rejects an oversized File before reading its contents", async () => {

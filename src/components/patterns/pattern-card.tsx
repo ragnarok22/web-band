@@ -28,9 +28,9 @@ export function PatternCard({
   pattern,
 }: PatternCardProps) {
   return (
-    <article className="border-border bg-surface hover:border-border-strong group flex h-full flex-col rounded-2xl border p-4 transition-colors sm:p-5">
+    <article className="border-border bg-surface hover:border-border-strong group flex h-full min-w-0 flex-col rounded-2xl border p-4 transition-colors [contain-intrinsic-size:auto_28rem] [content-visibility:auto] sm:p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.12em] uppercase">
             <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2 py-1">
               {formatPatternCategory(pattern.category)}
@@ -42,7 +42,7 @@ export function PatternCard({
               </span>
             ) : null}
           </div>
-          <h2 className="text-foreground text-xl font-black tracking-[-0.03em]">
+          <h2 className="text-foreground text-xl font-black tracking-[-0.03em] [overflow-wrap:anywhere] break-words">
             {pattern.name}
           </h2>
         </div>
@@ -60,7 +60,7 @@ export function PatternCard({
         </button>
       </div>
 
-      <p className="text-muted min-h-12 text-sm leading-6">
+      <p className="text-muted min-h-12 text-sm leading-6 [overflow-wrap:anywhere] break-words">
         {pattern.description}
       </p>
 

@@ -9,6 +9,7 @@ interface TransportControlsProps {
   onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
+  playDisabled?: boolean;
   status: AudioEngineStatus;
 }
 
@@ -16,6 +17,7 @@ export function TransportControls({
   onPause,
   onPlay,
   onStop,
+  playDisabled = false,
   status,
 }: TransportControlsProps) {
   const isBusy = status === "initializing";
@@ -48,7 +50,7 @@ export function TransportControls({
         <m.button
           aria-label={playLabel}
           className="play-control bg-accent text-accent-ink hover:bg-accent-strong flex size-24 items-center justify-center rounded-[1.75rem] shadow-[0_14px_45px_rgba(231,169,75,0.24)] transition-colors disabled:opacity-50 sm:size-28"
-          disabled={isBusy || isRunning}
+          disabled={playDisabled || isBusy || isRunning}
           onClick={onPlay}
           type="button"
           whileTap={{ scale: 0.96 }}

@@ -61,7 +61,8 @@ export function AppProviders({ children }: AppProvidersProps) {
         isActive &&
         hydrationResults.some((result) => result.status === "rejected")
       ) {
-        const recoveryStatus = storageService.recoverFromRepositoryFailure();
+        const recoveryStatus =
+          await storageService.recoverFromIndexedDbFailure();
         setStorageStatus(recoveryStatus.mode, recoveryStatus.warning);
         await Promise.all([
           hydratePatterns(),

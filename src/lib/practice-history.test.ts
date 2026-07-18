@@ -16,6 +16,8 @@ function session(
   durationSeconds: number,
   patternName: string,
   startingBpm: number,
+  endingBpm = startingBpm,
+  patternId = patternName.toLowerCase().replaceAll(" ", "-"),
 ): PracticeSession {
   const endedAt = new Date(
     Date.parse(startedAt) + durationSeconds * 1_000,
@@ -25,9 +27,9 @@ function session(
     createdAt: startedAt,
     durationSeconds,
     endedAt,
-    endingBpm: startingBpm,
+    endingBpm,
     id,
-    patternId: patternName.toLowerCase().replaceAll(" ", "-"),
+    patternId,
     patternName,
     practiceMode: "drums",
     startedAt,
@@ -91,6 +93,37 @@ describe("practice history aggregation", () => {
         session("low", "2026-07-14T11:00:00.000Z", 60, "Low", 80),
       ])?.minimumBpm,
     ).toBe(80);
+  });
+
+  it("uses both session BPM endpoints and the latest pattern name", () => {
+    expect(
+      getMostUsedBpmRange([
+        session("ramp", "2026-07-14T10:00:00.000Z", 60, "Ramp", 80, 140),
+      ]),
+    ).toMatchObject({ minimumBpm: 100, maximumBpm: 119 });
+
+    expect(
+      getMostUsedPattern([
+        session(
+          "new",
+          "2026-07-15T10:00:00.000Z",
+          60,
+          "New name",
+          90,
+          90,
+          "renamed-pattern",
+        ),
+        session(
+          "old",
+          "2026-07-14T10:00:00.000Z",
+          60,
+          "Old name",
+          90,
+          90,
+          "renamed-pattern",
+        ),
+      ])?.patternName,
+    ).toBe("New name");
   });
 
   it("groups local calendar days and sessions newest-first", () => {

@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 import { storageService } from "@/db/storage-service";
+import { isPracticePreset } from "@/lib/practice-validation";
+import { executeStorageOperation } from "@/lib/storage-execution";
 import {
   getGuidedPracticeConfiguration,
   useGuidedPracticeStore,
@@ -76,8 +78,12 @@ function getRecentPresetIds(presets: readonly PracticePreset[]): string[] {
 export const usePracticePresetStore = create<PracticePresetStore>(
   (set, get) => {
     async function savePreset(preset: PracticePreset): Promise<PracticePreset> {
-      await storageService.initialize();
-      await storageService.practicePresetRepository.put(preset);
+      if (!isPracticePreset(preset)) {
+        throw new Error("Only valid practice presets can be saved.");
+      }
+      await executeStorageOperation(() =>
+        storageService.practicePresetRepository.put(preset),
+      );
       const presets = sortPresets([
         preset,
         ...get().presets.filter(({ id }) => id !== preset.id),
@@ -114,8 +120,9 @@ export const usePracticePresetStore = create<PracticePresetStore>(
       },
       delete: async (presetId) => {
         findPreset(presetId);
-        await storageService.initialize();
-        await storageService.practicePresetRepository.delete(presetId);
+        await executeStorageOperation(() =>
+          storageService.practicePresetRepository.delete(presetId),
+        );
         const presets = get().presets.filter(({ id }) => id !== presetId);
         set({ presets, recentPresetIds: getRecentPresetIds(presets) });
       },
@@ -157,7 +164,8 @@ export const usePracticePresetStore = create<PracticePresetStore>(
       },
       presets: [],
       recentPresetIds: [],
-      refreshAfterImport: async () => get().hydrate(),
+      refreshAfterImport: async () =>
+        executeStorageOperation(() => get().hydrate()),
       rename: async (presetId, name) => {
         const preset = findPreset(presetId);
         return savePreset({

@@ -65,7 +65,12 @@ function dependencies(order: string[] = []): BackupServiceDependencies {
       order.push("preferences");
       return true;
     }),
+    clearRecentPatterns: vi.fn(() => {
+      order.push("recents");
+      return true;
+    }),
     downloadEnvelope: vi.fn(() => order.push("download")),
+    executeStorageOperation: vi.fn(async (operation) => operation()),
     getSettings: vi.fn(() => {
       order.push("get-settings");
       return settings();
@@ -121,6 +126,7 @@ describe("backup service", () => {
       "merge",
     );
     expect(deps.applySettings).toHaveBeenCalledWith(envelope().data.settings);
+    expect(deps.clearRecentPatterns).not.toHaveBeenCalled();
     expect(result).toMatchObject({ mode: "merge", settingsPersisted: true });
   });
 
@@ -136,6 +142,7 @@ describe("backup service", () => {
       "get-settings",
       "download",
       "import:replace",
+      "recents",
       "settings",
       "refresh",
     ]);
@@ -170,6 +177,56 @@ describe("backup service", () => {
     expect(result.warning).toMatch(/settings/i);
   });
 
+  it("returns a completion warning when settings throw after import commit", async () => {
+    const deps = dependencies();
+    vi.mocked(deps.applySettings).mockImplementationOnce(() => {
+      throw new Error("localStorage unavailable");
+    });
+    const service = new BackupService(deps);
+
+    const result = await service.importBackup(envelope(), "merge");
+
+    expect(result.settingsPersisted).toBe(false);
+    expect(result.warning).toMatch(/settings/i);
+    expect(deps.refreshStores).toHaveBeenCalledOnce();
+  });
+
+  it("returns a completion warning when store refresh fails after import commit", async () => {
+    const deps = dependencies();
+    vi.mocked(deps.refreshStores).mockRejectedValueOnce(
+      new Error("refresh failed"),
+    );
+    const service = new BackupService(deps);
+
+    const result = await service.importBackup(envelope(), "merge");
+
+    expect(result.settingsPersisted).toBe(true);
+    expect(result.warning).toMatch(/refresh/i);
+  });
+
+  it("clears replace recents before refresh and warns without rejecting on failure", async () => {
+    const order: string[] = [];
+    const deps = dependencies(order);
+    vi.mocked(deps.clearRecentPatterns).mockImplementationOnce(() => {
+      order.push("recents");
+      throw new Error("preferences unavailable");
+    });
+    const service = new BackupService(deps);
+
+    const result = await service.importBackup(envelope(), "replace");
+
+    expect(order).toEqual([
+      "export",
+      "get-settings",
+      "download",
+      "import:replace",
+      "recents",
+      "settings",
+      "refresh",
+    ]);
+    expect(result.warning).toMatch(/recent pattern/i);
+  });
+
   it("backs up, atomically empties the database domain, resets settings, and refreshes", async () => {
     const order: string[] = [];
     const deps = dependencies(order);
@@ -196,5 +253,41 @@ describe("backup service", () => {
       practice: defaultPracticeSettings,
     });
     expect(result.cleared).toBe(true);
+  });
+
+  it("does not reject a committed clear when settings, preferences, or refresh fail", async () => {
+    const deps = dependencies();
+    vi.mocked(deps.applySettings).mockImplementationOnce(() => {
+      throw new Error("settings failed");
+    });
+    vi.mocked(deps.clearAppPreferences).mockImplementationOnce(() => {
+      throw new Error("preferences failed");
+    });
+    vi.mocked(deps.refreshStores).mockRejectedValueOnce(
+      new Error("refresh failed"),
+    );
+    const service = new BackupService(deps);
+
+    const result = await service.clearAllLocalData();
+
+    expect(result).toMatchObject({ cleared: true, settingsPersisted: false });
+    expect(result.warning).toMatch(/settings/i);
+    expect(result.warning).toMatch(/preferences/i);
+    expect(result.warning).toMatch(/refresh/i);
+  });
+
+  it("still rejects a clear database failure before commit", async () => {
+    const deps = dependencies();
+    vi.mocked(deps.storage.importSnapshot).mockRejectedValueOnce(
+      new Error("database failed"),
+    );
+    const service = new BackupService(deps);
+
+    await expect(service.clearAllLocalData()).rejects.toThrow(
+      "database failed",
+    );
+    expect(deps.applySettings).not.toHaveBeenCalled();
+    expect(deps.clearAppPreferences).not.toHaveBeenCalled();
+    expect(deps.refreshStores).not.toHaveBeenCalled();
   });
 });
