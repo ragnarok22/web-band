@@ -1,6 +1,6 @@
 "use client";
 
-import { Drum, History, LibraryBig, Settings } from "lucide-react";
+import { Drum, History, Info, LibraryBig, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,7 @@ const navigationItems = [
   { href: "/patterns", icon: LibraryBig, label: "Patterns" },
   { href: "/history", icon: History, label: "History" },
   { href: "/settings", icon: Settings, label: "Settings" },
+  { href: "/about", icon: Info, label: "About" },
 ] as const;
 
 export function SiteNavigation() {
@@ -29,7 +30,7 @@ export function SiteNavigation() {
           <Drum aria-hidden="true" className="size-6" />
         </span>
       </div>
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-1 sm:gap-2 lg:mx-0 lg:flex lg:flex-1 lg:flex-col">
+      <div className="mx-auto grid max-w-md grid-cols-5 gap-1 sm:gap-2 lg:mx-0 lg:flex lg:flex-1 lg:flex-col">
         {navigationItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href;
           return (

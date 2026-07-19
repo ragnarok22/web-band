@@ -37,7 +37,7 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Versioned `localStorage` persistence for practice and mixer preferences.
 - Warm dark, light, and system color themes plus an explicit reduced-motion preference.
 - Skip navigation, visible keyboard focus, destructive-action focus recovery, safe-area-aware navigation, and stacked nonblocking notices.
-- Installable PWA with offline practice, pattern library, editor, history, and settings routes plus an update notification.
+- Installable PWA with offline practice, pattern library, editor, history, settings, and about routes plus an update notification.
 - Responsive layouts tested at 320px, mobile, and desktop widths.
 
 ## Requirements
@@ -192,7 +192,7 @@ Values are parsed defensively and clamped before use. Corrupted settings fall ba
 
 ## PWA and Offline Behavior
 
-`src/app/manifest.ts` defines the installable app metadata and generated 192px, 512px, and maskable icons. Serwist precaches the built application assets and the `/practice`, `/patterns`, `/editor`, `/history`, and `/settings` routes; built-in pattern data and synthesis code are part of that shell.
+`src/app/manifest.ts` defines the installable app metadata and generated 192px, 512px, and maskable icons. Serwist precaches the built application assets and the `/practice`, `/patterns`, `/editor`, `/history`, `/settings`, and `/about` routes; built-in pattern data and synthesis code are part of that shell.
 
 After the first successful production visit, every local-first route reloads offline with saved local data. A service-worker controller change shows a reload notification when a new version becomes active.
 

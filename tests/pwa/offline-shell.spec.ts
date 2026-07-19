@@ -32,6 +32,11 @@ test("loads every local-first route offline after the first visit", async ({
   ).toBeVisible();
   await expect(page.getByText("44 of 44 patterns")).toBeVisible();
 
+  await page.goto("/about", { waitUntil: "domcontentloaded" });
+  await expect(
+    page.getByRole("heading", { name: "A drum room without the room." }),
+  ).toBeVisible();
+
   await page.goto("/history", { waitUntil: "domcontentloaded" });
   await expect(
     page.getByRole("heading", { name: "The work you put in." }),

@@ -15,6 +15,7 @@ function getRevision() {
 
 const withSerwist = withSerwistInit({
   additionalPrecacheEntries: [
+    { url: "/about", revision: getRevision() },
     { url: "/editor", revision: getRevision() },
     { url: "/history", revision: getRevision() },
     { url: "/practice", revision: getRevision() },

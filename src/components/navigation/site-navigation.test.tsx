@@ -18,7 +18,7 @@ describe("site navigation", () => {
 
   it("includes History as the active primary destination", () => {
     render(<SiteNavigation />);
-    expect(screen.getAllByRole("link")).toHaveLength(4);
+    expect(screen.getAllByRole("link")).toHaveLength(5);
     expect(screen.getByRole("link", { name: "History" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -29,6 +29,15 @@ describe("site navigation", () => {
     navigation.pathname = "/settings";
     render(<SiteNavigation />);
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
+  it("includes About as a primary destination", () => {
+    navigation.pathname = "/about";
+    render(<SiteNavigation />);
+    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(
       "aria-current",
       "page",
     );

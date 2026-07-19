@@ -24,7 +24,7 @@ Last audited against the source on 2026-07-19.
 - [x] **Create the primary routes.** Provide `/practice`, `/patterns`, `/editor`, `/history`, and `/settings`, with `/` redirecting to `/practice`.
 - [x] **Create responsive navigation.** Use mobile bottom navigation and a desktop side rail without interrupting active audio cleanup.
 - [x] **Bootstrap appearance before hydration.** Apply the persisted dark, light, or system theme without a visible theme flash.
-- [ ] **Add the About route.** Create `/about`, add navigation and metadata, include it in offline precaching, and cover it in the PWA route test.
+- [x] **Add the About route.** Create `/about`, add navigation and metadata, include it in offline precaching, and cover it in the PWA route test.
 
 ## Phase 2: Audio Engine And Scheduling
 
