@@ -33,12 +33,13 @@ import type {
 } from "@/types/persistence";
 
 const engine = vi.hoisted(() => ({
-  changePattern: vi.fn((...arguments_: [unknown?, (() => void)?, boolean?]) => {
+  changePattern: vi.fn((...arguments_: [unknown?, (() => void)?, string?]) => {
     void arguments_;
     return false;
   }),
   pause: vi.fn(),
   play: vi.fn(() => Promise.resolve()),
+  queueStopWithFill: vi.fn(() => true),
   setBpm: vi.fn(),
   setFillFrequency: vi.fn(),
   setHumanization: vi.fn(),
@@ -182,7 +183,7 @@ describe("practice screen", () => {
     expect(screen.getByText("Swing 8ths")).toBeInTheDocument();
   });
 
-  it("queues active pattern changes by default", async () => {
+  it("queues active pattern changes after a transition fill by default", async () => {
     const user = userEvent.setup();
     useAudioStore.setState({ status: "playing" });
     engine.changePattern.mockReturnValueOnce(true);
@@ -196,9 +197,11 @@ describe("practice screen", () => {
     expect(engine.changePattern).toHaveBeenCalledWith(
       expect.objectContaining({ id: "driving-eighths" }),
       expect.any(Function),
-      false,
+      "fill",
     );
-    expect(screen.getByText("Queued for the next measure")).toBeInTheDocument();
+    expect(
+      screen.getByText("Queued after a transition fill"),
+    ).toBeInTheDocument();
   });
 
   it("switches an active same-meter pattern immediately when requested", async () => {
@@ -210,12 +213,8 @@ describe("practice screen", () => {
       name: "Switch same-meter patterns immediately",
     });
     engine.changePattern.mockImplementationOnce(
-      (
-        _pattern: unknown,
-        onPatternChanged?: () => void,
-        immediate?: boolean,
-      ) => {
-        expect(immediate).toBe(true);
+      (_pattern: unknown, onPatternChanged?: () => void, mode?: string) => {
+        expect(mode).toBe("immediate");
         onPatternChanged?.();
         return true;
       },
@@ -232,7 +231,7 @@ describe("practice screen", () => {
       swing: 0,
     });
     expect(
-      screen.queryByText("Queued for the next measure"),
+      screen.queryByText("Queued after a transition fill"),
     ).not.toBeInTheDocument();
   });
 
@@ -255,9 +254,26 @@ describe("practice screen", () => {
     expect(engine.changePattern).toHaveBeenCalledWith(
       expect.objectContaining({ id: "simple-six-eight" }),
       expect.any(Function),
-      false,
+      "fill",
     );
-    expect(screen.getByText("Queued for the next measure")).toBeInTheDocument();
+    expect(
+      screen.getByText("Queued after a transition fill"),
+    ).toBeInTheDocument();
+  });
+
+  it("offers graceful finish and immediate stop while playing", async () => {
+    const user = userEvent.setup();
+    useAudioStore.setState({ status: "playing" });
+    render(<PracticeScreen />);
+
+    await user.click(screen.getByRole("button", { name: "Finish with fill" }));
+    expect(engine.queueStopWithFill).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("button", { name: "Finishing after fill" }),
+    ).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Stop playback" }));
+    expect(engine.stop).toHaveBeenCalledOnce();
   });
 
   it("shows Basic Rock and starts only after Play is pressed", async () => {

@@ -219,6 +219,92 @@ describe("pattern scheduler", () => {
     expect(onPatternChanged).toHaveBeenCalledWith(nextPattern);
   });
 
+  it("forces a transition fill before committing a queued pattern", () => {
+    const runtime = new FakeAudioRuntime();
+    const trigger = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    const nextPattern = {
+      ...basicRockPattern,
+      id: "transition-target",
+      name: "Transition target",
+    };
+    const onPatternChanged = vi.fn();
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+    const callback = runtime.repeats[0]?.callback;
+    callback?.(0, 0);
+
+    expect(scheduler.changePattern(nextPattern, onPatternChanged, "fill")).toBe(
+      true,
+    );
+    for (let step = 1; step < 32; step += 1) callback?.(step, step);
+
+    expect(onPatternChanged).not.toHaveBeenCalled();
+    expect(
+      trigger.mock.calls.some(
+        ([instrument], index) =>
+          index > 0 && ["highTom", "midTom", "lowTom"].includes(instrument),
+      ),
+    ).toBe(true);
+
+    callback?.(32, 32);
+    expect(onPatternChanged).toHaveBeenCalledWith(nextPattern);
+    expect(trigger).toHaveBeenCalledWith("crash", 32, 0.9);
+  });
+
+  it("queues one bounded fill before stopping at audible time", () => {
+    const runtime = new FakeAudioRuntime();
+    const trigger = vi.fn();
+    const onTargetStop = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      onTargetStop,
+    });
+    const callback = runtime.repeats[0]?.callback;
+    callback?.(0, 0);
+
+    expect(scheduler.queueStopWithFill()).toBe(true);
+    for (let step = 1; step < 32; step += 1) callback?.(step, step);
+    expect(onTargetStop).not.toHaveBeenCalled();
+    const hitCountBeforeStop = trigger.mock.calls.length;
+
+    callback?.(32, 32);
+    expect(onTargetStop).toHaveBeenCalledOnce();
+    expect(trigger).toHaveBeenCalledTimes(hitCountBeforeStop);
+  });
+
+  it("lets immediate clear cancel a queued fill stop", () => {
+    const runtime = new FakeAudioRuntime();
+    runtime.deferCallbacks = true;
+    const onTargetStop = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      onTargetStop,
+    });
+    const callback = runtime.repeats[0]?.callback;
+    callback?.(0, 0);
+    scheduler.queueStopWithFill();
+    for (let step = 1; step <= 32; step += 1) callback?.(step, step);
+    const staleCallbacks = [...runtime.semanticCallbacks];
+
+    scheduler.clear();
+    staleCallbacks.forEach(({ callback: deliver }) => deliver());
+    expect(onTargetStop).not.toHaveBeenCalled();
+  });
+
   it("ignores transport and draw callbacks after clear", () => {
     const runtime = new FakeAudioRuntime();
     runtime.deferCallbacks = true;
@@ -796,11 +882,11 @@ describe("pattern scheduler", () => {
     scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
 
     expect(
-      scheduler.changePattern(sixEightPattern!, onPatternChanged, true),
+      scheduler.changePattern(sixEightPattern!, onPatternChanged, "immediate"),
     ).toBe(false);
     expect(onPatternChanged).not.toHaveBeenCalled();
     expect(
-      scheduler.changePattern(sameMeterPattern, onPatternChanged, true),
+      scheduler.changePattern(sameMeterPattern, onPatternChanged, "immediate"),
     ).toBe(true);
     expect(onPatternChanged).toHaveBeenCalledWith(sameMeterPattern);
   });

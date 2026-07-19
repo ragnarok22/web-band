@@ -6,6 +6,8 @@ import type { AudioEngineStatus } from "@/types/audio";
 
 interface TransportPanelProps {
   isReady?: boolean;
+  isFinishing?: boolean;
+  onFinish: () => void;
   onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
@@ -14,6 +16,8 @@ interface TransportPanelProps {
 
 export function TransportPanel({
   isReady = true,
+  isFinishing = false,
+  onFinish,
   onPause,
   onPlay,
   onStop,
@@ -22,6 +26,8 @@ export function TransportPanel({
   return (
     <div className="border-border rounded-2xl border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] px-3 py-7 shadow-[0_24px_70px_var(--shadow)] backdrop-blur sm:px-6 sm:py-9">
       <TransportControls
+        isFinishing={isFinishing}
+        onFinish={onFinish}
         onPause={onPause}
         onPlay={onPlay}
         onStop={onStop}

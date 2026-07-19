@@ -1,6 +1,6 @@
 "use client";
 
-import { Minimize2, Play, Square } from "lucide-react";
+import { Flag, Minimize2, Play, Square } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
@@ -19,9 +19,11 @@ interface FocusModeProps {
   elapsedSeconds: number;
   errorMessage: string | null;
   historyNotice: string | null;
+  isFinishing: boolean;
   isReady: boolean;
   onDismissNotice: () => void;
   onExit: () => void;
+  onFinish: () => void;
   onPlay: () => void;
   onStop: () => void;
   pattern: DrumPattern;
@@ -36,9 +38,11 @@ export function FocusMode({
   elapsedSeconds,
   errorMessage,
   historyNotice,
+  isFinishing,
   isReady,
   onDismissNotice,
   onExit,
+  onFinish,
   onPlay,
   onStop,
   pattern,
@@ -48,10 +52,8 @@ export function FocusMode({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const snapshot = useGuidanceSnapshot();
   const canResume = status === "paused" || status === "suspended";
-  const canStop =
-    status === "initializing" ||
-    status === "counting-in" ||
-    status === "playing";
+  const isRunning = status === "counting-in" || status === "playing";
+  const canStop = status === "initializing" || isRunning || canResume;
   const displayedBpm =
     configuration.mode === "tempoTrainer"
       ? snapshot?.mode === "tempoTrainer"
@@ -60,8 +62,10 @@ export function FocusMode({
       : bpm;
   const transportLabel = canResume
     ? "Resume"
-    : canStop
-      ? "Stop"
+    : isRunning
+      ? isFinishing
+        ? "Finishing after fill"
+        : "Finish with fill"
       : isReady
         ? "Play"
         : "Loading setup";
@@ -134,17 +138,30 @@ export function FocusMode({
         />
 
         <button
-          className={`mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] ${canStop ? "bg-surface-elevated text-foreground border-border border" : "bg-accent text-accent-ink"}`}
-          disabled={!isReady && !canStop}
-          onClick={canStop ? onStop : onPlay}
+          className="bg-accent text-accent-ink mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] disabled:opacity-50"
+          disabled={
+            (!isReady && !canResume) ||
+            status === "initializing" ||
+            (isRunning && isFinishing)
+          }
+          onClick={isRunning ? onFinish : onPlay}
           type="button"
         >
-          {canStop ? (
-            <Square aria-hidden="true" className="size-6 fill-current" />
+          {isRunning ? (
+            <Flag aria-hidden="true" className="size-6 fill-current" />
           ) : (
             <Play aria-hidden="true" className="size-7 fill-current" />
           )}
           {transportLabel}
+        </button>
+        <button
+          className="border-border bg-surface text-muted-strong hover:text-foreground mx-auto flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold disabled:opacity-35"
+          disabled={!canStop}
+          onClick={onStop}
+          type="button"
+        >
+          <Square aria-hidden="true" className="size-4 fill-current" />
+          Stop now
         </button>
       </div>
     </main>

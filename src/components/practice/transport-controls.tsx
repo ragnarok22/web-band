@@ -1,10 +1,12 @@
 "use client";
 
-import { Pause, Play, Square } from "lucide-react";
+import { Flag, Pause, Play, Square } from "lucide-react";
 
 import type { AudioEngineStatus } from "@/types/audio";
 
 interface TransportControlsProps {
+  isFinishing?: boolean;
+  onFinish: () => void;
   onPause: () => void;
   onPlay: () => void;
   onStop: () => void;
@@ -13,6 +15,8 @@ interface TransportControlsProps {
 }
 
 export function TransportControls({
+  isFinishing = false,
+  onFinish,
   onPause,
   onPlay,
   onStop,
@@ -23,8 +27,11 @@ export function TransportControls({
   const isRunning = status === "playing" || status === "counting-in";
   const canStop =
     isBusy || isRunning || status === "paused" || status === "suspended";
-  const playLabel =
-    status === "paused"
+  const playLabel = isRunning
+    ? isFinishing
+      ? "Finishing after fill"
+      : "Finish with fill"
+    : status === "paused"
       ? "Resume"
       : status === "suspended"
         ? "Resume audio"
@@ -48,14 +55,24 @@ export function TransportControls({
       <button
         aria-label={playLabel}
         className="play-control bg-accent text-accent-ink hover:bg-accent-strong flex size-24 items-center justify-center rounded-[1.75rem] shadow-[0_14px_45px_rgba(231,169,75,0.24)] transition-[background-color,transform] active:scale-[0.96] disabled:opacity-50 motion-reduce:transform-none sm:size-28"
-        disabled={playDisabled || isBusy || isRunning}
-        onClick={onPlay}
+        disabled={playDisabled || isBusy || (isRunning && isFinishing)}
+        onClick={isRunning ? onFinish : onPlay}
         type="button"
       >
-        <Play
-          aria-hidden="true"
-          className="ml-1 size-10 fill-current sm:size-12"
-        />
+        {isRunning ? (
+          <span className="flex flex-col items-center gap-1 text-xs font-black tracking-wide uppercase">
+            <Flag
+              aria-hidden="true"
+              className="size-8 fill-current sm:size-9"
+            />
+            Finish
+          </span>
+        ) : (
+          <Play
+            aria-hidden="true"
+            className="ml-1 size-10 fill-current sm:size-12"
+          />
+        )}
       </button>
 
       <button

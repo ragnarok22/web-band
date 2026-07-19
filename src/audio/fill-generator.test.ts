@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getGenericFillHits, shouldFillMeasure } from "@/audio/fill-generator";
+import {
+  getFillStep,
+  selectFillArrangement,
+  shouldFillMeasure,
+} from "@/audio/fill-generator";
 import { basicRockPattern } from "@/data/patterns/rock";
 
 describe("fill generator", () => {
@@ -19,11 +23,29 @@ describe("fill generator", () => {
     expect(random).toHaveBeenCalledOnce();
   });
 
-  it("keeps fills in the final half of a bar and ends with kick", () => {
-    expect(getGenericFillHits(basicRockPattern, 3)).toEqual([]);
-    expect(getGenericFillHits(basicRockPattern, 4)).not.toEqual([]);
-    expect(getGenericFillHits(basicRockPattern, 7)).toEqual(
-      expect.arrayContaining([{ instrument: "kick", velocity: 0.88 }]),
+  it("selects compatible arrangements deterministically", () => {
+    expect(selectFillArrangement(basicRockPattern, 0)?.id).toBe(
+      "compact-tom-drop",
+    );
+    expect(selectFillArrangement(basicRockPattern, 1)?.id).toBe(
+      "backbeat-lift",
+    );
+  });
+
+  it("anchors fills to the bar ending and preserves intentional rests", () => {
+    const arrangement = selectFillArrangement(basicRockPattern, 0)!;
+    expect(getFillStep(arrangement, basicRockPattern, 5)).toEqual({
+      hits: [],
+      isFillStep: false,
+    });
+    expect(getFillStep(arrangement, basicRockPattern, 6).isFillStep).toBe(true);
+    expect(getFillStep(arrangement, basicRockPattern, 7)).toEqual(
+      expect.objectContaining({
+        hits: expect.arrayContaining([
+          expect.objectContaining({ instrument: "kick" }),
+        ]),
+        isFillStep: true,
+      }),
     );
   });
 });

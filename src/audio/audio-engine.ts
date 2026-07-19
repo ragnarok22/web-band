@@ -2,6 +2,7 @@ import { ToneAudioRuntime, type AudioRuntime } from "@/audio/audio-runtime";
 import { InstrumentManager } from "@/audio/instrument-manager";
 import {
   PatternScheduler,
+  type PatternChangeMode,
   type PatternInstrumentPlayer,
 } from "@/audio/pattern-scheduler";
 import { visualTimeline } from "@/audio/visual-timeline";
@@ -213,7 +214,7 @@ export class AudioEngine {
   changePattern(
     pattern: DrumPattern,
     onPatternChanged: (pattern: DrumPattern) => void,
-    immediate = false,
+    mode: PatternChangeMode = "measure",
   ): boolean {
     if (
       !this.patternScheduler ||
@@ -222,11 +223,18 @@ export class AudioEngine {
       return false;
     }
 
-    return this.patternScheduler.changePattern(
-      pattern,
-      onPatternChanged,
-      immediate,
-    );
+    return this.patternScheduler.changePattern(pattern, onPatternChanged, mode);
+  }
+
+  queueStopWithFill(): boolean {
+    if (
+      !this.patternScheduler ||
+      this.runtime.getTransportState() !== "started"
+    ) {
+      return false;
+    }
+
+    return this.patternScheduler.queueStopWithFill();
   }
 
   dispose(): void {

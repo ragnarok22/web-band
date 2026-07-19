@@ -44,7 +44,7 @@ export function useEditorPlayback(pattern: CustomDrumPattern | null) {
       return;
     }
     const engine = getAudioEngine();
-    if (!engine.changePattern(pattern, () => undefined, true)) {
+    if (!engine.changePattern(pattern, () => undefined, "immediate")) {
       engine.changePattern(pattern, () => undefined);
     }
   }, [isPlaying, pattern]);

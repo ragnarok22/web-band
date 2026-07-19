@@ -1,13 +1,10 @@
+import { getCompatibleFills, toFillMeter } from "@/data/fills";
 import { getStepsPerBar } from "@/lib/musical-time";
 import type { FillFrequency } from "@/types/audio";
-import type { DrumInstrument, DrumPattern } from "@/types/pattern";
+import type { FillArrangement, FillHit } from "@/types/fill";
+import type { DrumPattern } from "@/types/pattern";
 
 export const RANDOM_FILL_PROBABILITY = 0.2;
-
-export interface GeneratedFillHit {
-  instrument: DrumInstrument;
-  velocity: number;
-}
 
 export function shouldFillMeasure(
   frequency: FillFrequency,
@@ -21,39 +18,41 @@ export function shouldFillMeasure(
   return random() < RANDOM_FILL_PROBABILITY;
 }
 
-export function getGenericFillHits(
+export function selectFillArrangement(
+  pattern: DrumPattern,
+  ordinal: number,
+): FillArrangement | null {
+  const meter = toFillMeter(
+    pattern.timeSignature.numerator,
+    pattern.timeSignature.denominator,
+  );
+  if (!meter) return null;
+  const compatible = getCompatibleFills(
+    pattern.category,
+    meter,
+    pattern.subdivision,
+  );
+  return compatible.length === 0
+    ? null
+    : (compatible[ordinal % compatible.length] ?? null);
+}
+
+export function getFillStep(
+  arrangement: FillArrangement,
   pattern: DrumPattern,
   stepInBar: number,
-): readonly GeneratedFillHit[] {
+): { hits: readonly FillHit[]; isFillStep: boolean } {
   const stepsPerBar = getStepsPerBar(
     pattern.timeSignature,
     pattern.subdivision,
   );
-  const fillLength = Math.max(1, Math.floor(stepsPerBar / 2));
-  const fillStart = stepsPerBar - fillLength;
-  if (stepInBar < fillStart || stepInBar >= stepsPerBar) return [];
-
-  const fillStep = stepInBar - fillStart;
-  const instruments: readonly DrumInstrument[] = [
-    "snare",
-    "highTom",
-    "midTom",
-    "lowTom",
-  ];
-  const instrumentIndex = Math.min(
-    instruments.length - 1,
-    Math.floor((fillStep / fillLength) * instruments.length),
-  );
-  const hits: GeneratedFillHit[] = [
-    {
-      instrument: instruments[instrumentIndex] ?? "snare",
-      velocity: 0.72 + (fillStep / Math.max(1, fillLength - 1)) * 0.2,
-    },
-  ];
-
-  if (stepInBar === stepsPerBar - 1) {
-    hits.push({ instrument: "kick", velocity: 0.88 });
+  const tail = arrangement.tail[pattern.subdivision];
+  const fillStart = stepsPerBar - tail.length;
+  if (stepInBar < fillStart || stepInBar >= stepsPerBar) {
+    return { hits: [], isFillStep: false };
   }
-
-  return hits;
+  return {
+    hits: tail[stepInBar - fillStart] ?? [],
+    isFillStep: true,
+  };
 }

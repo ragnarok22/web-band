@@ -1,7 +1,8 @@
-import { getGenericFillHits } from "@/audio/fill-generator";
+import { getFillStep } from "@/audio/fill-generator";
 import { getPatternStepCount, getStepsPerBar } from "@/lib/musical-time";
 import { clampUnit } from "@/lib/mixer";
 import type { DrumInstrument, DrumPattern } from "@/types/pattern";
+import type { FillArrangement } from "@/types/fill";
 
 export interface PlayableHit {
   flam?: boolean;
@@ -19,7 +20,7 @@ export interface PlayablePatternStep {
 export function getPlayablePatternStep(
   pattern: DrumPattern,
   absoluteSixteenth: number,
-  isFill: boolean,
+  fill: FillArrangement | null,
   addPostFillCrash: boolean,
 ): PlayablePatternStep | null {
   const sixteenthsPerStep = 16 / pattern.subdivision;
@@ -33,8 +34,10 @@ export function getPlayablePatternStep(
   const patternHits: PlayableHit[] = pattern.hits.filter(
     (hit) => hit.step === patternStep,
   );
-  const fillHits = isFill ? getGenericFillHits(pattern, stepInBar) : [];
-  const hits = fillHits.length > 0 ? [...fillHits] : [...patternHits];
+  const fillStep = fill
+    ? getFillStep(fill, pattern, stepInBar)
+    : { hits: [], isFillStep: false };
+  const hits = fillStep.isFillStep ? [...fillStep.hits] : [...patternHits];
 
   if (addPostFillCrash && !hits.some((hit) => hit.instrument === "crash")) {
     hits.push({ instrument: "crash", velocity: 0.9 });

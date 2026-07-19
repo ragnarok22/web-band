@@ -172,6 +172,25 @@ describe("audio engine", () => {
     expect(engine.changePattern(basicRockPattern, onPatternChanged)).toBe(true);
   });
 
+  it("finishes playback after a queued transition fill", async () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments = createInstruments();
+    const engine = new AudioEngine(runtime, () => instruments);
+
+    await engine.play(playbackConfiguration(0));
+    const callback = runtime.callbacks[0];
+    callback?.(0, 0);
+
+    expect(engine.queueStopWithFill()).toBe(true);
+    for (let step = 1; step < 32; step += 1) callback?.(step, step);
+    expect(runtime.state).toBe("started");
+
+    callback?.(32, 32);
+    expect(runtime.state).toBe("stopped");
+    expect(useAudioStore.getState().status).toBe("stopped");
+    expect(instruments.stop).toHaveBeenCalledOnce();
+  });
+
   it("exposes audio initialization failures without creating instruments", async () => {
     const runtime = new FakeAudioRuntime();
     runtime.startError = new Error("Audio permission denied");

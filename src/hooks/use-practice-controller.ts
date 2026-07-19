@@ -127,6 +127,7 @@ export function usePracticeController() {
   const [masterMuted, setMasterMuted] = useState(false);
   const [historyNotice, setHistoryNotice] = useState<string | null>(null);
   const [immediatePatternSwitch, setImmediatePatternSwitch] = useState(false);
+  const [finishRequested, setFinishRequested] = useState(false);
   const [patternAnnouncement, setPatternAnnouncement] = useState("");
   const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -135,6 +136,7 @@ export function usePracticeController() {
   const patterns = [...builtInPatterns, ...customPatterns];
   const pattern = getPatternById(selectedPatternId, customPatterns);
   const active = isSessionActive(status);
+  const isFinishing = active && finishRequested;
   const isReady =
     practiceHydrated &&
     guidedPracticeHydrated &&
@@ -250,6 +252,7 @@ export function usePracticeController() {
 
   async function play(): Promise<void> {
     if (!isReady) return;
+    setFinishRequested(false);
     const guidedValidation =
       validateGuidedPracticeConfiguration(guidedPractice);
     if (!guidedValidation.success) {
@@ -340,18 +343,15 @@ export function usePracticeController() {
       nextPattern.timeSignature.denominator !==
         pattern.timeSignature.denominator;
     const changeImmediately = immediatePatternSwitch && !meterChanged;
+    const changeMode = changeImmediately ? "immediate" : "fill";
 
     if (
-      getAudioEngine().changePattern(
-        nextPattern,
-        commitPattern,
-        changeImmediately,
-      )
+      getAudioEngine().changePattern(nextPattern, commitPattern, changeMode)
     ) {
       if (changeImmediately) return;
       setPendingPatternId(nextPattern.id);
       setPatternAnnouncement(
-        `${nextPattern.name} queued for the next measure.`,
+        `${nextPattern.name} queued after a transition fill.`,
       );
       return;
     }
@@ -459,8 +459,16 @@ export function usePracticeController() {
   }
 
   function stop(): void {
+    setFinishRequested(false);
     setPendingPatternId(null);
     getAudioEngine().stop();
+  }
+
+  function finishWithFill(): void {
+    if (!getAudioEngine().queueStopWithFill()) return;
+    setFinishRequested(true);
+    setPendingPatternId(null);
+    setPatternAnnouncement("Finishing after a transition fill.");
   }
 
   function exitFocusMode(): void {
@@ -486,11 +494,13 @@ export function usePracticeController() {
     errorMessage,
     exitFocusMode,
     fillFrequency,
+    finishWithFill,
     focusButtonRef,
     guidedPractice,
     humanization,
     historyNotice,
     immediatePatternSwitch,
+    isFinishing,
     isFocusMode,
     isReady,
     loadPreset,

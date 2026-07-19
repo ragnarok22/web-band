@@ -28,8 +28,10 @@ export function PracticeScreen() {
         errorMessage={practice.errorMessage}
         historyNotice={practice.historyNotice}
         isReady={practice.isReady}
+        isFinishing={practice.isFinishing}
         onDismissNotice={practice.dismissOnboarding}
         onExit={practice.exitFocusMode}
+        onFinish={practice.finishWithFill}
         onPlay={() => void practice.play()}
         onShortcutsClose={() => practice.setShortcutsOpen(false)}
         onStop={practice.stop}
@@ -105,6 +107,8 @@ export function PracticeScreen() {
 
           <TransportPanel
             isReady={practice.isReady}
+            isFinishing={practice.isFinishing}
+            onFinish={practice.finishWithFill}
             onPause={practice.pause}
             onPlay={() => void practice.play()}
             onStop={practice.stop}

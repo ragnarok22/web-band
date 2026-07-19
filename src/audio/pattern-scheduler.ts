@@ -1,5 +1,8 @@
 import type { AudioRuntime } from "@/audio/audio-runtime";
-import { shouldFillMeasure } from "@/audio/fill-generator";
+import {
+  selectFillArrangement,
+  shouldFillMeasure,
+} from "@/audio/fill-generator";
 import {
   GuidedPracticeController,
   type GuidedPracticeTick,
@@ -23,6 +26,7 @@ import type {
   ScheduledVisualStep,
 } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
+import type { FillArrangement } from "@/types/fill";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
 
 const FLAM_DELAY_SECONDS = 0.03;
@@ -44,6 +48,20 @@ interface PendingPattern {
   pattern: DrumPattern;
 }
 
+export type PatternChangeMode = "fill" | "immediate" | "measure";
+
+type PendingAction =
+  | {
+      kind: "pattern";
+      mode: Exclude<PatternChangeMode, "immediate">;
+      pending: PendingPattern;
+      phase: "filling" | "waiting";
+    }
+  | {
+      kind: "stop";
+      phase: "filling" | "waiting";
+    };
+
 interface PlannedHit {
   instrument: DrumPattern["hits"][number]["instrument"];
   timeOffset: number;
@@ -55,6 +73,7 @@ interface PlannedPatternTick {
   hits: PlannedHit[];
   patternChange: PendingPattern | null;
   semanticCallbackId: number | null;
+  terminalStop: boolean;
   visual: ScheduledVisualStep | null;
 }
 
@@ -78,8 +97,9 @@ export class PatternScheduler {
   private fillFrequency: FillFrequency = null;
   private hasStarted = false;
   private humanization = 0;
-  private isCurrentMeasureFill = false;
-  private pendingPattern: PendingPattern | null = null;
+  private activeFill: FillArrangement | null = null;
+  private fillOrdinal = 0;
+  private pendingAction: PendingAction | null = null;
   private readonly plannedTicks = new Map<number, PlannedPatternTick>();
   private previousMeasureWasFill = false;
   private scheduleGeneration = 0;
@@ -149,7 +169,7 @@ export class PatternScheduler {
   changePattern(
     pattern: DrumPattern,
     onPatternChanged: (pattern: DrumPattern) => void,
-    immediate = false,
+    mode: PatternChangeMode = "measure",
   ): boolean {
     this.assertValidPattern(pattern);
     if (
@@ -158,7 +178,7 @@ export class PatternScheduler {
       return false;
     }
     if (
-      immediate &&
+      mode === "immediate" &&
       this.activePattern &&
       (this.activePattern.timeSignature.numerator !==
         pattern.timeSignature.numerator ||
@@ -168,13 +188,31 @@ export class PatternScheduler {
       return false;
     }
 
-    if (immediate || !this.activePattern) {
+    if (this.pendingAction?.kind === "stop") return false;
+
+    if (mode === "immediate" || !this.activePattern) {
+      this.pendingAction = null;
       this.applyPattern(pattern);
       onPatternChanged(pattern);
       return true;
     }
 
-    this.pendingPattern = { onPatternChanged, pattern };
+    this.pendingAction = {
+      kind: "pattern",
+      mode,
+      pending: { onPatternChanged, pattern },
+      phase: mode === "fill" && this.activeFill ? "filling" : "waiting",
+    };
+    return true;
+  }
+
+  queueStopWithFill(): boolean {
+    if (!this.activePattern || this.targetStopState !== "idle") return false;
+    if (this.pendingAction?.kind === "stop") return true;
+    this.pendingAction = {
+      kind: "stop",
+      phase: this.activeFill ? "filling" : "waiting",
+    };
     return true;
   }
 
@@ -191,8 +229,9 @@ export class PatternScheduler {
     this.patternAbsoluteSixteenth = 0;
     this.activePattern = null;
     this.hasStarted = false;
-    this.isCurrentMeasureFill = false;
-    this.pendingPattern = null;
+    this.activeFill = null;
+    this.fillOrdinal = 0;
+    this.pendingAction = null;
     this.previousMeasureWasFill = false;
     this.targetStopState = "idle";
     this.guidedController.reset();
@@ -284,13 +323,33 @@ export class PatternScheduler {
     const isMeasureBoundary =
       this.patternAbsoluteSixteenth === 0 ||
       this.patternAbsoluteSixteenth % measureLength === 0;
-    const addPostFillCrash = isMeasureBoundary && this.isCurrentMeasureFill;
+    const addPostFillCrash = isMeasureBoundary && this.activeFill !== null;
     let patternChange: PendingPattern | null = null;
+    let forceFill = false;
+    let patternApplied = false;
+    let terminalStop = false;
 
-    if (isMeasureBoundary && this.pendingPattern) {
-      patternChange = this.pendingPattern;
-      this.applyPattern(patternChange.pattern);
-      this.pendingPattern = null;
+    if (isMeasureBoundary && this.pendingAction) {
+      if (this.pendingAction.kind === "stop") {
+        if (this.pendingAction.phase === "filling") {
+          terminalStop = true;
+          this.pendingAction = null;
+        } else {
+          this.pendingAction.phase = "filling";
+          forceFill = true;
+        }
+      } else if (
+        this.pendingAction.mode === "measure" ||
+        this.pendingAction.phase === "filling"
+      ) {
+        patternChange = this.pendingAction.pending;
+        this.applyPattern(patternChange.pattern);
+        this.pendingAction = null;
+        patternApplied = true;
+      } else {
+        this.pendingAction.phase = "filling";
+        forceFill = true;
+      }
     }
 
     const pattern = this.activePattern ?? initialPattern;
@@ -299,23 +358,31 @@ export class PatternScheduler {
     const measure =
       Math.floor(currentAbsoluteSixteenthStep / sixteenthsPerBar) + 1;
     if (isMeasureBoundary) {
-      this.previousMeasureWasFill = this.isCurrentMeasureFill;
-      this.isCurrentMeasureFill = shouldFillMeasure(
-        this.fillFrequency,
-        measure,
-        this.previousMeasureWasFill,
-        this.random,
-      );
+      this.previousMeasureWasFill = addPostFillCrash;
+      const shouldFill =
+        !terminalStop &&
+        !patternApplied &&
+        (forceFill ||
+          shouldFillMeasure(
+            this.fillFrequency,
+            measure,
+            this.previousMeasureWasFill,
+            this.random,
+          ));
+      this.activeFill = shouldFill
+        ? selectFillArrangement(pattern, this.fillOrdinal)
+        : null;
+      if (this.activeFill) this.fillOrdinal += 1;
     }
 
     const guidance = this.guidedController.tick();
     const hits: PlannedHit[] = [];
     let visual: ScheduledVisualStep | null = null;
-    if (!guidance.shouldStop) {
+    if (!guidance.shouldStop && !terminalStop) {
       const playableStep = getPlayablePatternStep(
         pattern,
         this.patternAbsoluteSixteenth,
-        this.isCurrentMeasureFill,
+        this.activeFill,
         addPostFillCrash,
       );
       this.patternAbsoluteSixteenth += 1;
@@ -364,6 +431,7 @@ export class PatternScheduler {
       hits,
       patternChange,
       semanticCallbackId: null,
+      terminalStop,
       visual,
     };
     this.plannedTicks.set(transportSixteenth, plan);
@@ -380,7 +448,9 @@ export class PatternScheduler {
     if (plan.guidance.bpmChange !== null) {
       this.runtime.setBpmAtTime(plan.guidance.bpmChange, time);
     }
-    if (plan.guidance.shouldStop) this.targetStopState = "pending";
+    if (plan.guidance.shouldStop || plan.terminalStop) {
+      this.targetStopState = "pending";
+    }
 
     for (const hit of plan.hits) {
       this.instruments.trigger(
@@ -421,7 +491,7 @@ export class PatternScheduler {
         this.hasStarted = true;
         options.onPatternStarted();
       }
-      if (plan.guidance.shouldStop) {
+      if (plan.guidance.shouldStop || plan.terminalStop) {
         this.targetStopState = "delivered";
         options.onTargetStop?.();
       }
@@ -442,7 +512,8 @@ export class PatternScheduler {
       pattern.timeSignature.denominator,
     );
     this.setSwing(pattern.swing ?? 0);
-    this.isCurrentMeasureFill = false;
+    this.activeFill = null;
+    this.fillOrdinal = 0;
     this.previousMeasureWasFill = false;
   }
 

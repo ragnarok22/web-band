@@ -112,7 +112,7 @@ export function PatternBrowser() {
         (changedPattern) => {
           setPreviewPatternId(changedPattern.id);
         },
-        false,
+        "measure",
       )
     ) {
       return;

@@ -61,7 +61,7 @@ export function PatternSummary({
         </label>
         {pendingPatternId ? (
           <p className="text-secondary-accent mt-2 text-xs font-bold">
-            Queued for the next measure
+            Queued after a transition fill
           </p>
         ) : null}
         <label className="text-muted-strong mt-3 flex cursor-pointer items-start gap-2 text-xs leading-5 font-bold">
