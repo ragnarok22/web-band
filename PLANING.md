@@ -1,1730 +1,209 @@
-# Implement a Browser-Based Drum Practice Companion for Guitarists
-
-Build a complete, polished, responsive web application that acts as a drum and rhythm practice companion for guitarists.
-
-The application must generate all drum sounds programmatically in the browser. Do not use MP3, WAV, recorded samples, external audio files, a backend, a database server, authentication, or cloud services.
-
-The application must work entirely on the client side and save user preferences, custom patterns, favorites, and practice history locally using IndexedDB. Small interface preferences may use `localStorage`.
-
-The experience should feel like a focused musical practice tool rather than a complex professional drum machine.
-
----
-
-# 1. Product concept
-
-The application should allow a guitarist to:
-
-- Choose a musical style.
-- Select a drum pattern.
-- Adjust BPM.
-- Start a count-in.
-- Play along with a synthesized drum groove.
-- Follow the current beat visually.
-- Practice chord progressions.
-- Practice strumming patterns.
-- Automatically increase tempo over time.
-- Save favorite practice configurations.
-- Review basic local practice statistics.
-- Use the application offline after the first visit.
-
-The main experience should be immediate:
-
-1. Open the application.
-2. Choose a style or keep the default.
-3. Set the BPM.
-4. Press Play.
-5. Start practicing guitar.
-
-The user should not need to create an account or configure anything before starting.
-
----
-
-# 2. Required technology
-
-Use the following stack:
-
-- Next.js with App Router.
-- React.
-- TypeScript with strict mode.
-- Tone.js for musical scheduling and synchronization.
-- Web Audio API for synthesized drum instruments.
-- Zustand for application state.
-- IndexedDB using Dexie.js.
-- Tailwind CSS.
-- PWA support.
-- Lucide icons.
-- Framer Motion for subtle UI transitions only.
-- Vitest for unit testing.
-- React Testing Library for component testing.
-- Playwright for essential end-to-end flows.
-
-Do not use:
-
-- Backend APIs.
-- Server databases.
-- Authentication.
-- Firebase.
-- Supabase.
-- Recorded drum samples.
-- External MP3 or WAV files.
-- `setInterval` as the main musical scheduler.
-- Excessive third-party UI libraries.
-
-Tone.js must control the musical transport, BPM, loops, subdivisions, sequencing, and audio scheduling.
-
----
-
-# 3. Browser and audio requirements
-
-The audio engine must follow browser autoplay restrictions.
-
-The `AudioContext` and Tone.js audio context must only start after a direct user interaction, such as pressing Play for the first time.
-
-Handle these states clearly:
-
-- Audio engine not initialized.
-- Audio engine initializing.
-- Ready.
-- Playing.
-- Paused.
-- Stopped.
-- Browser audio suspended.
-- Audio initialization failure.
-
-If the browser suspends the audio context after inactivity, pressing Play must resume it.
-
-The application must stop all active audio nodes, schedules, loops, animations, and wake locks when they are no longer needed.
-
-Avoid memory leaks and duplicated Tone.js scheduled events during React re-renders.
-
----
-
-# 4. No recorded audio
-
-Every drum instrument must be synthesized in real time.
-
-Create these instruments:
-
-- Kick drum.
-- Snare drum.
-- Closed hi-hat.
-- Open hi-hat.
-- Low tom.
-- Mid tom.
-- High tom.
-- Crash cymbal.
-- Ride cymbal.
-- Rim click.
-- Optional clap.
-
-Implement them in isolated modules so their synthesis can be adjusted independently.
-
-## Kick drum
-
-Create the kick using:
-
-- A sine oscillator.
-- A rapid pitch envelope.
-- A short amplitude envelope.
-- Optional subtle transient click.
-
-Suggested behavior:
-
-- Initial pitch around 140–170 Hz.
-- Rapid drop toward 45–60 Hz.
-- Short, controlled decay.
-- Velocity should affect volume and slightly affect the attack.
-
-## Snare drum
-
-Create the snare using:
-
-- White noise.
-- Band-pass or high-pass filtering.
-- A short noise envelope.
-- A tonal oscillator around the lower-mid frequencies for body.
-
-## Hi-hats and cymbals
-
-Generate metallic sounds using:
-
-- Filtered noise, metallic oscillators, or multiple inharmonic oscillators.
-- High-pass filtering.
-- Very short decay for closed hi-hat.
-- Longer decay for open hi-hat.
-- Longer, brighter envelope for crash.
-- Controlled decay for ride.
-
-When a closed hi-hat plays, it should choke an active open hi-hat.
-
-## Toms
-
-Generate toms using:
-
-- Sine or triangle oscillators.
-- Pitch envelopes.
-- Different frequency ranges for low, mid, and high toms.
-
-Each instrument must expose a consistent API similar to:
-
-```ts
-interface DrumVoice {
-  trigger(time: number, velocity?: number): void;
-  stop?(): void;
-  dispose(): void;
-}
-```
-
-Create an instrument manager responsible for:
-
-- Initializing voices.
-- Triggering instruments.
-- Controlling instrument volume.
-- Muting and soloing instruments.
-- Applying master volume.
-- Disposing all audio resources.
-
----
-
-# 5. Musical timing and scheduler
-
-Timing accuracy is critical.
-
-Use Tone.js Transport and schedule audio events ahead of time.
-
-Do not depend on React state updates for audio timing.
-
-React should display the transport state, but it must not be the source of truth for precisely scheduling drum hits.
-
-Implement:
-
-- BPM from 40 to 220.
-- BPM increments of 1 and 5.
-- Tap tempo.
-- Count-in of 0, 1, 2, or 4 measures.
-- Swing from 0% to approximately 65%.
-- Humanization from 0% to a subtle maximum.
-- Looping.
-- Time signatures.
-- Musical subdivisions.
-- Automatic BPM progression.
-- Pattern changes aligned to the next measure.
-- Safe stopping and restarting.
-
-Supported time signatures:
-
-- 2/4.
-- 3/4.
-- 4/4.
-- 5/4.
-- 6/8.
-- 7/8.
-- 12/8.
-
-For the first implementation, prioritize excellent support for:
-
-- 4/4.
-- 3/4.
-- 6/8.
-
-The scheduler must support:
-
-- Eighth-note patterns.
-- Sixteenth-note patterns.
-- Multiple measures.
-- Accented beats.
-- Velocity per hit.
-- Probability per hit.
-- Optional flam or double-hit metadata.
-- Pattern fills.
-- Pattern transitions.
-
-Pattern changes while playing should occur cleanly at the beginning of the next measure unless the user explicitly chooses immediate switching.
-
----
-
-# 6. Musical data model
-
-Use patterns as pure data. They must not contain audio files or direct audio-node references.
-
-Use a model similar to:
-
-```ts
-type DrumInstrument =
-  | "kick"
-  | "snare"
-  | "closedHat"
-  | "openHat"
-  | "lowTom"
-  | "midTom"
-  | "highTom"
-  | "crash"
-  | "ride"
-  | "rim"
-  | "clap";
-
-type PatternDifficulty = "beginner" | "intermediate" | "advanced";
-
-type PatternCategory =
-  | "rock"
-  | "pop"
-  | "blues"
-  | "funk"
-  | "reggae"
-  | "country"
-  | "ballad"
-  | "latin"
-  | "metal"
-  | "jazz"
-  | "custom";
-
-interface DrumHit {
-  id: string;
-  instrument: DrumInstrument;
-  step: number;
-  velocity: number;
-  probability?: number;
-  flam?: boolean;
-  timingOffset?: number;
-}
-
-interface DrumPattern {
-  id: string;
-  name: string;
-  description: string;
-  category: PatternCategory;
-  difficulty: PatternDifficulty;
-  timeSignature: {
-    numerator: number;
-    denominator: number;
-  };
-  subdivision: 8 | 16;
-  bars: number;
-  defaultBpm: number;
-  recommendedBpmRange: {
-    min: number;
-    max: number;
-  };
-  swing?: number;
-  hits: DrumHit[];
-  isBuiltIn: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-```
-
-Validate pattern data before using it in the audio engine.
-
-A malformed custom pattern must never crash playback.
-
----
-
-# 7. Built-in styles and patterns
-
-Include a useful initial library of built-in patterns.
-
-Each pattern should have:
-
-- Name.
-- Short description.
-- Genre.
-- Difficulty.
-- Default BPM.
-- Recommended BPM range.
-- Time signature.
-- One or more measures.
-- Appropriate velocity variation.
-- Musically believable accents.
-
-Include at least the following.
-
-## Rock
-
-- Basic Rock.
-- Driving Eighths.
-- Four on the Floor.
-- Half-Time Rock.
-- Rock with Open Hi-Hat.
-- Beginner Rock Fill.
-- 6/8 Rock Ballad.
-
-## Pop
-
-- Basic Pop.
-- Modern Pop Groove.
-- Dance Pop.
-- Pop Ballad.
-- Syncopated Pop.
-
-## Blues
-
-- Straight Blues.
-- Shuffle Blues.
-- Slow 12/8 Blues.
-- Blues Rock.
-- Texas-style Shuffle-inspired practice groove.
-
-Do not copy protected recordings. Create generic educational genre patterns.
-
-## Funk
-
-- Basic Sixteenth Funk.
-- Syncopated Funk.
-- Ghost-note-inspired groove.
-- Half-Time Funk.
-
-## Reggae
-
-- One Drop.
-- Steppers.
-- Rockers.
-- Basic Reggae Practice Groove.
-
-## Country
-
-- Basic Country.
-- Train Beat.
-- Country Ballad.
-- Country Rock.
-
-## Latin-inspired practice patterns
-
-- Basic Bossa-inspired rhythm.
-- Basic Son-inspired practice groove.
-- Basic Cha-cha-inspired practice groove.
-- Basic Latin Rock.
-
-Keep them educational and generic rather than imitating a particular copyrighted song.
-
-## Additional
-
-- Metronome only.
-- Kick and snare only.
-- Hi-hat only.
-- Simple 3/4.
-- Simple 6/8.
-- Slow ballad.
-- Basic metal.
-- Basic jazz ride practice.
-
-Provide beginner, intermediate, and advanced variations where appropriate.
-
----
-
-# 8. Main application pages
-
-Create the following primary routes:
-
-```text
-/
- /practice
- /patterns
- /editor
- /history
- /settings
- /about
-```
-
-The home route may redirect to `/practice` or act as a minimal introduction.
-
----
-
-# 9. Practice screen
-
-The Practice screen is the most important screen.
-
-It must be optimized for use while the user is holding a guitar.
-
-## Main layout
-
-Display:
-
-- Current style.
-- Current pattern.
-- Current BPM.
-- Time signature.
-- Large Play, Pause, and Stop controls.
-- BPM decrement and increment buttons.
-- Tap Tempo.
-- Current beat indicator.
-- Current measure number.
-- Practice timer.
-- Count-in status.
-- Master volume.
-- Quick access to pattern selection.
-- Quick access to practice mode.
-- Fullscreen or focus mode.
-
-The central Play button must be large and easy to press.
-
-## Beat visualization
-
-Display the current beat and subdivision visually.
-
-For 4/4, represent:
-
-```text
-1 & 2 & 3 & 4 &
-```
-
-For sixteenth-note patterns:
-
-```text
-1 e & a 2 e & a 3 e & a 4 e & a
-```
-
-Visually distinguish:
-
-- Current subdivision.
-- Main beats.
-- Downbeat.
-- Accented hit.
-- Measure boundary.
-
-The visual indicator should use Tone.js draw scheduling or an equivalent audio-synchronized approach so that it follows what the user hears as closely as possible.
-
-Do not trigger React state updates for every audio event if that causes performance issues. Use refs, requestAnimationFrame, CSS variables, or a lightweight visual state layer where appropriate.
-
-## Focus mode
-
-Focus mode must hide nonessential controls and display only:
-
-- BPM.
-- Current beat.
-- Pattern name.
-- Practice duration.
-- Play or Stop control.
-- Optional current chord.
-- Optional strumming direction.
-
-Focus mode should prevent accidental navigation where practical.
-
----
-
-# 10. BPM controls
-
-Implement:
-
-- Numeric BPM input.
-- Range slider.
-- `-5`.
-- `-1`.
-- `+1`.
-- `+5`.
-- Tap Tempo.
-- Reset to pattern default.
-
-Tap Tempo behavior:
-
-- Calculate BPM from recent taps.
-- Ignore unrealistic gaps.
-- Smooth the result over several taps.
-- Clamp the final result between 40 and 220 BPM.
-- Reset the tap sequence after an inactivity timeout.
-
-Changing BPM while playing should smoothly update the Tone.js transport without restarting the pattern.
-
----
-
-# 11. Count-in
-
-Allow:
-
-- No count-in.
-- 1 measure.
-- 2 measures.
-- 4 measures.
-
-During count-in:
-
-- Use a clear synthesized click.
-- Emphasize the first beat.
-- Show a large visual countdown.
-- Do not start the full drum pattern until the count-in finishes.
-- Allow cancellation with Stop.
-- Correctly support the selected time signature.
-
-Optionally provide spoken-style visual labels such as:
-
-```text
-1, 2, 3, 4
-```
-
-Do not use recorded voice audio.
-
----
-
-# 12. Automatic tempo trainer
-
-Create a tempo progression mode for scales, riffs, chord changes, and technical exercises.
-
-The user can configure:
-
-- Starting BPM.
-- Ending BPM.
-- BPM increment.
-- Increase every number of measures.
-- Increase every number of seconds.
-- Optional decrease mode.
-- Optional repeat at final BPM.
-- Stop when target BPM is reached.
-- Reset to starting BPM after stopping.
-
-Example:
-
-```text
-Start: 70 BPM
-End: 110 BPM
-Increase: 2 BPM
-Every: 4 measures
-```
-
-Show:
-
-- Current BPM.
-- Next BPM.
-- Measures remaining before the next increase.
-- Overall progress.
-
-Tempo changes should occur at clean musical boundaries.
-
----
-
-# 13. Chord progression trainer
-
-Create a practice mode where users can define a chord progression.
-
-Example:
-
-```text
-G | D | Em | C
-```
-
-Features:
-
-- Add, edit, reorder, and remove chords.
-- Choose how many beats or measures each chord lasts.
-- Repeat the progression.
-- Show the current chord prominently.
-- Preview the next chord.
-- Change chords in synchronization with the drum transport.
-- Optional visual countdown before the chord change.
-- Save chord progressions locally.
-- Mark progressions as favorites.
-- Provide a few example progressions.
-
-Example presets:
-
-- G – D – Em – C.
-- C – G – Am – F.
-- Am – F – C – G.
-- 12-bar blues in A.
-- Simple I–IV–V progression.
-
-Store chord names only. Do not generate copyrighted song transcriptions.
-
-Use a model similar to:
-
-```ts
-interface ChordStep {
-  id: string;
-  chord: string;
-  durationInMeasures: number;
-}
-
-interface ChordProgression {
-  id: string;
-  name: string;
-  steps: ChordStep[];
-  isFavorite: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
----
-
-# 14. Strumming trainer
-
-Create a visual strumming mode.
-
-Allow the user to select predefined patterns such as:
-
-```text
-↓ ↓↑ ↑↓↑
-```
-
-And display the subdivision:
-
-```text
-1 & 2 & 3 & 4 &
-```
-
-Support:
-
-- Downstroke.
-- Upstroke.
-- Rest.
-- Muted stroke.
-- Accent.
-- Hold or sustain.
-
-Use a data model similar to:
-
-```ts
-type StrumAction = "down" | "up" | "mute" | "rest" | "hold";
-
-interface StrumStep {
-  id: string;
-  subdivisionIndex: number;
-  action: StrumAction;
-  accent?: boolean;
-}
-
-interface StrummingPattern {
-  id: string;
-  name: string;
-  timeSignature: {
-    numerator: number;
-    denominator: number;
-  };
-  subdivision: 8 | 16;
-  steps: StrumStep[];
-  isBuiltIn: boolean;
-}
-```
-
-Include beginner patterns:
-
-- Downstrokes on each beat.
-- Downstrokes on eighth notes.
-- Down, down-up, up-down-up.
-- Ballad pattern.
-- Basic pop pattern.
-- Basic 3/4 pattern.
-- Basic 6/8 pattern.
-
-Highlight the current strum action in sync with the audio.
-
----
-
-# 15. Pattern browser
-
-Create a dedicated Pattern Browser.
-
-It should allow users to:
-
-- Browse built-in and custom patterns.
-- Search by name.
-- Filter by genre.
-- Filter by difficulty.
-- Filter by time signature.
-- Filter by subdivision.
-- Sort by name, BPM, recently used, or favorites.
-- Preview patterns.
-- Add or remove favorites.
-- Open a pattern in Practice mode.
-- Duplicate a built-in pattern into the custom editor.
-
-Pattern cards should show:
-
-- Pattern name.
-- Genre.
-- Difficulty.
-- Time signature.
-- Default BPM.
-- Recommended BPM range.
-- Favorite status.
-- Short visual rhythm preview.
-
-The preview must be lightweight and understandable.
-
----
-
-# 16. Custom pattern editor
-
-Create a grid-based drum pattern editor.
-
-The user must be able to:
-
-- Create a new pattern.
-- Duplicate a built-in pattern.
-- Rename the pattern.
-- Select time signature.
-- Select one, two, or four measures.
-- Select eighth or sixteenth subdivisions.
-- Add and remove drum hits.
-- Adjust hit velocity.
-- Optionally set probability.
-- Clear a row.
-- Clear the pattern.
-- Copy a measure.
-- Paste a measure.
-- Save locally.
-- Delete custom patterns.
-- Play the pattern while editing.
-
-Grid rows represent instruments.
-
-Grid columns represent musical subdivisions.
-
-Example rows:
-
-```text
-Crash
-Ride
-Open Hat
-Closed Hat
-High Tom
-Mid Tom
-Low Tom
-Snare
-Rim
-Clap
-Kick
-```
-
-Interaction requirements:
-
-- Click or tap an empty cell to add a hit.
-- Click or tap an active cell to cycle velocity levels.
-- Long-press or use a context action for advanced properties.
-- Keyboard support for desktop.
-- Horizontal scrolling on small screens.
-- Sticky instrument labels.
-- Clear current playhead.
-- Visually highlight main beats and measure boundaries.
-- Avoid accidental changes while scrolling on touch devices.
-
-Built-in patterns must be read-only. Users can duplicate them before editing.
-
----
-
-# 17. Fill system
-
-Implement optional fills.
-
-The user may choose:
-
-- No fills.
-- Fill every 4 measures.
-- Fill every 8 measures.
-- Fill every 16 measures.
-- Random fill within a controlled probability.
-- Fill before stopping.
-- Fill before changing patterns.
-
-Create generic synthesized fills using toms, snare, kick, and crash.
-
-Fills should:
-
-- Respect the current time signature.
-- Fit within the final measure of the phrase.
-- Avoid excessive randomization.
-- Transition cleanly back to the groove.
-- Use a crash on the next downbeat where musically appropriate.
-
-Include several predefined fills and a mechanism for associating compatible fills with pattern categories.
-
----
-
-# 18. Mixer
-
-Add a compact mixer panel.
-
-Controls:
-
-- Master volume.
-- Kick volume.
-- Snare volume.
-- Hi-hat volume.
-- Toms volume.
-- Cymbals volume.
-- Rim and clap volume.
-- Mute.
-- Solo.
-- Reset mix.
-
-Persist mixer preferences locally.
-
-Avoid professional-level complexity such as routing matrices or plugin chains.
-
-Optionally provide three sound characters:
-
-- Soft.
-- Balanced.
-- Punchy.
-
-These presets should adjust synthesis and mix parameters, not load samples.
-
----
-
-# 19. Practice history
-
-Store basic practice sessions in IndexedDB.
-
-A session may include:
-
-```ts
-interface PracticeSession {
-  id: string;
-  startedAt: string;
-  endedAt: string;
-  durationSeconds: number;
-  patternId: string;
-  patternName: string;
-  category: string;
-  startingBpm: number;
-  endingBpm: number;
-  timeSignature: string;
-  practiceMode: "drums" | "chords" | "strumming" | "tempoTrainer";
-}
-```
-
-Only save meaningful sessions, for example sessions longer than 30 seconds.
-
-History page features:
-
-- Total practice time.
-- Practice time this week.
-- Number of sessions.
-- Most-used pattern.
-- Most-used BPM range.
-- Recent sessions.
-- Sessions grouped by day.
-- Ability to delete a session.
-- Ability to clear all history.
-- Export local data as JSON.
-- Import previously exported JSON.
-
-Do not overstate these statistics. They are simple local practice records, not professional performance analytics.
-
----
-
-# 20. Local persistence
-
-Use Dexie.js and IndexedDB for:
-
-- Custom patterns.
-- Favorite patterns.
-- Chord progressions.
-- Custom strumming patterns.
-- Practice sessions.
-- Saved practice presets.
-- User-created collections if implemented.
-
-Use `localStorage` only for small settings such as:
-
-- Theme.
-- Last selected pattern.
-- Last BPM.
-- Last volume.
-- Focus mode preference.
-- Count-in preference.
-- Interface density.
-- Reduced-motion choice.
-
-Create a versioned persistence layer.
-
-Handle schema migrations safely.
-
-The application must continue working if:
-
-- IndexedDB is unavailable.
-- Storage permission fails.
-- Stored data is corrupted.
-- The user is in private browsing mode with limited persistence.
-
-In those cases:
-
-- Show a nonblocking warning.
-- Continue operating in memory.
-- Avoid losing the current active session unexpectedly.
-- Do not crash the application.
-
-Create a storage abstraction so components do not access IndexedDB directly.
-
----
-
-# 21. Practice presets
-
-Allow users to save a complete practice configuration.
-
-A preset may contain:
-
-```ts
-interface PracticePreset {
-  id: string;
-  name: string;
-  patternId: string;
-  bpm: number;
-  countInMeasures: number;
-  swing: number;
-  humanization: number;
-  fillFrequency: number | null;
-  practiceMode: string;
-  chordProgressionId?: string;
-  strummingPatternId?: string;
-  tempoTrainer?: {
-    startBpm: number;
-    endBpm: number;
-    increment: number;
-    intervalMeasures: number;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-```
-
-Allow:
-
-- Save current configuration.
-- Load a preset.
-- Rename.
-- Duplicate.
-- Delete.
-- Favorite.
-- Quickly open recent presets.
-
----
-
-# 22. Offline PWA
-
-Make the application installable as a Progressive Web App.
-
-Requirements:
-
-- Web app manifest.
-- App icons.
-- Theme color.
-- Standalone display.
-- Service worker.
-- Offline support for the application shell.
-- Offline access to built-in patterns.
-- Offline access to previously saved local user data.
-- Update notification when a new version is available.
-
-Do not cache unnecessary remote resources.
-
-Since no external audio files are used, the entire musical functionality should work offline after installation or initial caching.
-
----
-
-# 23. Wake Lock
-
-Use the Screen Wake Lock API during active practice when available.
-
-Behavior:
-
-- Request wake lock after playback begins.
-- Release it when playback stops.
-- Reacquire it after the document becomes visible again if practice is still active.
-- Provide a setting to disable wake lock.
-- Fail gracefully on unsupported browsers.
-
----
-
-# 24. Keyboard shortcuts
-
-Add desktop keyboard shortcuts:
-
-- Space: Play or pause.
-- Escape: Stop.
-- Arrow Up: Increase BPM by 1.
-- Arrow Down: Decrease BPM by 1.
-- Shift + Arrow Up: Increase BPM by 5.
-- Shift + Arrow Down: Decrease BPM by 5.
-- `T`: Tap tempo.
-- `F`: Toggle focus mode.
-- `M`: Mute master.
-- Left and Right arrows: Change pattern only when focus is not inside an input.
-
-Do not trigger shortcuts while the user is typing in a text field.
-
-Show a keyboard shortcuts dialog.
-
----
-
-# 25. Design direction
-
-The interface should feel:
-
-- Calm.
-- Musical.
-- Focused.
-- Modern.
-- Warm.
-- Easy to understand.
-- Useful during real guitar practice.
-
-Avoid making it look like:
-
-- A complex digital audio workstation.
-- A nightclub application.
-- A toy.
-- A generic admin dashboard.
-- A neon cyberpunk interface.
-
-## Visual style
-
-Use:
-
-- A warm, dark background.
-- Slightly lighter elevated surfaces.
-- One strong accent color for active beats and primary actions.
-- A secondary warm accent for count-in, warnings, or tempo changes.
-- Large typography for BPM and current beat.
-- Rounded but not excessively pill-shaped controls.
-- Clear visual hierarchy.
-- Subtle shadows.
-- Moderate border contrast.
-- Generous spacing.
-- Touch targets of at least 44 by 44 pixels.
-
-Suggested color direction:
-
-```text
-Background: #12110F
-Surface: #1B1916
-Elevated surface: #24211D
-Primary text: #F5F1E8
-Secondary text: #AAA399
-Primary accent: #E7A94B
-Secondary accent: #D56A4A
-Success: #65A875
-Border: rgba(255,255,255,0.08)
-```
-
-These values may be adjusted for accessibility.
-
-## Typography
-
-Use a readable modern sans-serif font.
-
-Examples:
-
-- Inter.
-- Manrope.
-- Geist.
-- Instrument Sans.
-
-Use a tabular-number font feature for BPM, timers, and measure counts.
-
-Do not use decorative fonts for essential controls.
-
----
-
-# 26. Responsive design
-
-Design mobile-first.
-
-## Mobile
-
-- Large Play button.
-- Bottom navigation.
-- Collapsible advanced controls.
-- Swipe-friendly pattern browser.
-- Fullscreen focus mode.
-- Avoid dense side panels.
-- Keep primary controls reachable with one hand.
-
-## Tablet
-
-- Two-column layout where useful.
-- Pattern list beside practice controls.
-- Expanded beat visualization.
-
-## Desktop
-
-- Optional sidebar navigation.
-- Practice controls in the center.
-- Pattern and mixer panels on the sides.
-- Keyboard shortcuts.
-- Larger pattern editor.
-
-The application must remain fully usable at approximately 320 pixels wide.
-
----
-
-# 27. Accessibility
-
-Implement:
-
-- Semantic HTML.
-- Keyboard navigation.
-- Visible focus indicators.
-- Accessible labels.
-- Screen-reader announcements for major state changes.
-- Sufficient color contrast.
-- Reduced-motion support.
-- Controls that do not rely exclusively on color.
-- Large touch targets.
-- Accessible dialogs.
-- Accessible sliders.
-- `aria-pressed` for toggle buttons.
-- Meaningful status text for Play, Pause, Stop, and Count-in.
-
-Do not announce every beat to screen readers because that would be disruptive.
-
-Instead, announce:
-
-- Playback started.
-- Playback paused.
-- Playback stopped.
-- Pattern changed.
-- BPM changed when changed through major controls.
-- Tempo target reached.
-- Storage error.
-- Audio initialization error.
-
----
-
-# 28. Motion and animation
-
-Use Framer Motion sparingly.
-
-Animations should include:
-
-- Page transitions.
-- Panel opening and closing.
-- Play button state changes.
-- Beat pulse.
-- Pattern selection feedback.
-- Focus mode transition.
-- Count-in animation.
-
-Do not use heavy animation that could interfere with audio performance.
-
-Beat animations must use transforms and opacity where possible.
-
-Respect `prefers-reduced-motion`.
-
-Never use animation timing as the source of musical timing.
-
----
-
-# 29. State architecture
-
-Separate the following concerns:
-
-## Audio engine state
-
-- Transport state.
-- Audio initialization state.
-- Scheduled pattern.
-- Current musical position.
-- Active voices.
-- Mixer state.
-
-## UI state
-
-- Open panels.
-- Selected tab.
-- Focus mode.
-- Dialogs.
-- Filters.
-- Responsive navigation.
-
-## Practice configuration
-
-- Pattern.
-- BPM.
-- Time signature.
-- Count-in.
-- Swing.
-- Humanization.
-- Fills.
-- Tempo trainer.
-- Chords.
-- Strumming.
-
-## Persistent data
-
-- Favorites.
-- Custom patterns.
-- Presets.
-- Progressions.
-- Practice history.
-- Settings.
-
-Avoid placing all state inside a single large Zustand store.
-
-Create focused stores or slices.
-
-Do not store nonserializable Tone.js objects in persisted Zustand state.
-
----
-
-# 30. Suggested project structure
-
-Use a maintainable structure similar to:
-
-```text
-src/
-├── app/
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── practice/
-│   │   └── page.tsx
-│   ├── patterns/
-│   │   └── page.tsx
-│   ├── editor/
-│   │   └── page.tsx
-│   ├── history/
-│   │   └── page.tsx
-│   ├── settings/
-│   │   └── page.tsx
-│   └── about/
-│       └── page.tsx
-├── audio/
-│   ├── AudioEngine.ts
-│   ├── TransportController.ts
-│   ├── PatternScheduler.ts
-│   ├── CountInController.ts
-│   ├── FillController.ts
-│   ├── TempoTrainerController.ts
-│   ├── MixerController.ts
-│   ├── instruments/
-│   │   ├── KickVoice.ts
-│   │   ├── SnareVoice.ts
-│   │   ├── ClosedHatVoice.ts
-│   │   ├── OpenHatVoice.ts
-│   │   ├── TomVoice.ts
-│   │   ├── CymbalVoice.ts
-│   │   ├── RimVoice.ts
-│   │   └── ClapVoice.ts
-│   └── synthesis/
-│       ├── envelopes.ts
-│       ├── noise.ts
-│       ├── filters.ts
-│       └── utilities.ts
-├── components/
-│   ├── layout/
-│   ├── navigation/
-│   ├── transport/
-│   ├── practice/
-│   ├── patterns/
-│   ├── editor/
-│   ├── chords/
-│   ├── strumming/
-│   ├── history/
-│   ├── settings/
-│   └── ui/
-├── data/
-│   ├── patterns/
-│   │   ├── rock.ts
-│   │   ├── pop.ts
-│   │   ├── blues.ts
-│   │   ├── funk.ts
-│   │   ├── reggae.ts
-│   │   ├── country.ts
-│   │   ├── latin.ts
-│   │   └── utility.ts
-│   ├── fills/
-│   ├── chordProgressions.ts
-│   └── strummingPatterns.ts
-├── db/
-│   ├── database.ts
-│   ├── schema.ts
-│   ├── migrations.ts
-│   ├── repositories/
-│   └── backup.ts
-├── stores/
-│   ├── audioStore.ts
-│   ├── practiceStore.ts
-│   ├── uiStore.ts
-│   └── settingsStore.ts
-├── hooks/
-│   ├── useAudioEngine.ts
-│   ├── useKeyboardShortcuts.ts
-│   ├── useWakeLock.ts
-│   ├── usePracticeSession.ts
-│   └── usePersistentSettings.ts
-├── lib/
-│   ├── patternValidation.ts
-│   ├── musicalTime.ts
-│   ├── tapTempo.ts
-│   ├── exportImport.ts
-│   └── accessibility.ts
-├── types/
-│   ├── audio.ts
-│   ├── pattern.ts
-│   ├── practice.ts
-│   ├── persistence.ts
-│   └── settings.ts
-└── tests/
-```
-
-Adjust the structure when necessary, but maintain clear separation between audio, UI, data, and persistence.
-
----
-
-# 31. Import and export
-
-Allow the user to export all locally stored data as a versioned JSON file.
-
-Export:
-
-- Custom patterns.
-- Favorites.
-- Presets.
-- Chord progressions.
-- Custom strumming patterns.
-- Practice history.
-- Settings where appropriate.
-
-Example envelope:
-
-```ts
-interface BackupFile {
-  app: "guitar-rhythm-practice";
-  version: number;
-  exportedAt: string;
-  data: {
-    patterns: DrumPattern[];
-    favorites: string[];
-    presets: PracticePreset[];
-    chordProgressions: ChordProgression[];
-    strummingPatterns: StrummingPattern[];
-    practiceSessions: PracticeSession[];
-  };
-}
-```
-
-Import requirements:
-
-- Validate the file.
-- Reject unsupported or dangerous structures.
-- Show an import summary.
-- Allow merge or replace.
-- Avoid duplicate IDs.
-- Create a backup before replacing current local data.
-- Never execute imported content as code.
-- Show useful validation errors.
-
----
-
-# 32. Error handling
-
-Create friendly handling for:
-
-- Audio engine initialization failure.
-- Unsupported Web Audio API.
-- Unsupported IndexedDB.
-- Storage quota exceeded.
-- Invalid imported backup.
-- Corrupted custom pattern.
-- Service worker update failure.
-- Wake Lock unavailable.
-- Invalid BPM.
-- Invalid time signature.
-- Deleted pattern still referenced by a preset.
-- Interrupted browser tab.
-- Audio context suspension.
-
-Errors should not destroy the current user configuration where avoidable.
-
-Use error boundaries for major application sections.
-
----
-
-# 33. Performance requirements
-
-Prioritize stable audio.
-
-- Avoid unnecessary React re-renders during playback.
-- Do not recreate audio nodes on each beat.
-- Reuse and dispose audio resources correctly.
-- Avoid updating global state on every subdivision unless necessary.
-- Keep animations GPU-friendly.
-- Lazy-load the pattern editor and history visualizations.
-- Keep built-in pattern data reasonably compact.
-- Avoid blocking the main thread during import or large local operations.
-- Batch IndexedDB writes where appropriate.
-
-Playback should remain stable when:
-
-- Opening and closing panels.
-- Changing volume.
-- Switching focus mode.
-- Updating the practice timer.
-- Displaying beat animations.
-- Saving a session.
-
----
-
-# 34. Testing
-
-Create meaningful tests.
-
-## Unit tests
-
-Test:
-
-- BPM clamping.
-- Tap tempo calculation.
-- Pattern validation.
-- Step-to-musical-time conversion.
-- Time-signature calculations.
-- Measure length calculations.
-- Tempo trainer progression.
-- Chord progression timing.
-- Strumming-step timing.
-- IndexedDB repository behavior.
-- Backup validation.
-- Pattern duplication.
-- Fill scheduling rules.
-
-## Component tests
-
-Test:
-
-- Play button states.
-- BPM controls.
-- Count-in selector.
-- Pattern filters.
-- Favorite toggle.
-- Focus mode.
-- Storage warnings.
-- Pattern editor cell interaction.
-- Chord progression editor.
-- Tempo trainer form validation.
-
-## End-to-end tests
-
-Cover:
-
-1. Open the application.
-2. Start the audio after pressing Play.
-3. Change BPM.
-4. Select another pattern.
-5. Stop playback.
-6. Save a favorite.
-7. Create and save a custom pattern.
-8. Reload and confirm persistence.
-9. Save a practice preset.
-10. Export and import local data.
-11. Enable focus mode.
-12. Complete and save a meaningful practice session.
-
-Mock the Web Audio layer where required in automated tests, but keep the production engine real.
-
----
-
-# 35. Initial user experience
-
-On first visit:
-
-- Show the Practice screen immediately.
-- Select Basic Rock.
-- Use approximately 90 BPM.
-- Use 4/4.
-- Use one-measure count-in.
-- Display a small onboarding hint near Play.
-- Explain that sound begins after pressing Play because browsers require user interaction.
-- Allow dismissing onboarding permanently.
-
-Do not present a long onboarding wizard.
-
----
-
-# 36. Settings
-
-Include:
-
-- Theme: system, dark, or light.
-- Reduced motion.
-- Default count-in.
-- Default BPM adjustment step.
-- Wake Lock.
-- Keep screen active.
-- Save practice history.
-- Minimum duration required to save a session.
-- Restore last session configuration.
-- Visual subdivision detail.
-- Beat flash intensity.
-- Sound character.
-- Master volume.
-- Reset settings.
-- Delete all local data.
-- Export data.
-- Import data.
-
-Destructive actions must require confirmation.
-
----
-
-# 37. Light theme
-
-Dark mode should be the primary visual direction, but include an accessible light theme.
-
-The light theme should remain warm and low-glare rather than pure white.
-
-Persist the selected theme locally.
-
----
-
-# 38. Implementation sequence
-
-Implement the application in this order.
-
-## ✅ Phase 1: Foundation
-
-- Configure Next.js, TypeScript, Tailwind, linting, tests, and PWA.
-- Add application layout and responsive navigation.
-- Define types.
-- Create Zustand stores.
-- Create IndexedDB schema.
-- Add basic settings persistence.
-
-## ✅ Phase 2: Audio engine
-
-- Initialize Tone.js safely.
-- Create synthesized kick, snare, and hi-hat.
-- Implement transport.
-- Implement BPM.
-- Implement Play, Pause, and Stop.
-- Implement a basic 4/4 pattern.
-- Implement synchronized beat visualization.
-- Verify cleanup and audio context behavior.
-
-## ✅ Phase 3: Pattern system
-
-- Add the full pattern data model.
-- Add built-in patterns.
-- Add pattern selection and filters.
-- Add time signatures and subdivisions.
-- Add pattern switching at measure boundaries.
-- Add favorites.
-
-## ✅ Phase 4: Practice features
-
-- Count-in.
-- Practice timer.
-- Focus mode.
-- Tap Tempo.
-- Swing.
-- Humanization.
-- Fills.
-- Mixer.
-- Wake Lock.
-
-## ✅ Phase 5: Guided practice
-
-- Tempo trainer.
-- Chord progression trainer.
-- Strumming trainer.
-- Practice presets.
-
-## ✅ Phase 6: Creation and persistence
-
-- Custom pattern editor.
-- IndexedDB repositories.
-- Practice history.
-- Import and export.
-- Storage migration and fallback handling.
-
-## ✅ Phase 7: Final quality
-
-- Accessibility.
-- Responsive polish.
-- Error handling.
-- Automated tests.
-- Offline verification.
-- Performance review.
-- Audio scheduling review.
-- Documentation.
-
-Do not attempt to build all features inside one oversized component.
-
----
-
-# 39. Completion criteria
-
-The application is complete when:
-
-- It generates convincing basic drum sounds without audio files.
-- A user can start practicing in no more than two interactions.
-- Playback remains rhythmically stable.
-- BPM can change during playback.
-- Pattern changes are musically aligned.
-- Beat visualization follows the audio.
-- Count-in works correctly.
-- At least the requested built-in genre patterns are available.
-- Chord and strumming trainers remain synchronized.
-- Custom patterns can be created and saved.
-- Preferences survive page reloads.
-- Practice history is stored locally.
-- Data can be exported and imported.
-- The application works offline after initial loading.
-- Mobile controls are usable while holding a guitar.
-- No backend or account is required.
-- No MP3, WAV, or sample-based audio is included.
-- Core features have automated tests.
-- The codebase is modular and maintainable.
-
----
-
-# 40. Deliverables
-
-Provide:
-
-- Complete working source code.
-- Clean project structure.
-- `README.md`.
-- Setup instructions.
-- Development commands.
-- Production build instructions.
-- Architecture explanation.
-- Audio-engine explanation.
-- IndexedDB schema documentation.
-- Pattern format documentation.
-- Import and export format documentation.
-- Browser support notes.
-- Known limitations.
-- Testing instructions.
-- A list of possible future improvements.
-
-The README must explain that the drum sounds are synthesized in real time and that no recorded audio files are used.
-
----
-
-# 41. Development rules
-
-- Use strict TypeScript.
-- Avoid `any`.
-- Use small, focused components.
-- Keep audio logic outside React components.
-- Dispose Tone.js and Web Audio resources properly.
-- Do not persist nonserializable audio objects.
-- Validate all local and imported data.
-- Use accessible controls.
-- Do not add a backend.
-- Do not add authentication.
-- Do not add analytics or tracking.
-- Do not add advertisements.
-- Do not include copyrighted song patterns.
-- Do not use fake placeholder buttons.
-- Do not leave critical functionality as TODO comments.
-- Ensure production build succeeds.
-- Ensure linting succeeds.
-- Ensure tests succeed.
-
-Start by implementing a solid, working vertical slice containing:
-
-- [x] Synthesized kick, snare, and hi-hat.
-- [x] Tone.js transport.
-- [x] Basic Rock pattern.
-- [x] BPM controls.
-- [x] Play, Pause, and Stop.
-- [x] One-measure count-in.
-- [x] Beat visualization.
-- [x] Master volume.
-- [x] IndexedDB initialization.
-- [x] Persistence of the last selected BPM and pattern.
-
-Verify that this vertical slice works correctly before implementing the remaining features.
-
-**Vertical slice status:** Done and verified on 2026-07-17.
-
-Verification passed with `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test:coverage`, `pnpm test:e2e`, `pnpm test:pwa`, and `pnpm build`.
+# Web Band Implementation Plan
+
+Last audited against the source on 2026-07-19.
+
+## How To Use This Plan
+
+- `[x]` means the capability was verified in the current source or tests.
+- `[ ]` means work remains. Partial features are split so completed behavior stays checked and missing behavior has its own task.
+- Mark a task complete only after its behavior, tests, and relevant documentation are finished.
+- For bugs, first add a failing regression test, then implement the fix and prove the test passes.
+
+## Product Boundaries
+
+- Keep the application client-only. Do not add API routes, server actions, backend services, authentication, analytics, advertisements, or cloud persistence.
+- Synthesize every drum sound in the browser. Do not add recordings, samples, MP3/WAV files, or external audio assets.
+- Use Tone Transport and Web Audio callback times as the musical clock. React state, animation frames, and timers must not schedule music.
+- Keep Tone nodes, AudioNodes, schedules, and precise tick state outside React and Zustand.
+- Validate and clone persisted or imported data before it reaches stores, UI, or the scheduler.
+
+## Phase 1: Foundation And App Shell
+
+- [x] **Configure the application stack.** Use Next.js App Router, React, strict TypeScript, Tailwind CSS, Tone.js, Zustand, Dexie, Serwist, Lucide, Vitest, Testing Library, and Playwright.
+- [x] **Keep one client-first application package.** Run browser-only screens through client shells while keeping App Router page files thin.
+- [x] **Create the primary routes.** Provide `/practice`, `/patterns`, `/editor`, `/history`, and `/settings`, with `/` redirecting to `/practice`.
+- [x] **Create responsive navigation.** Use mobile bottom navigation and a desktop side rail without interrupting active audio cleanup.
+- [x] **Bootstrap appearance before hydration.** Apply the persisted dark, light, or system theme without a visible theme flash.
+- [ ] **Add the About route.** Create `/about`, add navigation and metadata, include it in offline precaching, and cover it in the PWA route test.
+
+## Phase 2: Audio Engine And Scheduling
+
+- [x] **Start audio from the Play interaction.** Call `Tone.start()` only from the direct user gesture and resume a suspended context when playback restarts.
+- [x] **Implement synthesized drum voices.** Provide kick, snare, closed/open hats, low/mid/high toms, crash, ride, rim, clap, and count-in click without recordings.
+- [x] **Centralize instrument ownership.** Use one instrument manager for triggering, buses, mute, solo, master volume, silence, and disposal.
+- [x] **Implement transport states.** Handle not initialized, initializing, ready, count-in, playing, paused, stopped, suspended audio, and initialization failure.
+- [x] **Schedule against Tone Transport.** Support looping eighth- and sixteenth-note grids, multiple bars, accents, velocity, and callback-time scheduling.
+- [x] **Support all required meters.** Handle 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, and 12/8 patterns.
+- [x] **Implement live groove controls.** Support 40-220 BPM, smooth tempo changes, swing, timing/velocity humanization, tap tempo, and 0/1/2/4-measure count-ins.
+- [x] **Preserve musical lifecycle behavior.** Pause keeps transport position; stop and disposal clear owned schedules, semantic callbacks, visual work, voices, and nodes.
+- [x] **Quantize normal pattern changes.** Queue active pattern changes for the next measure and publish the selection at audible time.
+- [x] **Synchronize visuals from audio time.** Drive beat and guidance timelines from scheduled Tone callbacks rather than React render timing.
+- [ ] **Schedule hi-hat choking at audio time.** Pass the closed-hat hit time into open-hat stopping so Tone lookahead cannot choke the sound early; add a regression test.
+- [ ] **Implement audible flam behavior.** Convert `flam` metadata into a bounded second hit while preserving velocity, timing, pause replay, and disposal behavior.
+- [ ] **Fix zero-probability semantics.** Guarantee a hit with probability `0` never triggers, including when the random source returns exactly zero.
+- [ ] **Apply pattern swing consistently.** Decide whether selecting a pattern adopts its `swing` metadata or remove the misleading metadata-driven Swing label; test selection and preview behavior.
+- [ ] **Expose immediate pattern switching.** Add an explicit same-meter immediate-switch option while retaining next-measure switching as the safe default.
+
+## Phase 3: Pattern Data And Library
+
+- [x] **Define pure serializable patterns.** Keep instrument, step, velocity, probability, flam, timing offset, meter, subdivision, bars, BPM, category, and difficulty as data only.
+- [x] **Validate scheduler inputs.** Reject malformed patterns, duplicate cells, invalid ranges, and unsafe imported or persisted data before playback.
+- [x] **Provide the built-in catalog.** Ship 44 original educational grooves spanning the required genres, difficulties, meters, and subdivisions.
+- [x] **Implement library discovery.** Search, filter by genre/difficulty/meter/subdivision, and sort by name, BPM, recent use, or favorites.
+- [x] **Implement pattern actions.** Preview, favorite, open in Practice, export custom patterns, and duplicate built-ins into the editor.
+- [x] **Render lightweight rhythm previews.** Show an understandable per-instrument groove summary without starting full playback.
+- [ ] **Show recommended BPM ranges.** Add each pattern's recommended minimum and maximum BPM to library cards and component tests.
+- [ ] **Lock the catalog contract with tests.** Verify required pattern names and intended categories, resolving current title/category deviations instead of testing only count and validity.
+
+## Phase 4: Practice Experience
+
+- [x] **Build the main practice workspace.** Show style, pattern, BPM, meter, transport, timer, count-in, master volume, mode selection, and quick pattern access.
+- [x] **Implement BPM controls.** Provide numeric and range inputs, -5/-1/+1/+5 buttons, tap tempo, clamping, and reset to pattern default.
+- [x] **Implement count-in feedback.** Play a synthesized accented click, show meter-aware visual counts, delay the groove, and allow Stop to cancel.
+- [x] **Implement the beat visualizer.** Distinguish subdivisions, beats, downbeat, accents, measure boundaries, and the current measure at audible time.
+- [x] **Implement focus mode.** Hide navigation and secondary controls while retaining pattern, BPM, timer, beat, transport, and guided-practice cues.
+- [x] **Implement session tools.** Provide the practice timer, Wake Lock toggle/status, shortcuts dialog, and master mute.
+- [x] **Implement keyboard shortcuts.** Support transport, BPM, tap, focus, mute, and pattern navigation without firing inside editable controls.
+- [x] **Provide usable mobile and desktop layouts.** Keep primary transport controls large and provide horizontal editor scrolling with sticky labels.
+- [ ] **Collapse advanced mobile controls.** Add accessible disclosure controls for guided practice and groove settings so the mobile screen stays focused.
+- [ ] **Improve tablet composition.** Introduce the intended two-column pattern/control layout before the current extra-large breakpoint.
+- [ ] **Make mobile pattern browsing swipe-friendly.** Provide a deliberate touch browsing interaction rather than relying only on a vertical card list.
+- [ ] **Verify the 320px layout.** Add an E2E viewport assertion and fix any overflow or unreachable controls at approximately 320 CSS pixels.
+
+## Phase 5: Guided Practice And Presets
+
+- [x] **Implement tempo training.** Support ascending/descending targets, measure/second intervals, increments, current/next BPM, progress, target stop, and reset-on-stop.
+- [x] **Implement chord progression training.** Create, edit, reorder, remove, repeat, time, save, favorite, and display current/next chords with optional countdowns.
+- [x] **Provide built-in chord progressions.** Include the requested pop progressions, I-IV-V progression, and 12-bar blues example.
+- [x] **Implement built-in strumming guidance.** Support down, up, mute, rest, hold, accents, meter matching, and audio-synchronized current/next actions.
+- [x] **Provide the beginner strumming catalog.** Include beat downstrokes, eighth-note downstrokes, common pop/ballad patterns, and 3/4 and 6/8 patterns.
+- [ ] **Render strumming subdivision labels.** Show musical positions such as `1 & 2 & 3 & 4 &` and highlight the active sequence step at audible time.
+- [ ] **Complete custom strumming workflows.** Hydrate persisted custom patterns, include them in selection and backup restore, and provide create/edit/delete management.
+- [x] **Implement complete practice presets.** Save, load, rename, duplicate, delete, favorite, and reopen recent drum and guided-practice configurations.
+
+## Phase 6: Pattern Editor
+
+- [x] **Create and duplicate patterns.** Start blank patterns or copy built-ins while keeping built-in records read-only.
+- [x] **Edit pattern metadata.** Configure name, category, difficulty, meter, one/two/four bars, subdivision, default BPM, and recommended range.
+- [x] **Edit drum cells.** Add/remove hits, cycle velocity, clear rows/patterns, and copy or paste measures.
+- [x] **Edit advanced hit properties.** Persist probability, flam, and timing offset values with validation.
+- [x] **Support desktop and touch editing.** Provide grid keyboard movement, advanced-property access, horizontal scrolling, sticky labels, and safe touch behavior.
+- [x] **Preview and persist drafts.** Play editor changes, show the synchronized playhead, save valid custom patterns, and delete existing custom patterns.
+
+## Phase 7: Fills And Mixer
+
+- [x] **Generate phrase fills.** Support off, every 4/8/16 measures, and controlled random fills that respect meter and return with a crash.
+- [x] **Implement the compact mixer.** Provide master, kick, snare, hats, toms, cymbals, and rim/clap volume plus mute, solo, reset, and persistence.
+- [ ] **Add fill-before-stop behavior.** Queue a musically bounded fill and stop cleanly after it, while retaining immediate Stop for emergency cancellation.
+- [ ] **Add fill-before-pattern-change behavior.** Schedule a transition fill before committing a queued compatible pattern change.
+- [ ] **Create a fill library.** Add several validated fill arrangements and category compatibility rules instead of one generic algorithm.
+- [ ] **Add sound-character presets.** Implement Soft, Balanced, and Punchy synthesis/mix presets without loading samples, then expose the setting consistently.
+
+## Phase 8: Persistence, History, And Backup
+
+- [x] **Version the IndexedDB schema.** Keep Dexie versions 1-3 as migration history for patterns, favorites, progressions, strumming, presets, and sessions.
+- [x] **Use repository boundaries.** Keep components away from Dexie and clone/validate records at repositories and `StorageService`.
+- [x] **Recover from IndexedDB failure.** Copy readable records into memory repositories, show a nonblocking warning, and retry the failed operation once.
+- [x] **Persist lightweight preferences.** Version local settings for practice, guided modes, history, appearance, recents, and onboarding.
+- [x] **Record practice history.** Store playing time, mode, pattern, meter, starting/ending BPM, and timestamps with a configurable meaningful-session threshold.
+- [x] **Summarize history.** Show total/weekly time, session count, most-used pattern, BPM range, recent sessions, daily groups, deletion, and clearing.
+- [x] **Import and export core data.** Validate versioned JSON, preview it, merge or replace transactionally, handle collisions, and download a safety backup before replacement.
+- [ ] **Back up every local preference.** Include appearance, reduced motion, recent patterns, and onboarding state so export and safety backups match the all-data claim.
+- [ ] **Make delete-all complete.** Clear appearance and every other Web Band key in addition to IndexedDB, recents, onboarding, and practice settings.
+- [ ] **Report localStorage failures.** Surface nonblocking warnings when normal preference writes fail instead of silently ignoring repository results.
+- [ ] **Report corrupted stored rows.** Continue filtering invalid legacy data, but tell the user which collections were partially recovered.
+- [ ] **Strengthen session finalization.** Reduce navigation/page-lifecycle data loss and clearly preserve best-effort semantics where browsers cannot guarantee an async write.
+- [ ] **Enforce meaningful history settings.** Define a nonzero minimum threshold policy and cover normal-duration recording without lowering the E2E threshold to zero.
+
+## Phase 9: Settings
+
+- [x] **Configure appearance.** Expose system/dark/light themes and explicit reduced-motion preference.
+- [x] **Configure practice history.** Expose recording enablement and minimum session duration.
+- [x] **Manage local data.** Provide backup export/import and confirmed deletion controls.
+- [ ] **Configure default count-in.** Expose the persisted count-in preference on Settings as well as Practice.
+- [ ] **Configure the BPM adjustment step.** Let users choose the default keyboard/button increment while retaining direct +/-1 and +/-5 controls.
+- [ ] **Configure Wake Lock.** Expose the persisted keep-screen-awake preference on Settings and keep it synchronized with Practice.
+- [ ] **Configure restore behavior.** Allow users to choose whether the last practice configuration is restored on startup.
+- [ ] **Configure visual subdivision detail.** Let users reduce or expand beat-grid detail without changing musical scheduling.
+- [ ] **Configure beat-flash intensity.** Apply a persisted accessible visual intensity without relying only on color.
+- [ ] **Configure master volume.** Expose the same persisted master level on Settings and in the Practice mixer.
+- [ ] **Implement reset settings.** Restore preference defaults without deleting user-created patterns, presets, progressions, or history.
+
+## Phase 10: Offline PWA
+
+- [x] **Provide installable metadata.** Define the manifest, icons, theme colors, and standalone behavior.
+- [x] **Generate the service worker.** Build Serwist from `src/app/service-worker.ts` and keep generated workers out of source control.
+- [x] **Precache local-first routes.** Cache Practice, Patterns, Editor, History, and Settings with `/practice` as the document fallback.
+- [x] **Load the application shell offline.** Verify every current local-first route after service-worker control is established.
+- [x] **Notify after a controller update.** Show a reload notice when an activated service worker takes control.
+- [ ] **Handle the full update lifecycle.** Detect waiting/updatefound workers and registration or activation failures, and show accurate retry/reload guidance.
+- [ ] **Verify saved data offline.** Seed IndexedDB data, go offline, and prove custom content and preferences still load.
+- [ ] **Verify audio offline.** Start synthesized playback offline and assert the engine reaches Playing without network requests.
+- [ ] **Test update notifications.** Exercise the service-worker update UI rather than relying only on static component behavior.
+
+## Phase 11: Accessibility, Motion, And Error Recovery
+
+- [x] **Provide accessibility foundations.** Use semantic landmarks, skip navigation, visible focus, labels, large common targets, native dialogs/sliders, and reduced motion.
+- [x] **Avoid noisy beat announcements.** Keep per-subdivision visuals hidden from screen readers while exposing meaningful transport status.
+- [x] **Handle primary runtime errors.** Show audio initialization alerts, IndexedDB fallback warnings, and validated import errors without destroying active configuration.
+- [x] **Provide an application error boundary.** Render a recoverable App Router error screen for page failures.
+- [ ] **Preserve live regions in focus mode.** Announce playback and pattern changes even when the normal Practice screen is replaced by focus mode.
+- [ ] **Announce major BPM changes.** Add a concise live message for buttons, slider commits, tap tempo, presets, and keyboard changes without announcing every tick.
+- [ ] **Announce tempo completion.** Put the target-reached state in an assertive or polite live region as appropriate.
+- [ ] **Audit toggle semantics.** Ensure every stateful toggle or preview control has accurate `aria-pressed`, label, and disabled behavior.
+- [ ] **Expose Wake Lock failure visibly.** Replace title-only error details with a readable, nonblocking status message.
+- [ ] **Add section-level error isolation.** Protect major browser-only screens and provider failures beyond the current route error boundary.
+- [ ] **Add automated accessibility checks.** Cover contrast, names, roles, keyboard paths, and 44px targets with an appropriate audit tool and focused tests.
+- [ ] **Add Framer Motion sparingly.** Introduce the required dependency only for useful transitions and keep musical timing completely independent.
+- [ ] **Implement restrained transitions.** Add reduced-motion-safe page, panel, Play-state, pattern-selection, focus-mode, beat, and count-in feedback using transform/opacity where possible.
+
+## Phase 12: Performance And Stability
+
+- [x] **Keep high-frequency timing outside global state.** Use retained visual/guidance timelines and direct DOM updates instead of Zustand updates on every subdivision.
+- [x] **Reuse and dispose shared audio resources.** Retain the engine, manager, buses, and schedules for a session while cleaning up one-shot nodes.
+- [x] **Lazy-load heavy screens.** Load browser-only Editor and History screens through dynamic client shells.
+- [x] **Batch database replacement.** Use Dexie transactions and bulk writes for merge/replace operations.
+- [ ] **Move large backup parsing off long tasks.** Chunk, yield, or use a worker for JSON parsing/validation near the 25 MB limit.
+- [ ] **Profile active playback.** Record React and browser performance while changing panels, mixer levels, focus mode, timers, and storage writes.
+- [ ] **Run physical audio checks.** Listen for timbre, timing, hi-hat choke, pause/resume, and installed-PWA behavior on representative desktop and mobile devices.
+
+## Phase 13: Automated Verification
+
+- [x] **Cover core logic with Vitest.** Test musical time, validation, scheduling, guided modes, editor transforms, repositories, migrations, backup, and recovery.
+- [x] **Cover UI behavior with Testing Library.** Test transport, BPM, editor, filters, presets, settings, storage notices, and guided controls in jsdom with fake IndexedDB.
+- [x] **Configure cross-browser E2E.** Run Chromium, Firefox, WebKit, and mobile Chromium against the real browser audio engine.
+- [x] **Configure production PWA E2E.** Build and serve production separately before testing offline behavior.
+- [ ] **Fix the current Chromium E2E failures.** Reproduce and repair backup restore, custom pattern editing, and pattern sharing; keep regression coverage.
+- [ ] **Cover count-in to groove in E2E.** Start with a nonzero count-in and assert the audible-state transition rather than disabling count-in first.
+- [ ] **Cover keyboard pattern navigation in E2E.** Verify left/right changes, editable-target suppression, and measure-aligned active changes.
+- [ ] **Cover a meaningful recorded session in E2E.** Exercise the configured nonzero threshold instead of setting it to zero.
+- [ ] **Cover every meter directly.** Add focused musical-time/scheduler tests for 2/4, 5/4, 7/8, and 12/8 in addition to common meters.
+- [ ] **Add coverage thresholds.** Set justified line, branch, function, and statement minimums so `pnpm test:coverage` can detect regressions.
+- [ ] **Make the full release suite green.** Pass format, lint, typecheck, unit/coverage, E2E, PWA, and production build in the required command forms.
+
+## Phase 14: Documentation And Release
+
+- [x] **Document setup and architecture.** Keep requirements, commands, route behavior, audio ownership, persistence, schemas, pattern format, backup, PWA, browser support, and limitations in `README.md`.
+- [x] **Document repository workflow.** Keep concise, executable guidance in `AGENTS.md` for future sessions.
+- [ ] **Correct stale README claims.** Align test coverage, 320px behavior, count-in E2E, custom strumming status, fills, and other limitations with executable evidence.
+- [ ] **Update docs with completed tasks.** Revise README architecture, settings, backup, PWA, and testing sections whenever this checklist changes shipped behavior.
+
+## Definition Of Done
+
+Every unchecked implementation task must satisfy all applicable items below before it is marked complete:
+
+1. Behavior is implemented without violating the product boundaries.
+2. Regression or feature tests cover success, failure, and cleanup paths.
+3. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, and focused/full `pnpm test` pass.
+4. `pnpm build` passes for Next.js, routing, service-worker, or production changes.
+5. Relevant Playwright and PWA tests pass for user-flow or offline changes.
+6. Persistence changes preserve old schema versions and include migration/backup coverage.
+7. README and this checklist describe the behavior accurately.
+
+## Final Release Gate
+
+- [ ] **Complete every required task above.** No mandatory checkbox remains open or is silently reclassified as optional.
+- [ ] **Pass the complete automated suite.** Format, lint, typecheck, coverage, E2E, PWA, and production build all succeed from a clean checkout.
+- [ ] **Pass manual browser and device checks.** Verify synthesized sound, stable timing, responsive controls, accessibility, Wake Lock, and installed-PWA behavior.
+- [ ] **Confirm local-first data safety.** Test upgrades, corrupted data, unavailable storage, merge/replace, safety backup, delete-all, and offline reloads.
+- [ ] **Publish truthful final documentation.** Ensure README feature, limitation, and testing claims match the released implementation.
