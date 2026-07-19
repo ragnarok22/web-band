@@ -1,13 +1,23 @@
 import { validateHistorySettings } from "@/lib/persistence-validation";
+import {
+  defaultHistorySettings,
+  isHistoryMinimumDurationSeconds,
+} from "@/lib/history-settings";
 import type { HistorySettings } from "@/types/persistence";
 
 export const HISTORY_SETTINGS_KEY = "web-band-history-settings-v1";
 const HISTORY_SETTINGS_VERSION = 1;
 
-export const defaultHistorySettings: HistorySettings = {
-  enabled: true,
-  minimumDurationSeconds: 30,
-};
+export { defaultHistorySettings } from "@/lib/history-settings";
+
+function isSupportedHistorySettings(value: unknown): value is HistorySettings {
+  return (
+    validateHistorySettings(value).success &&
+    isHistoryMinimumDurationSeconds(
+      (value as HistorySettings).minimumDurationSeconds,
+    )
+  );
+}
 
 function isVersionedHistorySettings(
   value: unknown,
@@ -21,7 +31,7 @@ function isVersionedHistorySettings(
     Object.hasOwn(record, "settings") &&
     Object.hasOwn(record, "version") &&
     record.version === HISTORY_SETTINGS_VERSION &&
-    validateHistorySettings(record.settings).success
+    isSupportedHistorySettings(record.settings)
   );
 }
 
@@ -41,10 +51,7 @@ export function loadHistorySettings(): HistorySettings {
 }
 
 export function saveHistorySettings(settings: HistorySettings): boolean {
-  if (
-    typeof window === "undefined" ||
-    !validateHistorySettings(settings).success
-  ) {
+  if (typeof window === "undefined" || !isSupportedHistorySettings(settings)) {
     return false;
   }
 

@@ -33,6 +33,7 @@ import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePracticeUiStore } from "@/stores/practice-ui-store";
 import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
+import { reportPreferenceWrite } from "@/stores/storage-store";
 import type { FillFrequency, MixerGroup } from "@/types/audio";
 import type {
   PracticePreset,
@@ -247,7 +248,7 @@ export function usePracticeController() {
   }
 
   function dismissOnboarding(): void {
-    saveOnboardingDismissal();
+    reportPreferenceWrite("onboarding", saveOnboardingDismissal());
     setShowOnboarding(false);
   }
 

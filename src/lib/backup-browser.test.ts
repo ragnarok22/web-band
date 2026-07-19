@@ -5,6 +5,7 @@ import { downloadBackupEnvelope, parseBackupFile } from "@/lib/backup-browser";
 import {
   backupFileName,
   createBackupEnvelope,
+  defaultBackupPreferences,
   MAX_BACKUP_FILE_BYTES,
 } from "@/lib/backup-envelope";
 import { createDefaultGuidedPracticeValues } from "@/stores/guided-practice-store";
@@ -25,6 +26,7 @@ function envelope() {
       history: { enabled: true, minimumDurationSeconds: 30 },
       practice: structuredClone(defaultPracticeSettings),
     },
+    defaultBackupPreferences,
     new Date("2026-07-18T12:00:00.000Z"),
   );
 }

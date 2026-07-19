@@ -82,6 +82,11 @@ export function BackupPreviewDialog({
             </div>
           ))}
         </dl>
+        <p className="border-border bg-background/45 text-muted mt-3 rounded-xl border px-3 py-2 text-xs leading-5">
+          This backup also includes practice settings, appearance, recent
+          patterns, and onboarding state. Imported settings and preferences
+          replace the current values in both modes.
+        </p>
 
         <fieldset className="mt-6">
           <legend className="text-sm font-extrabold">Import behavior</legend>

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { cGAmFProgression, gDEmCProgression } from "@/data/chord-progressions";
 import { basicPopPattern } from "@/data/strumming-patterns";
@@ -8,15 +8,34 @@ import {
   GUIDED_PRACTICE_STORAGE_KEY,
   useGuidedPracticeStore,
 } from "@/stores/guided-practice-store";
+import { useStorageStore } from "@/stores/storage-store";
 
 beforeEach(() => {
   useGuidedPracticeStore.setState({
     ...createDefaultGuidedPracticeValues(),
     isHydrated: false,
   });
+  useStorageStore.setState({ preferenceWriteFailures: [] });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 describe("guided practice store", () => {
+  it("reports a failed normal preference write", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    useGuidedPracticeStore.getState().setMode("chords");
+
+    expect(useGuidedPracticeStore.getState().mode).toBe("chords");
+    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
+      "guided practice",
+    );
+  });
+
   it("replaces and persists all backup settings in one store update", () => {
     const settings = {
       ...createDefaultGuidedPracticeValues(),

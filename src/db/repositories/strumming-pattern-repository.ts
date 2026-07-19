@@ -1,6 +1,9 @@
 import type { EntityTable } from "dexie";
 
-import { cloneValidRecords } from "@/db/repositories/repository-helpers";
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isCustomStrummingPattern } from "@/lib/persistence-validation";
 import type { CustomStrummingPattern } from "@/types/persistence";
 
@@ -30,6 +33,7 @@ function sortPatterns(
 export class DexieStrummingPatternRepository implements StrummingPatternRepository {
   constructor(
     private readonly table: EntityTable<CustomStrummingPattern, "id">,
+    private readonly reportCorruptRows?: ReportCorruptRows,
   ) {}
 
   async delete(patternId: string): Promise<void> {
@@ -47,7 +51,13 @@ export class DexieStrummingPatternRepository implements StrummingPatternReposito
 
   async list(): Promise<CustomStrummingPattern[]> {
     const patterns = await this.table.toArray();
-    return sortPatterns(cloneValidRecords(patterns, isCustomStrummingPattern));
+    return sortPatterns(
+      cloneValidRecords(
+        patterns,
+        isCustomStrummingPattern,
+        this.reportCorruptRows,
+      ),
+    );
   }
 
   async put(pattern: CustomStrummingPattern): Promise<void> {

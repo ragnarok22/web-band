@@ -1,5 +1,9 @@
 import type { EntityTable } from "dexie";
 
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type { FavoriteChordProgressionRecord } from "@/types/persistence";
 
@@ -47,6 +51,7 @@ export class DexieChordProgressionFavoriteRepository implements ChordProgression
       FavoriteChordProgressionRecord,
       "progressionId"
     >,
+    private readonly reportCorruptRows?: ReportCorruptRows,
   ) {}
 
   async add(progressionId: string): Promise<void> {
@@ -63,9 +68,9 @@ export class DexieChordProgressionFavoriteRepository implements ChordProgression
 
   async list(): Promise<string[]> {
     const records = await this.table.toArray();
-    return sortFavoriteRecords(records.filter(isFavoriteRecord)).map(
-      (record) => record.progressionId,
-    );
+    return sortFavoriteRecords(
+      cloneValidRecords(records, isFavoriteRecord, this.reportCorruptRows),
+    ).map((record) => record.progressionId);
   }
 
   async remove(progressionId: string): Promise<void> {

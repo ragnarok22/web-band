@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   defaultHistorySettings,
   HISTORY_SETTINGS_KEY,
 } from "@/db/repositories/history-settings-repository";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
+import { useStorageStore } from "@/stores/storage-store";
 
 describe("history settings store", () => {
   beforeEach(() => {
@@ -12,6 +13,7 @@ describe("history settings store", () => {
       ...defaultHistorySettings,
       hasHydrated: false,
     });
+    useStorageStore.setState({ preferenceWriteFailures: [] });
   });
 
   it("hydrates strict saved settings", () => {
@@ -41,7 +43,9 @@ describe("history settings store", () => {
     });
 
     useHistorySettingsStore.getState().setMinimumDurationSeconds(-10);
-    expect(useHistorySettingsStore.getState().minimumDurationSeconds).toBe(0);
+    expect(useHistorySettingsStore.getState().minimumDurationSeconds).toBe(1);
+    useHistorySettingsStore.getState().setMinimumDurationSeconds(Number.NaN);
+    expect(useHistorySettingsStore.getState().minimumDurationSeconds).toBe(30);
     useHistorySettingsStore.getState().setMinimumDurationSeconds(9_000);
     expect(useHistorySettingsStore.getState().minimumDurationSeconds).toBe(
       3_600,
@@ -72,5 +76,26 @@ describe("history settings store", () => {
       settings: { enabled: false, minimumDurationSeconds: 75 },
       version: 1,
     });
+
+    expect(
+      useHistorySettingsStore.getState().replaceSettings({
+        enabled: true,
+        minimumDurationSeconds: 0,
+      }),
+    ).toBe(true);
+    expect(useHistorySettingsStore.getState().minimumDurationSeconds).toBe(1);
+  });
+
+  it("reports a failed normal preference write", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    useHistorySettingsStore.getState().setEnabled(false);
+
+    expect(useHistorySettingsStore.getState().enabled).toBe(false);
+    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
+      "history settings",
+    );
   });
 });

@@ -9,6 +9,7 @@ import {
   isStrummingPattern,
   isTempoTrainerConfiguration,
 } from "@/lib/practice-validation";
+import { reportPreferenceWrite } from "@/stores/storage-store";
 import type {
   ChordTrainerConfiguration,
   GuidedPracticeConfiguration,
@@ -145,7 +146,7 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
   (set, get) => {
     function update(changes: Partial<GuidedPracticeValues>): void {
       set(changes);
-      saveGuidedPracticeValues(get());
+      reportPreferenceWrite("guided practice", saveGuidedPracticeValues(get()));
     }
 
     return {
@@ -192,7 +193,9 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
         }
         const next = structuredClone(settings);
         set(next);
-        return saveGuidedPracticeValues(next);
+        const persisted = saveGuidedPracticeValues(next);
+        reportPreferenceWrite("guided practice", persisted);
+        return persisted;
       },
       setChordTrainerConfiguration: (chordTrainer) => {
         if (!isChordTrainerConfiguration(chordTrainer)) {

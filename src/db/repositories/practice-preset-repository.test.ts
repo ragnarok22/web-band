@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WebBandDatabase } from "@/db/database";
 import {
@@ -41,8 +41,10 @@ describe("practice preset repositories", () => {
   it("stores, sorts, filters, and deletes Dexie rows", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
+    const reportCorruptRows = vi.fn();
     const repository = new DexiePracticePresetRepository(
       database.practicePresets,
+      reportCorruptRows,
     );
     const older = createPreset("older", "2026-07-18T11:00:00.000Z");
     const newerB = createPreset("newer-b");
@@ -70,6 +72,9 @@ describe("practice preset repositories", () => {
       "newer-b",
       "older",
     ]);
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(2);
+    await repository.list();
+    expect(reportCorruptRows.mock.calls).toEqual([[2], [2]]);
     expect(await repository.get("corrupt")).toBeUndefined();
     expect(await repository.get("noncanonical-timestamp")).toBeUndefined();
     await repository.delete("older");

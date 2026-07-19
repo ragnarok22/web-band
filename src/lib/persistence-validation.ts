@@ -2,6 +2,10 @@ import { builtInChordProgressions } from "@/data/chord-progressions";
 import { builtInPatterns } from "@/data/patterns";
 import { builtInStrummingPatterns } from "@/data/strumming-patterns";
 import { isSoundCharacter } from "@/audio/synthesis/sound-profiles";
+import {
+  MAX_HISTORY_MINIMUM_DURATION_SECONDS,
+  MIN_HISTORY_MINIMUM_DURATION_SECONDS,
+} from "@/lib/history-settings";
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 import { validatePattern } from "@/lib/pattern-validation";
 import {
@@ -38,7 +42,7 @@ const MAX_CATEGORY_LENGTH = 64;
 const MAX_TIME_SIGNATURE_LENGTH = 16;
 const MAX_PATTERN_HITS = 2_048;
 const MAX_SESSION_DURATION_SECONDS = 86_400;
-const MAX_HISTORY_MINIMUM_DURATION_SECONDS = 3_600;
+const MAX_RECENT_PATTERNS = 20;
 
 const builtInPatternIds = new Set(builtInPatterns.map(({ id }) => id));
 const builtInChordProgressionIds = new Set(
@@ -395,6 +399,7 @@ export function validatePracticeSession(
 
 export function validateHistorySettings(
   value: unknown,
+  minimumDurationSeconds = MIN_HISTORY_MINIMUM_DURATION_SECONDS,
 ): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value)) {
@@ -407,7 +412,7 @@ export function validateHistorySettings(
   if (
     !isIntegerInRange(
       value.minimumDurationSeconds,
-      0,
+      minimumDurationSeconds,
       MAX_HISTORY_MINIMUM_DURATION_SECONDS,
     )
   ) {
@@ -418,7 +423,7 @@ export function validateHistorySettings(
 
 function validatePracticeSettings(
   value: unknown,
-  version: 1 | 2,
+  version: 1 | 2 | 3,
 ): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value)) {
@@ -433,7 +438,7 @@ function validatePracticeSettings(
       "masterVolume",
       "mixer",
       "selectedPatternId",
-      ...(version === 2 ? ["soundCharacter"] : []),
+      ...(version >= 2 ? ["soundCharacter"] : []),
       "swing",
       "wakeLockEnabled",
     ])
@@ -452,7 +457,7 @@ function validatePracticeSettings(
     errors.push("Practice settings volume is invalid.");
   if (!hasBoundedText(value.selectedPatternId, MAX_ID_LENGTH))
     errors.push("Practice settings pattern ID is invalid.");
-  if (version === 2 && !isSoundCharacter(value.soundCharacter))
+  if (version >= 2 && !isSoundCharacter(value.soundCharacter))
     errors.push("Practice settings sound character is invalid.");
   if (!isNumberInRange(value.swing, 0, 0.65))
     errors.push("Practice settings swing is invalid.");
@@ -518,6 +523,46 @@ function validateGuidedPracticeSettings(
   return { errors, success: errors.length === 0 };
 }
 
+function validateBackupPreferences(
+  value: unknown,
+): PersistenceValidationResult {
+  const errors: string[] = [];
+  if (!isRecord(value)) {
+    return {
+      errors: ["Backup preferences must be an object."],
+      success: false,
+    };
+  }
+  if (
+    !hasExactKeys(value, [
+      "appearance",
+      "onboardingDismissed",
+      "recentPatternIds",
+    ])
+  ) {
+    errors.push("Backup preference fields are invalid.");
+  }
+  if (
+    !isRecord(value.appearance) ||
+    !hasExactKeys(value.appearance, ["reducedMotion", "theme"]) ||
+    typeof value.appearance.reducedMotion !== "boolean" ||
+    !["dark", "light", "system"].includes(value.appearance.theme as string)
+  ) {
+    errors.push("Backup appearance preferences are invalid.");
+  }
+  if (typeof value.onboardingDismissed !== "boolean") {
+    errors.push("Backup onboarding preference is invalid.");
+  }
+  if (
+    !Array.isArray(value.recentPatternIds) ||
+    value.recentPatternIds.length > MAX_RECENT_PATTERNS ||
+    !hasUniqueStrings(value.recentPatternIds)
+  ) {
+    errors.push("Backup recent pattern preferences are invalid.");
+  }
+  return { errors, success: errors.length === 0 };
+}
+
 function validateFavoriteIds(
   value: unknown,
   name: string,
@@ -550,7 +595,7 @@ export function validateBackupEnvelope(
   if (!hasExactKeys(value, ["app", "version", "exportedAt", "data"]))
     errors.push("Backup envelope fields are invalid.");
   if (value.app !== "web-band") errors.push("Backup app ID is unsupported.");
-  if (value.version !== 1 && value.version !== 2)
+  if (value.version !== 1 && value.version !== 2 && value.version !== 3)
     errors.push("Backup version is unsupported.");
   if (!isCanonicalUtcIsoTimestamp(value.exportedAt))
     errors.push("Backup export date is invalid.");
@@ -560,6 +605,8 @@ export function validateBackupEnvelope(
   }
 
   const data = value.data;
+  const version =
+    value.version === 1 ? 1 : value.version === 2 ? 2 : (3 as const);
   if (
     !hasExactKeys(data, [
       "customPatterns",
@@ -569,6 +616,7 @@ export function validateBackupEnvelope(
       "customStrummingPatterns",
       "practicePresets",
       "practiceSessions",
+      ...(version === 3 ? ["preferences"] : []),
       "settings",
     ])
   ) {
@@ -636,13 +684,20 @@ export function validateBackupEnvelope(
   } else {
     if (!hasExactKeys(data.settings, ["practice", "guidedPractice", "history"]))
       errors.push("Backup settings fields are invalid.");
-    const version = value.version === 1 ? 1 : 2;
     if (!validatePracticeSettings(data.settings.practice, version).success)
       errors.push("Backup practice settings are invalid.");
     if (!validateGuidedPracticeSettings(data.settings.guidedPractice).success)
       errors.push("Backup guided practice settings are invalid.");
-    if (!validateHistorySettings(data.settings.history).success)
+    if (
+      !validateHistorySettings(
+        data.settings.history,
+        version < 3 ? 0 : MIN_HISTORY_MINIMUM_DURATION_SECONDS,
+      ).success
+    )
       errors.push("Backup history settings are invalid.");
+  }
+  if (version === 3 && !validateBackupPreferences(data.preferences).success) {
+    errors.push("Backup preferences are invalid.");
   }
 
   const availablePatternIds = new Set(builtInPatternIds);
@@ -661,6 +716,22 @@ export function validateBackupEnvelope(
       ) {
         errors.push(
           `Favorite pattern ID ${patternId} is not included in this backup.`,
+        );
+      }
+    }
+  }
+  if (
+    version === 3 &&
+    isRecord(data.preferences) &&
+    Array.isArray(data.preferences.recentPatternIds)
+  ) {
+    for (const patternId of data.preferences.recentPatternIds) {
+      if (
+        typeof patternId === "string" &&
+        !availablePatternIds.has(patternId)
+      ) {
+        errors.push(
+          `Recent pattern ID ${patternId} is not included in this backup.`,
         );
       }
     }

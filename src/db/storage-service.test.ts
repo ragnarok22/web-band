@@ -314,6 +314,83 @@ describe("storage service", () => {
     service.close();
   });
 
+  it("reports exact corrupt-row counts without inflating repeated reads", async () => {
+    const databaseName = `web-band-test-${crypto.randomUUID()}`;
+    const service = new StorageService();
+    expect(await service.initialize(databaseName)).toEqual({
+      mode: "indexed-db",
+      warning: null,
+    });
+    const database = new WebBandDatabase(databaseName);
+    await database.open();
+    await Promise.all([
+      database.customPatterns.put({
+        ...createPattern("corrupt-pattern"),
+        createdAt: "invalid",
+      }),
+      database.favoritePatterns.bulkPut([
+        { createdAt: "invalid", patternId: "corrupt-favorite-a" },
+        { createdAt: "invalid", patternId: "corrupt-favorite-b" },
+      ]),
+      database.chordProgressions.put({
+        ...createProgression("corrupt-chords"),
+        steps: [],
+      }),
+      database.favoriteChordProgressions.put({
+        createdAt: "invalid",
+        progressionId: "corrupt-chord-favorite",
+      }),
+      database.strummingPatterns.put({
+        ...createStrummingPattern("corrupt-strumming"),
+        updatedAt: "invalid",
+      }),
+      database.practicePresets.put({
+        ...createPreset("corrupt-preset"),
+        configuration: {
+          ...createPreset("corrupt-preset").configuration,
+          bpm: 500,
+        },
+      }),
+      database.practiceSessions.put({
+        ...createSession("corrupt-session"),
+        durationSeconds: 0,
+      }),
+    ]);
+    const listener = vi.fn();
+    const unsubscribe = service.subscribeToCorruptRows(listener);
+
+    await service.exportSnapshot();
+    const expectedCounts = {
+      chordProgressions: 1,
+      customPatterns: 1,
+      favoriteChordProgressions: 1,
+      favoritePatterns: 2,
+      practicePresets: 1,
+      practiceSessions: 1,
+      strummingPatterns: 1,
+    };
+    expect(service.currentCorruptRowCounts).toEqual(expectedCounts);
+    expect(service.currentStatus).toEqual({
+      mode: "indexed-db",
+      warning: null,
+    });
+    expect(listener).toHaveBeenCalledTimes(8);
+
+    await service.exportSnapshot();
+    expect(service.currentCorruptRowCounts).toEqual(expectedCounts);
+    expect(listener).toHaveBeenCalledTimes(8);
+
+    await database.favoritePatterns.delete("corrupt-favorite-a");
+    await service.favoriteRepository.list();
+    expect(service.currentCorruptRowCounts.favoritePatterns).toBe(1);
+    expect(listener).toHaveBeenCalledTimes(9);
+
+    unsubscribe();
+    database.close();
+    service.close();
+    await database.delete();
+  });
+
   it("falls back to memory when IndexedDB is unavailable", async () => {
     vi.stubGlobal("indexedDB", undefined);
     const service = new StorageService();

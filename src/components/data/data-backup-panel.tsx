@@ -81,7 +81,7 @@ export function DataBackupPanel({
       const result = await actions.importBackup(preview.envelope, mode);
       const recordLabel = result.totalImported === 1 ? "record" : "records";
       setAnnouncement(
-        `${result.totalImported} ${recordLabel} imported by ${mode}. ${result.warning ?? "Backup settings applied."}`,
+        `${result.totalImported} ${recordLabel} imported by ${mode}. ${result.warning ?? "Backup settings and preferences applied."}`,
       );
       setPreview(null);
       window.setTimeout(() => uploadButtonRef.current?.focus());
@@ -118,8 +118,8 @@ export function DataBackupPanel({
         </h2>
         <p className="text-muted mt-2 text-sm leading-6">
           {compact
-            ? "Keep a portable copy of this journal and your practice setup."
-            : "Download a portable JSON copy of patterns, presets, sessions, favorites, and practice settings stored on this device."}
+            ? "Keep a portable copy of this journal, practice setup, and app preferences."
+            : "Download a portable JSON copy of patterns, presets, sessions, favorites, settings, appearance, recents, and onboarding state stored on this device."}
         </p>
       </div>
 

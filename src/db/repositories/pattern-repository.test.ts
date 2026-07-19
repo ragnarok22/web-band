@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { basicRockPattern } from "@/data/patterns/rock";
 import { WebBandDatabase } from "@/db/database";
@@ -34,7 +34,11 @@ describe("Dexie pattern repository", () => {
   it("stores, reads, lists, and deletes validated custom patterns", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
-    const repository = new DexiePatternRepository(database.customPatterns);
+    const reportCorruptRows = vi.fn();
+    const repository = new DexiePatternRepository(
+      database.customPatterns,
+      reportCorruptRows,
+    );
     const older = createCustomPattern("older", "2026-07-18T11:00:00.000Z");
     const newerB = createCustomPattern("newer-b");
     const newerA = createCustomPattern("newer-a");
@@ -51,6 +55,9 @@ describe("Dexie pattern repository", () => {
       "newer-b",
       "older",
     ]);
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(1);
+    await repository.list();
+    expect(reportCorruptRows.mock.calls).toEqual([[1], [1]]);
     expect(await repository.get("corrupt")).toBeUndefined();
     expect(await repository.get(older.id)).toEqual(older);
 

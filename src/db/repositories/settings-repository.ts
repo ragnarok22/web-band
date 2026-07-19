@@ -12,11 +12,11 @@ import type {
 } from "@/types/audio";
 import type { PracticeSettings } from "@/types/persistence";
 
-const SETTINGS_KEY = "web-band-practice-settings-v3";
-const LEGACY_SETTINGS_KEYS = [
+export const SETTINGS_KEY = "web-band-practice-settings-v3";
+export const LEGACY_SETTINGS_KEYS = [
   "web-band-practice-settings-v2",
   "web-band-practice-settings-v1",
-];
+] as const;
 
 export const defaultPracticeSettings: PracticeSettings = {
   bpm: 90,

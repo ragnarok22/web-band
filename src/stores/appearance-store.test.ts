@@ -5,6 +5,7 @@ import {
   defaultAppearancePreferences,
   useAppearanceStore,
 } from "@/stores/appearance-store";
+import { useStorageStore } from "@/stores/storage-store";
 
 describe("appearance store", () => {
   beforeEach(() => {
@@ -12,6 +13,7 @@ describe("appearance store", () => {
       ...defaultAppearancePreferences,
       hasHydrated: false,
     });
+    useStorageStore.setState({ preferenceWriteFailures: [] });
   });
 
   it("hydrates validated preferences and applies the resolved system theme", () => {
@@ -49,5 +51,18 @@ describe("appearance store", () => {
     expect(
       JSON.parse(window.localStorage.getItem(appearanceStorageKey)!),
     ).toEqual({ reducedMotion: true, theme: "light" });
+  });
+
+  it("applies appearance for the visit and reports failed persistence", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    useAppearanceStore.getState().setTheme("light");
+
+    expect(document.documentElement.dataset.theme).toBe("light");
+    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
+      "appearance",
+    );
   });
 });

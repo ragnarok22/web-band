@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WebBandDatabase } from "@/db/database";
 import { DexieFavoriteRepository } from "@/db/repositories/favorite-repository";
@@ -14,7 +14,11 @@ describe("favorite repository", () => {
   it("persists and removes favorite pattern IDs", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
-    const repository = new DexieFavoriteRepository(database.favoritePatterns);
+    const reportCorruptRows = vi.fn();
+    const repository = new DexieFavoriteRepository(
+      database.favoritePatterns,
+      reportCorruptRows,
+    );
 
     await repository.add("basic-rock");
     await repository.add("one-drop");
@@ -29,8 +33,13 @@ describe("favorite repository", () => {
     expect(new Set(await repository.list())).toEqual(
       new Set(["one-drop", "basic-rock"]),
     );
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(2);
 
     await repository.remove("basic-rock");
     expect(await repository.list()).toEqual(["one-drop"]);
+    expect(reportCorruptRows.mock.calls).toEqual([[2], [2]]);
+    await expect(repository.add("x".repeat(129))).rejects.toThrow(
+      "Pattern ID is invalid.",
+    );
   });
 });

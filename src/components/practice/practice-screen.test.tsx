@@ -26,6 +26,7 @@ import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePracticeUiStore } from "@/stores/practice-ui-store";
 import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
+import { useStorageStore } from "@/stores/storage-store";
 import type {
   CustomChordProgression,
   CustomStrummingPattern,
@@ -99,6 +100,7 @@ describe("practice screen", () => {
     vi.clearAllMocks();
     guidanceTimeline.reset();
     useAudioStore.setState({ errorMessage: null, status: "not-initialized" });
+    useStorageStore.setState({ preferenceWriteFailures: [] });
     useGuidedPracticeStore.setState({
       ...createDefaultGuidedPracticeValues(),
       isHydrated: true,
@@ -566,6 +568,9 @@ describe("practice screen", () => {
 
   it("dismisses the browser audio onboarding hint", async () => {
     const user = userEvent.setup();
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
     render(<PracticeScreen />);
 
     expect(screen.getByRole("note")).toHaveTextContent(
@@ -573,6 +578,9 @@ describe("practice screen", () => {
     );
     await user.click(screen.getByRole("button", { name: "Dismiss audio tip" }));
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
+      "onboarding",
+    );
   });
 
   it("uses Space to play, pause, and resume", () => {

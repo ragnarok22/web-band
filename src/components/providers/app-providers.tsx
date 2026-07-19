@@ -44,9 +44,14 @@ export function AppProviders({ children }: AppProvidersProps) {
     (state) => state.hydrate,
   );
   const setStorageStatus = useStorageStore((state) => state.setStorageStatus);
+  const setCorruptRowCounts = useStorageStore(
+    (state) => state.setCorruptRowCounts,
+  );
   const hydrateAppearance = useAppearanceStore((state) => state.hydrate);
 
   useEffect(() => {
+    const unsubscribeFromCorruptRows =
+      storageService.subscribeToCorruptRows(setCorruptRowCounts);
     hydrateAppearance();
     hydrate();
     hydrateHistorySettings();
@@ -85,6 +90,7 @@ export function AppProviders({ children }: AppProvidersProps) {
 
     return () => {
       isActive = false;
+      unsubscribeFromCorruptRows();
     };
   }, [
     hydrate,
@@ -96,6 +102,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     hydratePracticePresets,
     hydratePracticeHistory,
     hydrateStrummingPatterns,
+    setCorruptRowCounts,
     setStorageStatus,
   ]);
 

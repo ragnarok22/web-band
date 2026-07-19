@@ -1,5 +1,9 @@
 import type { EntityTable } from "dexie";
 
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type { FavoritePatternRecord } from "@/types/persistence";
 
@@ -18,16 +22,25 @@ function isFavoriteRecord(value: unknown): value is FavoritePatternRecord {
   return (
     typeof record.patternId === "string" &&
     record.patternId.trim() !== "" &&
+    record.patternId.length <= 128 &&
     isCanonicalUtcIsoTimestamp(record.createdAt)
   );
+}
+
+function assertPatternId(patternId: string): void {
+  if (!patternId.trim() || patternId.length > 128) {
+    throw new Error("Pattern ID is invalid.");
+  }
 }
 
 export class DexieFavoriteRepository implements FavoriteRepository {
   constructor(
     private readonly table: EntityTable<FavoritePatternRecord, "patternId">,
+    private readonly reportCorruptRows?: ReportCorruptRows,
   ) {}
 
   async add(patternId: string): Promise<void> {
+    assertPatternId(patternId);
     await this.table.put({
       createdAt: new Date().toISOString(),
       patternId,
@@ -36,8 +49,7 @@ export class DexieFavoriteRepository implements FavoriteRepository {
 
   async list(): Promise<string[]> {
     const records = await this.table.toArray();
-    return records
-      .filter(isFavoriteRecord)
+    return cloneValidRecords(records, isFavoriteRecord, this.reportCorruptRows)
       .sort(
         (left, right) =>
           right.createdAt.localeCompare(left.createdAt) ||
@@ -47,6 +59,7 @@ export class DexieFavoriteRepository implements FavoriteRepository {
   }
 
   async remove(patternId: string): Promise<void> {
+    assertPatternId(patternId);
     await this.table.delete(patternId);
   }
 }
@@ -55,6 +68,7 @@ export class MemoryFavoriteRepository implements FavoriteRepository {
   private readonly patternIds = new Set<string>();
 
   async add(patternId: string): Promise<void> {
+    assertPatternId(patternId);
     this.patternIds.add(patternId);
   }
 
@@ -65,6 +79,7 @@ export class MemoryFavoriteRepository implements FavoriteRepository {
   }
 
   async remove(patternId: string): Promise<void> {
+    assertPatternId(patternId);
     this.patternIds.delete(patternId);
   }
 }

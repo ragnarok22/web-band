@@ -9,6 +9,10 @@ import {
 } from "@/components/data/data-backup-panel";
 import { DeleteLocalDataDialog } from "@/components/settings/delete-local-data-dialog";
 import {
+  MAX_HISTORY_MINIMUM_DURATION_SECONDS,
+  MIN_HISTORY_MINIMUM_DURATION_SECONDS,
+} from "@/lib/history-settings";
+import {
   backupService,
   type ClearLocalDataCompletion,
 } from "@/services/backup-service";
@@ -210,8 +214,8 @@ export function SettingsScreen({
                 <input
                   className="text-foreground min-w-0 flex-1 bg-transparent py-2 outline-none"
                   id="history-minimum-duration"
-                  max={3600}
-                  min={0}
+                  max={MAX_HISTORY_MINIMUM_DURATION_SECONDS}
+                  min={MIN_HISTORY_MINIMUM_DURATION_SECONDS}
                   onChange={(event) => {
                     setMinimumDurationInput(event.currentTarget.value);
                     if (event.currentTarget.value !== "") {
@@ -224,6 +228,10 @@ export function SettingsScreen({
                   value={minimumDurationInput ?? minimumDuration}
                 />
                 <span className="text-muted text-xs">seconds</span>
+              </span>
+              <span className="text-muted mt-1 block text-xs font-medium">
+                {MIN_HISTORY_MINIMUM_DURATION_SECONDS}–
+                {MAX_HISTORY_MINIMUM_DURATION_SECONDS} seconds; default 30.
               </span>
             </div>
           </div>

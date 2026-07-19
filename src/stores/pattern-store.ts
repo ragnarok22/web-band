@@ -13,6 +13,7 @@ import {
 import { isCustomDrumPattern } from "@/lib/persistence-validation";
 import { executeStorageOperation } from "@/lib/storage-execution";
 import { usePracticeStore } from "@/stores/practice-store";
+import { reportPreferenceWrite } from "@/stores/storage-store";
 import type { CustomDrumPattern } from "@/types/persistence";
 import type { ImportedPattern } from "@/types/pattern-sharing";
 
@@ -33,6 +34,7 @@ interface PatternStore {
     patterns: readonly CustomDrumPattern[],
   ) => Promise<ImportedPattern[]>;
   markRecent: (patternId: string) => void;
+  replaceRecentPatternIds: (patternIds: string[]) => boolean;
   refreshAfterImport: () => Promise<void>;
   toggleFavorite: (patternId: string) => Promise<void>;
   update: (
@@ -104,7 +106,10 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
       ),
       recentPatternIds,
     });
-    saveRecentPatternIds(recentPatternIds);
+    reportPreferenceWrite(
+      "recent patterns",
+      saveRecentPatternIds(recentPatternIds),
+    );
     if (usePracticeStore.getState().selectedPatternId === patternId) {
       usePracticeStore.getState().setSelectedPatternId(basicRockPattern.id);
     }
@@ -194,7 +199,17 @@ export const usePatternStore = create<PatternStore>((set, get) => ({
       ...get().recentPatternIds.filter((id) => id !== patternId),
     ].slice(0, 20);
     set({ recentPatternIds });
-    saveRecentPatternIds(recentPatternIds);
+    reportPreferenceWrite(
+      "recent patterns",
+      saveRecentPatternIds(recentPatternIds),
+    );
+  },
+  replaceRecentPatternIds: (patternIds) => {
+    const recentPatternIds = [...new Set(patternIds)].slice(0, 20);
+    set({ recentPatternIds });
+    const persisted = saveRecentPatternIds(recentPatternIds);
+    reportPreferenceWrite("recent patterns", persisted);
+    return persisted;
   },
   refreshAfterImport: async () =>
     executeStorageOperation(() => get().hydrate()),

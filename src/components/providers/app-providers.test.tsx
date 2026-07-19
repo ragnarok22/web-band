@@ -1,7 +1,9 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { basicRockPattern } from "@/data/patterns";
+import { WebBandDatabase } from "@/db/database";
 import { storageService } from "@/db/storage-service";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
@@ -13,6 +15,9 @@ import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { useStorageStore } from "@/stores/storage-store";
 import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
+import type { CustomDrumPattern } from "@/types/persistence";
+
+let databaseName = "";
 
 beforeEach(async () => {
   storageService.close();
@@ -47,13 +52,16 @@ beforeEach(async () => {
     hasHydrated: false,
   });
   useStorageStore.setState({
+    corruptRowCounts: {},
     isInitialized: false,
     mode: "memory",
+    preferenceWriteFailures: [],
     warning: null,
   });
   usePracticeStore.getState().setBpm(137);
   useGuidedPracticeStore.getState().setMode("tempoTrainer");
-  await storageService.initialize(`web-band-test-${crypto.randomUUID()}`);
+  databaseName = `web-band-test-${crypto.randomUUID()}`;
+  await storageService.initialize(databaseName);
 });
 
 afterEach(() => {
@@ -110,5 +118,37 @@ describe("app providers", () => {
     expect(useStorageStore.getState().warning).toContain(
       "Practice can continue",
     );
+  });
+
+  it("keeps IndexedDB active and warns when hydration filters corrupt rows", async () => {
+    const database = new WebBandDatabase(databaseName);
+    await database.open();
+    await database.customPatterns.put({
+      ...structuredClone(basicRockPattern),
+      createdAt: "invalid",
+      id: "corrupt-private-pattern",
+      isBuiltIn: false,
+      name: "Private row contents",
+      updatedAt: "2026-07-18T12:00:00.000Z",
+    } as CustomDrumPattern);
+    database.close();
+
+    render(
+      <AppProviders>
+        <div>Application</div>
+      </AppProviders>,
+    );
+
+    await waitFor(() => {
+      expect(useStorageStore.getState()).toMatchObject({
+        corruptRowCounts: { customPatterns: 1 },
+        mode: "indexed-db",
+        warning: null,
+      });
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Custom drum patterns: 1",
+    );
+    expect(screen.queryByText("Private row contents")).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,9 @@
 import type { EntityTable } from "dexie";
 
-import { cloneValidRecords } from "@/db/repositories/repository-helpers";
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isPracticeSession } from "@/lib/persistence-validation";
 import type { PracticeSession } from "@/types/persistence";
 
@@ -26,7 +29,10 @@ function sortSessions(sessions: PracticeSession[]): PracticeSession[] {
 }
 
 export class DexiePracticeSessionRepository implements PracticeSessionRepository {
-  constructor(private readonly table: EntityTable<PracticeSession, "id">) {}
+  constructor(
+    private readonly table: EntityTable<PracticeSession, "id">,
+    private readonly reportCorruptRows?: ReportCorruptRows,
+  ) {}
 
   async clear(): Promise<void> {
     await this.table.clear();
@@ -39,7 +45,9 @@ export class DexiePracticeSessionRepository implements PracticeSessionRepository
 
   async list(): Promise<PracticeSession[]> {
     const sessions = await this.table.toArray();
-    return sortSessions(cloneValidRecords(sessions, isPracticeSession));
+    return sortSessions(
+      cloneValidRecords(sessions, isPracticeSession, this.reportCorruptRows),
+    );
   }
 
   async put(session: PracticeSession): Promise<void> {

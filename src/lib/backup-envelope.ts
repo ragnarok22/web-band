@@ -1,6 +1,7 @@
 import { validateBackupEnvelope } from "@/lib/persistence-validation";
 import type {
   BackupEnvelope,
+  BackupPreferences,
   BackupSettings,
   ImportCollectionCounts,
   PersistenceSnapshot,
@@ -8,6 +9,12 @@ import type {
 } from "@/types/persistence";
 
 export const MAX_BACKUP_FILE_BYTES = 25 * 1024 * 1024;
+
+export const defaultBackupPreferences: BackupPreferences = {
+  appearance: { reducedMotion: false, theme: "dark" },
+  onboardingDismissed: false,
+  recentPatternIds: [],
+};
 
 export interface BackupPreview {
   byteSize: number;
@@ -42,16 +49,18 @@ function collectionCounts(
 export function createBackupEnvelope(
   snapshot: PersistenceSnapshot,
   settings: BackupSettings,
+  preferences: BackupPreferences,
   exportedAt = new Date(),
 ): BackupEnvelope {
   return {
     app: "web-band",
     data: {
       ...structuredClone(snapshot),
+      preferences: structuredClone(preferences),
       settings: structuredClone(settings),
     },
     exportedAt: exportedAt.toISOString(),
-    version: 2,
+    version: 3,
   };
 }
 
@@ -103,21 +112,30 @@ export function normalizeBackupEnvelope(value: unknown): BackupEnvelope {
   }
 
   const envelope = structuredClone(value as VersionedBackupEnvelope);
-  if (envelope.version === 2) return envelope;
+  if (envelope.version === 3) return envelope;
+
+  const settings: BackupSettings =
+    envelope.version === 1
+      ? {
+          ...structuredClone(envelope.data.settings),
+          practice: {
+            ...structuredClone(envelope.data.settings.practice),
+            soundCharacter: "balanced",
+          },
+        }
+      : structuredClone(envelope.data.settings);
+  if (settings.history.minimumDurationSeconds === 0) {
+    settings.history.minimumDurationSeconds = 1;
+  }
 
   return {
     ...envelope,
     data: {
       ...envelope.data,
-      settings: {
-        ...envelope.data.settings,
-        practice: {
-          ...envelope.data.settings.practice,
-          soundCharacter: "balanced",
-        },
-      },
+      preferences: structuredClone(defaultBackupPreferences),
+      settings,
     },
-    version: 2,
+    version: 3,
   };
 }
 

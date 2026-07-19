@@ -8,6 +8,7 @@ import {
 import { clampBpm } from "@/lib/musical-time";
 import { clampUnit, createDefaultMixerSettings } from "@/lib/mixer";
 import { isPracticePresetConfiguration } from "@/lib/practice-validation";
+import { reportPreferenceWrite } from "@/stores/storage-store";
 import type {
   CountInMeasures,
   FillFrequency,
@@ -62,11 +63,12 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
     mixer?: MixerSettings,
   ): void {
     set({ ...changes, ...(mixer ? { mixer } : {}) });
-    savePracticeSettings({
+    const persisted = savePracticeSettings({
       ...settingsFromState(get()),
       ...changes,
       ...(mixer ? { mixer } : {}),
     });
+    reportPreferenceWrite("practice settings", persisted);
   }
 
   return {
@@ -91,7 +93,9 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
     replaceSettings: (settings) => {
       const next = structuredClone(settings);
       set(next);
-      return savePracticeSettings(next);
+      const persisted = savePracticeSettings(next);
+      reportPreferenceWrite("practice settings", persisted);
+      return persisted;
     },
     setBpm: (bpm) => update({ bpm: clampBpm(bpm) }),
     setCountInMeasures: (countInMeasures) => update({ countInMeasures }),

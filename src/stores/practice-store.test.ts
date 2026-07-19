@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { usePracticeStore } from "@/stores/practice-store";
+import { useStorageStore } from "@/stores/storage-store";
 import type { PracticePresetConfiguration } from "@/types/persistence";
 
 beforeEach(() => {
@@ -9,6 +10,7 @@ beforeEach(() => {
     ...structuredClone(defaultPracticeSettings),
     hasHydrated: false,
   });
+  useStorageStore.setState({ preferenceWriteFailures: [] });
 });
 
 describe("practice store preset configuration", () => {
@@ -89,5 +91,18 @@ describe("practice store preset configuration", () => {
       }),
     ).toThrow("Practice preset configuration is invalid.");
     expect(usePracticeStore.getState().bpm).toBe(before);
+  });
+
+  it("reports visit-only changes when practice settings cannot be saved", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    usePracticeStore.getState().setBpm(132);
+
+    expect(usePracticeStore.getState().bpm).toBe(132);
+    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
+      "practice settings",
+    );
   });
 });

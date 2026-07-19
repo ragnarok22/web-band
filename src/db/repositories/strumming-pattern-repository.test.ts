@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { basicPopPattern } from "@/data/strumming-patterns";
 import { WebBandDatabase } from "@/db/database";
@@ -33,8 +33,10 @@ describe("custom strumming pattern repositories", () => {
   it("stores, sorts, filters, reads, and deletes Dexie patterns", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
+    const reportCorruptRows = vi.fn();
     const repository = new DexieStrummingPatternRepository(
       database.strummingPatterns,
+      reportCorruptRows,
     );
     const older = createPattern("older", "2026-07-18T11:00:00.000Z");
     const newerB = createPattern("newer-b");
@@ -53,6 +55,9 @@ describe("custom strumming pattern repositories", () => {
       "newer-b",
       "older",
     ]);
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(1);
+    await repository.list();
+    expect(reportCorruptRows.mock.calls).toEqual([[1], [1]]);
     expect(await repository.get("corrupt")).toBeUndefined();
     expect(await repository.get("older")).toEqual(older);
     await repository.delete("older");

@@ -1,6 +1,9 @@
 import type { EntityTable } from "dexie";
 
-import { cloneValidRecords } from "@/db/repositories/repository-helpers";
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isPracticePreset } from "@/lib/practice-validation";
 import type { PracticePreset } from "@/types/persistence";
 
@@ -26,7 +29,10 @@ function sortPresets(presets: PracticePreset[]): PracticePreset[] {
 }
 
 export class DexiePracticePresetRepository implements PracticePresetRepository {
-  constructor(private readonly table: EntityTable<PracticePreset, "id">) {}
+  constructor(
+    private readonly table: EntityTable<PracticePreset, "id">,
+    private readonly reportCorruptRows?: ReportCorruptRows,
+  ) {}
 
   async delete(presetId: string): Promise<void> {
     assertPresetId(presetId);
@@ -43,7 +49,9 @@ export class DexiePracticePresetRepository implements PracticePresetRepository {
 
   async list(): Promise<PracticePreset[]> {
     const presets = await this.table.toArray();
-    return sortPresets(cloneValidRecords(presets, isPracticePreset));
+    return sortPresets(
+      cloneValidRecords(presets, isPracticePreset, this.reportCorruptRows),
+    );
   }
 
   async put(preset: PracticePreset): Promise<void> {

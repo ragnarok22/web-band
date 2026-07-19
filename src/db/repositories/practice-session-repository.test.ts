@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WebBandDatabase } from "@/db/database";
 import {
@@ -40,8 +40,10 @@ describe("practice session repositories", () => {
   it("stores, sorts, filters, deletes, and clears Dexie sessions", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
+    const reportCorruptRows = vi.fn();
     const repository = new DexiePracticeSessionRepository(
       database.practiceSessions,
+      reportCorruptRows,
     );
     const older = createSession("older", "2026-07-18T10:00:00.000Z");
     const newerB = createSession("newer-b");
@@ -60,6 +62,7 @@ describe("practice session repositories", () => {
       "newer-b",
       "older",
     ]);
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(1);
     await repository.delete("older");
     expect((await repository.list()).map(({ id }) => id)).toEqual([
       "newer-a",
@@ -71,6 +74,7 @@ describe("practice session repositories", () => {
 
     await repository.clear();
     expect(await repository.list()).toEqual([]);
+    expect(reportCorruptRows.mock.calls).toEqual([[1], [1], [0]]);
   });
 
   it("validates writes and deep-clones memory sessions", async () => {

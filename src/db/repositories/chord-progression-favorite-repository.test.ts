@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WebBandDatabase } from "@/db/database";
 import {
@@ -17,8 +17,10 @@ describe("chord progression favorite repositories", () => {
   it("stores deterministic favorite IDs and filters corrupt Dexie rows", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
+    const reportCorruptRows = vi.fn();
     const repository = new DexieChordProgressionFavoriteRepository(
       database.favoriteChordProgressions,
+      reportCorruptRows,
     );
 
     await repository.add("progression-b");
@@ -37,8 +39,10 @@ describe("chord progression favorite repositories", () => {
     });
 
     expect(await repository.list()).toEqual(["progression-a", "progression-b"]);
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(3);
     await repository.remove("progression-a");
     expect(await repository.list()).toEqual(["progression-b"]);
+    expect(reportCorruptRows.mock.calls).toEqual([[3], [3]]);
   });
 
   it("validates IDs and keeps deterministic memory order", async () => {

@@ -15,6 +15,12 @@ import type {
 import type { DrumPattern } from "@/types/pattern";
 
 export type PersistenceMode = "indexed-db" | "memory";
+export type ColorTheme = "dark" | "light" | "system";
+
+export interface AppearancePreferences {
+  reducedMotion: boolean;
+  theme: ColorTheme;
+}
 
 export interface PersistenceStatus {
   mode: PersistenceMode;
@@ -139,6 +145,12 @@ export interface BackupSettings {
   history: HistorySettings;
 }
 
+export interface BackupPreferences {
+  appearance: AppearancePreferences;
+  onboardingDismissed: boolean;
+  recentPatternIds: string[];
+}
+
 export type PracticeSettingsV1 = Omit<PracticeSettings, "soundCharacter">;
 
 export interface BackupSettingsV1 {
@@ -169,8 +181,21 @@ export interface BackupEnvelopeV2 {
   data: BackupDataV2;
 }
 
-export type BackupEnvelope = BackupEnvelopeV2;
-export type VersionedBackupEnvelope = BackupEnvelopeV1 | BackupEnvelopeV2;
+export interface BackupDataV3 extends PersistenceSnapshot {
+  preferences: BackupPreferences;
+  settings: BackupSettings;
+}
+
+export interface BackupEnvelopeV3 {
+  app: "web-band";
+  version: 3;
+  exportedAt: string;
+  data: BackupDataV3;
+}
+
+export type BackupEnvelope = BackupEnvelopeV3;
+export type VersionedBackupEnvelope =
+  BackupEnvelopeV1 | BackupEnvelopeV2 | BackupEnvelopeV3;
 
 export type ImportMode = "merge" | "replace";
 

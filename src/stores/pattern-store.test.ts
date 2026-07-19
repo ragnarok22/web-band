@@ -6,6 +6,7 @@ import { RECENT_PATTERNS_KEY } from "@/db/repositories/pattern-preferences-repos
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
+import { useStorageStore } from "@/stores/storage-store";
 
 beforeEach(async () => {
   storageService.close();
@@ -16,6 +17,7 @@ beforeEach(async () => {
     isHydrated: false,
     recentPatternIds: [],
   });
+  useStorageStore.setState({ preferenceWriteFailures: [] });
   await storageService.initialize();
 });
 
@@ -26,6 +28,19 @@ afterEach(() => {
 });
 
 describe("pattern store", () => {
+  it("reports failed recent-pattern persistence without losing visit state", () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+
+    usePatternStore.getState().markRecent("basic-rock");
+
+    expect(usePatternStore.getState().recentPatternIds).toEqual(["basic-rock"]);
+    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
+      "recent patterns",
+    );
+  });
+
   it("creates, duplicates, updates, hydrates, and deletes custom patterns", async () => {
     const created = await usePatternStore.getState().create();
     expect(created).toMatchObject({

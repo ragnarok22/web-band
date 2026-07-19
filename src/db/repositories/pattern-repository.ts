@@ -1,6 +1,9 @@
 import type { EntityTable } from "dexie";
 
-import { cloneValidRecords } from "@/db/repositories/repository-helpers";
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isCustomDrumPattern } from "@/lib/persistence-validation";
 import type { CustomDrumPattern } from "@/types/persistence";
 
@@ -26,7 +29,10 @@ function sortPatterns(patterns: CustomDrumPattern[]): CustomDrumPattern[] {
 }
 
 export class DexiePatternRepository implements PatternRepository {
-  constructor(private readonly table: EntityTable<CustomDrumPattern, "id">) {}
+  constructor(
+    private readonly table: EntityTable<CustomDrumPattern, "id">,
+    private readonly reportCorruptRows?: ReportCorruptRows,
+  ) {}
 
   async delete(patternId: string): Promise<void> {
     assertPatternId(patternId);
@@ -43,7 +49,9 @@ export class DexiePatternRepository implements PatternRepository {
 
   async list(): Promise<CustomDrumPattern[]> {
     const patterns = await this.table.toArray();
-    return sortPatterns(cloneValidRecords(patterns, isCustomDrumPattern));
+    return sortPatterns(
+      cloneValidRecords(patterns, isCustomDrumPattern, this.reportCorruptRows),
+    );
   }
 
   async put(pattern: CustomDrumPattern): Promise<void> {

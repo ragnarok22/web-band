@@ -3,6 +3,7 @@
 import { useEffect, useEffectEvent, useRef } from "react";
 
 import { guidanceTimeline } from "@/audio/guidance-timeline";
+import { clampHistoryMinimumDurationSeconds } from "@/lib/history-settings";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import type { AudioEngineStatus } from "@/types/audio";
@@ -23,6 +24,7 @@ interface ActiveSession {
   activeMilliseconds: number;
   activeSince: number | null;
   endingBpm: number;
+  id: string;
   metadata: Pick<
     PracticeSession,
     | "category"
@@ -34,6 +36,8 @@ interface ActiveSession {
   >;
   startedAt: string;
 }
+
+const MAX_SESSION_DURATION_SECONDS = 86_400;
 
 function isRecordedPractice(status: AudioEngineStatus): boolean {
   return status === "playing";
@@ -59,6 +63,61 @@ export function usePracticeHistoryRecorder({
   const reportSaveError = useEffectEvent(onSaveError);
   const reportSaveSuccess = useEffectEvent(onSaveSuccess);
 
+  const persistSnapshot = useEffectEvent(
+    (session: ActiveSession, activeMilliseconds: number): void => {
+      const settings = useHistorySettingsStore.getState();
+      const minimumDurationMilliseconds =
+        clampHistoryMinimumDurationSeconds(settings.minimumDurationSeconds) *
+        1_000;
+      if (
+        !settings.enabled ||
+        activeMilliseconds < minimumDurationMilliseconds
+      ) {
+        return;
+      }
+
+      const durationSeconds = Math.min(
+        MAX_SESSION_DURATION_SECONDS,
+        Math.floor(activeMilliseconds / 1_000),
+      );
+      const earliestValidEnd =
+        Date.parse(session.startedAt) + durationSeconds * 1_000;
+      const endedAt = new Date(
+        Math.max(Date.now(), earliestValidEnd),
+      ).toISOString();
+      const record: PracticeSession = {
+        ...session.metadata,
+        createdAt: session.startedAt,
+        durationSeconds,
+        endedAt,
+        endingBpm: session.endingBpm,
+        id: session.id,
+        startedAt: session.startedAt,
+        updatedAt: endedAt,
+      };
+      void usePracticeHistoryStore
+        .getState()
+        .record(record)
+        .then(() => {
+          if (isMounted.current) reportSaveSuccess();
+        })
+        .catch(() => {
+          if (isMounted.current) reportSaveError();
+        });
+    },
+  );
+
+  const checkpoint = useEffectEvent((now = performance.now()) => {
+    const session = activeSession.current;
+    if (!session) return;
+    const activeMilliseconds =
+      session.activeMilliseconds +
+      (session.activeSince === null
+        ? 0
+        : Math.max(0, now - session.activeSince));
+    persistSnapshot(session, activeMilliseconds);
+  });
+
   const finalize = useEffectEvent((now = performance.now()) => {
     const session = activeSession.current;
     if (!session) return;
@@ -67,40 +126,7 @@ export function usePracticeHistoryRecorder({
       session.activeSince = null;
     }
     activeSession.current = null;
-
-    const settings = useHistorySettingsStore.getState();
-    const durationSeconds = Math.max(
-      1,
-      Math.floor(session.activeMilliseconds / 1_000),
-    );
-    if (
-      !settings.enabled ||
-      session.activeMilliseconds <= 0 ||
-      durationSeconds < settings.minimumDurationSeconds
-    ) {
-      return;
-    }
-
-    const endedAt = new Date().toISOString();
-    const record: PracticeSession = {
-      ...session.metadata,
-      createdAt: session.startedAt,
-      durationSeconds,
-      endedAt,
-      endingBpm: session.endingBpm,
-      id: crypto.randomUUID(),
-      startedAt: session.startedAt,
-      updatedAt: endedAt,
-    };
-    void usePracticeHistoryStore
-      .getState()
-      .record(record)
-      .then(() => {
-        if (isMounted.current) reportSaveSuccess();
-      })
-      .catch(() => {
-        if (isMounted.current) reportSaveError();
-      });
+    persistSnapshot(session, session.activeMilliseconds);
   });
 
   useEffect(() => {
@@ -126,6 +152,7 @@ export function usePracticeHistoryRecorder({
           activeMilliseconds: 0,
           activeSince: now,
           endingBpm: startingBpm,
+          id: crypto.randomUUID(),
           metadata: {
             category: pattern.category,
             patternId: pattern.id,
@@ -155,6 +182,23 @@ export function usePracticeHistoryRecorder({
     }
     if (isFinalStatus(status)) finalize(now);
   }, [bpm, guidedPractice, pattern, status]);
+
+  useEffect(() => {
+    function handleVisibilityChange(): void {
+      if (document.visibilityState === "hidden") checkpoint();
+    }
+
+    function handlePageHide(): void {
+      checkpoint();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, []);
 
   useEffect(() => {
     isMounted.current = true;

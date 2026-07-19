@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
-import { createBackupEnvelope } from "@/lib/backup-envelope";
+import {
+  createBackupEnvelope,
+  defaultBackupPreferences,
+} from "@/lib/backup-envelope";
 import {
   BackupService,
   type BackupServiceDependencies,
@@ -51,26 +54,31 @@ function envelope(): BackupEnvelope {
   return createBackupEnvelope(
     emptySnapshot,
     settings(),
+    defaultBackupPreferences,
     new Date("2026-07-18T12:00:00.000Z"),
   );
 }
 
 function dependencies(order: string[] = []): BackupServiceDependencies {
   return {
+    applyPreferences: vi.fn(() => {
+      order.push("apply-preferences");
+      return true;
+    }),
     applySettings: vi.fn(() => {
       order.push("settings");
       return true;
     }),
     clearAppPreferences: vi.fn(() => {
-      order.push("preferences");
-      return true;
-    }),
-    clearRecentPatterns: vi.fn(() => {
-      order.push("recents");
+      order.push("clear-keys");
       return true;
     }),
     downloadEnvelope: vi.fn(() => order.push("download")),
     executeStorageOperation: vi.fn(async (operation) => operation()),
+    getPreferences: vi.fn(() => {
+      order.push("get-preferences");
+      return structuredClone(defaultBackupPreferences);
+    }),
     getSettings: vi.fn(() => {
       order.push("get-settings");
       return settings();
@@ -120,13 +128,20 @@ describe("backup service", () => {
 
     const result = await service.importBackup(envelope(), "merge");
 
-    expect(order).toEqual(["import:merge", "settings", "refresh"]);
+    expect(order).toEqual([
+      "import:merge",
+      "settings",
+      "apply-preferences",
+      "refresh",
+    ]);
     expect(deps.storage.importSnapshot).toHaveBeenCalledWith(
       emptySnapshot,
       "merge",
     );
     expect(deps.applySettings).toHaveBeenCalledWith(envelope().data.settings);
-    expect(deps.clearRecentPatterns).not.toHaveBeenCalled();
+    expect(deps.applyPreferences).toHaveBeenCalledWith(
+      envelope().data.preferences,
+    );
     expect(result).toMatchObject({ mode: "merge", settingsPersisted: true });
   });
 
@@ -138,15 +153,12 @@ describe("backup service", () => {
     delete legacyPractice.soundCharacter;
     const legacy = {
       ...current,
-      data: {
-        ...current.data,
-        settings: {
-          ...current.data.settings,
-          practice: legacyPractice,
-        },
-      },
+      data: structuredClone(current.data) as unknown as Record<string, unknown>,
       version: 1,
     };
+    delete legacy.data.preferences;
+    const legacySettings = legacy.data.settings as Record<string, unknown>;
+    legacySettings.practice = legacyPractice;
     const deps = dependencies();
     const service = new BackupService(deps);
 
@@ -156,6 +168,9 @@ describe("backup service", () => {
       expect.objectContaining({
         practice: expect.objectContaining({ soundCharacter: "balanced" }),
       }),
+    );
+    expect(deps.applyPreferences).toHaveBeenCalledWith(
+      defaultBackupPreferences,
     );
   });
 
@@ -169,14 +184,15 @@ describe("backup service", () => {
     expect(order).toEqual([
       "export",
       "get-settings",
+      "get-preferences",
       "download",
       "import:replace",
-      "recents",
       "settings",
+      "apply-preferences",
       "refresh",
     ]);
     expect(deps.downloadEnvelope).toHaveBeenCalledWith(
-      expect.objectContaining({ app: "web-band", version: 2 }),
+      expect.objectContaining({ app: "web-band", version: 3 }),
     );
   });
 
@@ -191,6 +207,7 @@ describe("backup service", () => {
       "database failed",
     );
     expect(deps.applySettings).not.toHaveBeenCalled();
+    expect(deps.applyPreferences).not.toHaveBeenCalled();
     expect(deps.refreshStores).not.toHaveBeenCalled();
   });
 
@@ -220,6 +237,18 @@ describe("backup service", () => {
     expect(deps.refreshStores).toHaveBeenCalledOnce();
   });
 
+  it("returns a completion warning when preferences fail after import commit", async () => {
+    const deps = dependencies();
+    vi.mocked(deps.applyPreferences).mockReturnValueOnce(false);
+    const service = new BackupService(deps);
+
+    const result = await service.importBackup(envelope(), "merge");
+
+    expect(result.settingsPersisted).toBe(false);
+    expect(result.warning).toMatch(/preferences/i);
+    expect(deps.refreshStores).toHaveBeenCalledOnce();
+  });
+
   it("returns a completion warning when store refresh fails after import commit", async () => {
     const deps = dependencies();
     vi.mocked(deps.refreshStores).mockRejectedValueOnce(
@@ -233,13 +262,9 @@ describe("backup service", () => {
     expect(result.warning).toMatch(/refresh/i);
   });
 
-  it("clears replace recents before refresh and warns without rejecting on failure", async () => {
+  it("applies imported preferences before refreshing stores", async () => {
     const order: string[] = [];
     const deps = dependencies(order);
-    vi.mocked(deps.clearRecentPatterns).mockImplementationOnce(() => {
-      order.push("recents");
-      throw new Error("preferences unavailable");
-    });
     const service = new BackupService(deps);
 
     const result = await service.importBackup(envelope(), "replace");
@@ -247,13 +272,14 @@ describe("backup service", () => {
     expect(order).toEqual([
       "export",
       "get-settings",
+      "get-preferences",
       "download",
       "import:replace",
-      "recents",
       "settings",
+      "apply-preferences",
       "refresh",
     ]);
-    expect(result.warning).toMatch(/recent pattern/i);
+    expect(result.warning).toBeNull();
   });
 
   it("backs up, atomically empties the database domain, resets settings, and refreshes", async () => {
@@ -266,10 +292,12 @@ describe("backup service", () => {
     expect(order).toEqual([
       "export",
       "get-settings",
+      "get-preferences",
       "download",
       "import:replace",
       "settings",
-      "preferences",
+      "apply-preferences",
+      "clear-keys",
       "refresh",
     ]);
     expect(deps.storage.importSnapshot).toHaveBeenCalledWith(
@@ -281,6 +309,9 @@ describe("backup service", () => {
       history: defaultHistorySettings,
       practice: defaultPracticeSettings,
     });
+    expect(deps.applyPreferences).toHaveBeenCalledWith(
+      defaultBackupPreferences,
+    );
     expect(result.cleared).toBe(true);
   });
 
@@ -288,6 +319,9 @@ describe("backup service", () => {
     const deps = dependencies();
     vi.mocked(deps.applySettings).mockImplementationOnce(() => {
       throw new Error("settings failed");
+    });
+    vi.mocked(deps.applyPreferences).mockImplementationOnce(() => {
+      throw new Error("preference reset failed");
     });
     vi.mocked(deps.clearAppPreferences).mockImplementationOnce(() => {
       throw new Error("preferences failed");
@@ -316,6 +350,7 @@ describe("backup service", () => {
       "database failed",
     );
     expect(deps.applySettings).not.toHaveBeenCalled();
+    expect(deps.applyPreferences).not.toHaveBeenCalled();
     expect(deps.clearAppPreferences).not.toHaveBeenCalled();
     expect(deps.refreshStores).not.toHaveBeenCalled();
   });

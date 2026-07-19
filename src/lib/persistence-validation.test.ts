@@ -111,6 +111,11 @@ function createBackup(): BackupEnvelope {
       customStrummingPatterns: [createStrummingPattern()],
       favoriteChordProgressionIds: ["custom-chords"],
       favoritePatternIds: ["custom-rock"],
+      preferences: {
+        appearance: { reducedMotion: true, theme: "system" },
+        onboardingDismissed: true,
+        recentPatternIds: ["custom-rock", "basic-rock"],
+      },
       practicePresets: [createPreset()],
       practiceSessions: [createSession()],
       settings: {
@@ -136,7 +141,7 @@ function createBackup(): BackupEnvelope {
       },
     },
     exportedAt: updatedAt,
-    version: 2,
+    version: 3,
   };
 }
 
@@ -233,9 +238,13 @@ describe("persistence validation", () => {
     expect(validateHistorySettings({ ...settings, extra: true }).success).toBe(
       false,
     );
+    expect(
+      validateHistorySettings({ ...settings, minimumDurationSeconds: 0 })
+        .success,
+    ).toBe(false);
   });
 
-  it("validates a complete version 2 backup without mutating it", () => {
+  it("validates a complete version 3 backup without mutating it", () => {
     const backup = createBackup();
     const before = structuredClone(backup);
 
@@ -252,7 +261,7 @@ describe("persistence validation", () => {
     expect(
       validateBackupEnvelope({ ...backup, app: "other-app" }).success,
     ).toBe(false);
-    expect(validateBackupEnvelope({ ...backup, version: 3 }).success).toBe(
+    expect(validateBackupEnvelope({ ...backup, version: 4 }).success).toBe(
       false,
     );
     expect(
@@ -279,6 +288,26 @@ describe("persistence validation", () => {
     expect(
       validateBackupEnvelope({ ...backup, executable: "alert(1)" }).success,
     ).toBe(false);
+  });
+
+  it("strictly validates complete portable preferences", () => {
+    const backup = createBackup();
+
+    backup.data.preferences.recentPatternIds = ["missing-pattern"];
+    expect(validateBackupEnvelope(backup).errors).toContain(
+      "Recent pattern ID missing-pattern is not included in this backup.",
+    );
+
+    backup.data.preferences = {
+      appearance: { reducedMotion: false, theme: "dark" },
+      onboardingDismissed: false,
+      recentPatternIds: Array.from({ length: 21 }, (_, index) =>
+        index === 0 ? "basic-rock" : `pattern-${index}`,
+      ),
+    };
+    expect(validateBackupEnvelope(backup).errors).toContain(
+      "Backup preferences are invalid.",
+    );
   });
 
   it("rejects duplicate IDs in every backup collection", () => {

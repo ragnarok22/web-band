@@ -124,4 +124,28 @@ describe("practice history store", () => {
       usePracticeHistoryStore.getState().sessions.map(({ id }) => id),
     ).toEqual(["recorded", "persisted"]);
   });
+
+  it("upserts a longer final record over a same-session checkpoint", async () => {
+    const finalRecord = createSession("stable-session");
+    const checkpointEndedAt = new Date(
+      Date.parse(finalRecord.startedAt) + 30_000,
+    ).toISOString();
+    const checkpoint = {
+      ...finalRecord,
+      durationSeconds: 30,
+      endedAt: checkpointEndedAt,
+      updatedAt: checkpointEndedAt,
+    };
+
+    const checkpointWrite = usePracticeHistoryStore
+      .getState()
+      .record(checkpoint);
+    const finalWrite = usePracticeHistoryStore.getState().record(finalRecord);
+    await Promise.all([checkpointWrite, finalWrite]);
+
+    expect(usePracticeHistoryStore.getState().sessions).toEqual([finalRecord]);
+    expect(await storageService.practiceSessionRepository.list()).toEqual([
+      finalRecord,
+    ]);
+  });
 });

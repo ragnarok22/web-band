@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { WebBandDatabase } from "@/db/database";
@@ -33,8 +33,10 @@ describe("chord progression repositories", () => {
   it("stores, sorts, filters, and deletes Dexie rows", async () => {
     database = new WebBandDatabase(`web-band-test-${crypto.randomUUID()}`);
     await database.open();
+    const reportCorruptRows = vi.fn();
     const repository = new DexieChordProgressionRepository(
       database.chordProgressions,
+      reportCorruptRows,
     );
     const older = createProgression("older", "2026-07-18T11:00:00.000Z");
     const newerB = createProgression("newer-b");
@@ -59,6 +61,9 @@ describe("chord progression repositories", () => {
       "newer-b",
       "older",
     ]);
+    expect(reportCorruptRows).toHaveBeenLastCalledWith(2);
+    await repository.list();
+    expect(reportCorruptRows.mock.calls).toEqual([[2], [2]]);
     expect(await repository.get("corrupt")).toBeUndefined();
     expect(await repository.get("offset-timestamp")).toBeUndefined();
     expect(await repository.get("older")).toEqual(older);

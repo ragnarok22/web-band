@@ -30,6 +30,15 @@ describe("history settings repository", () => {
     window.localStorage.setItem(
       HISTORY_SETTINGS_KEY,
       JSON.stringify({
+        settings: { enabled: true, minimumDurationSeconds: 0 },
+        version: 1,
+      }),
+    );
+    expect(loadHistorySettings()).toEqual(defaultHistorySettings);
+
+    window.localStorage.setItem(
+      HISTORY_SETTINGS_KEY,
+      JSON.stringify({
         extra: true,
         settings: defaultHistorySettings,
         version: 1,
@@ -46,6 +55,12 @@ describe("history settings repository", () => {
       JSON.parse(window.localStorage.getItem(HISTORY_SETTINGS_KEY)!),
     ).toEqual({ settings, version: 1 });
     expect(loadHistorySettings()).toEqual(settings);
+    expect(
+      saveHistorySettings({ enabled: true, minimumDurationSeconds: 0 }),
+    ).toBe(false);
+    expect(
+      saveHistorySettings({ enabled: true, minimumDurationSeconds: 3_601 }),
+    ).toBe(false);
   });
 
   it("falls back safely when localStorage throws", () => {

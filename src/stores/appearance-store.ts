@@ -1,15 +1,14 @@
 import { create } from "zustand";
 
-export type ColorTheme = "dark" | "light" | "system";
+import { reportPreferenceWrite } from "@/stores/storage-store";
+import type { AppearancePreferences, ColorTheme } from "@/types/persistence";
 
-interface AppearancePreferences {
-  reducedMotion: boolean;
-  theme: ColorTheme;
-}
+export type { ColorTheme } from "@/types/persistence";
 
 interface AppearanceStore extends AppearancePreferences {
   hasHydrated: boolean;
   hydrate: () => void;
+  replacePreferences: (preferences: AppearancePreferences) => boolean;
   setReducedMotion: (reducedMotion: boolean) => void;
   setTheme: (theme: ColorTheme) => void;
 }
@@ -21,7 +20,7 @@ export const defaultAppearancePreferences: AppearancePreferences = {
   theme: "dark",
 };
 
-function isColorTheme(value: unknown): value is ColorTheme {
+export function isColorTheme(value: unknown): value is ColorTheme {
   return value === "dark" || value === "light" || value === "system";
 }
 
@@ -72,14 +71,15 @@ export function applyAppearancePreferences(
     );
 }
 
-function persistPreferences(preferences: AppearancePreferences): void {
+function persistPreferences(preferences: AppearancePreferences): boolean {
   try {
     window.localStorage.setItem(
       appearanceStorageKey,
       JSON.stringify(preferences),
     );
+    return true;
   } catch {
-    // Appearance changes still apply for this visit when storage is unavailable.
+    return false;
   }
 }
 
@@ -91,16 +91,30 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => ({
     applyAppearancePreferences(preferences);
     set({ ...preferences, hasHydrated: true });
   },
+  replacePreferences: (preferences) => {
+    if (
+      !isColorTheme(preferences.theme) ||
+      typeof preferences.reducedMotion !== "boolean"
+    ) {
+      throw new Error("Appearance preferences are invalid.");
+    }
+    const next = structuredClone(preferences);
+    applyAppearancePreferences(next);
+    set(next);
+    const persisted = persistPreferences(next);
+    reportPreferenceWrite("appearance", persisted);
+    return persisted;
+  },
   setReducedMotion: (reducedMotion) => {
     const preferences = { reducedMotion, theme: get().theme };
     applyAppearancePreferences(preferences);
-    persistPreferences(preferences);
+    reportPreferenceWrite("appearance", persistPreferences(preferences));
     set({ reducedMotion });
   },
   setTheme: (theme) => {
     const preferences = { reducedMotion: get().reducedMotion, theme };
     applyAppearancePreferences(preferences);
-    persistPreferences(preferences);
+    reportPreferenceWrite("appearance", persistPreferences(preferences));
     set({ theme });
   },
 }));

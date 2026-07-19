@@ -4,6 +4,7 @@ import { basicPopPattern } from "@/data/strumming-patterns";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import {
   createBackupEnvelope,
+  defaultBackupPreferences,
   MAX_BACKUP_FILE_BYTES,
   parseBackupText,
   serializeBackupEnvelope,
@@ -33,19 +34,20 @@ function settings(): BackupSettings {
 }
 
 describe("backup envelope", () => {
-  it("creates a detached, canonical version 2 envelope", () => {
+  it("creates a detached, canonical version 3 envelope", () => {
     const snapshot = structuredClone(emptySnapshot);
     const backupSettings = settings();
     const envelope = createBackupEnvelope(
       snapshot,
       backupSettings,
+      defaultBackupPreferences,
       new Date("2026-07-18T12:34:56.789Z"),
     );
 
     expect(envelope).toMatchObject({
       app: "web-band",
       exportedAt: "2026-07-18T12:34:56.789Z",
-      version: 2,
+      version: 3,
     });
     backupSettings.practice.bpm = 150;
     snapshot.favoritePatternIds.push("later");
@@ -57,6 +59,7 @@ describe("backup envelope", () => {
     const envelope = createBackupEnvelope(
       emptySnapshot,
       settings(),
+      defaultBackupPreferences,
       new Date("2026-07-18T12:34:56.789Z"),
     );
     const serialized = serializeBackupEnvelope(envelope);
@@ -74,10 +77,11 @@ describe("backup envelope", () => {
     expect(parsed.envelope).toEqual(envelope);
   });
 
-  it("strictly migrates version 1 backups to Balanced without mutation", () => {
+  it("strictly migrates version 1 backups to current defaults", () => {
     const current = createBackupEnvelope(
       emptySnapshot,
       settings(),
+      defaultBackupPreferences,
       new Date("2026-07-18T12:34:56.789Z"),
     );
     const legacyPractice = structuredClone(
@@ -86,24 +90,49 @@ describe("backup envelope", () => {
     delete legacyPractice.soundCharacter;
     const legacy = {
       ...current,
-      data: {
-        ...current.data,
-        settings: {
-          ...current.data.settings,
-          practice: legacyPractice,
-        },
-      },
+      data: structuredClone(current.data) as unknown as Record<string, unknown>,
       version: 1,
     };
+    delete legacy.data.preferences;
+    const legacySettings = legacy.data.settings as Record<string, unknown>;
+    legacySettings.practice = legacyPractice;
     const before = structuredClone(legacy);
 
     const parsed = parseBackupText(JSON.stringify(legacy));
 
-    expect(parsed.envelope.version).toBe(2);
+    expect(parsed.envelope.version).toBe(3);
     expect(parsed.envelope.data.settings.practice.soundCharacter).toBe(
       "balanced",
     );
+    expect(parsed.envelope.data.preferences).toEqual(defaultBackupPreferences);
     expect(legacy).toEqual(before);
+  });
+
+  it("migrates version 2 history zero and missing preferences", () => {
+    const current = createBackupEnvelope(
+      emptySnapshot,
+      settings(),
+      defaultBackupPreferences,
+      new Date("2026-07-18T12:34:56.789Z"),
+    );
+    const legacy = {
+      ...current,
+      data: structuredClone(current.data) as unknown as Record<string, unknown>,
+      version: 2,
+    };
+    delete legacy.data.preferences;
+    const legacySettings = legacy.data.settings as {
+      history: { minimumDurationSeconds: number };
+    };
+    legacySettings.history.minimumDurationSeconds = 0;
+
+    const parsed = parseBackupText(JSON.stringify(legacy));
+
+    expect(parsed.envelope.version).toBe(3);
+    expect(parsed.envelope.data.settings.history.minimumDurationSeconds).toBe(
+      1,
+    );
+    expect(parsed.envelope.data.preferences).toEqual(defaultBackupPreferences);
   });
 
   it("enforces the byte limit before attempting JSON parsing", () => {

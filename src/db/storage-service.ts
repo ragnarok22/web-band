@@ -34,6 +34,10 @@ import {
   MemoryStrummingPatternRepository,
   type StrummingPatternRepository,
 } from "@/db/repositories/strumming-pattern-repository";
+import type {
+  CorruptRowCounts,
+  IndexedDbCollection,
+} from "@/db/repositories/repository-helpers";
 import {
   isCustomDrumPattern,
   isCustomStrummingPattern,
@@ -64,6 +68,8 @@ interface MemoryRepositories {
   practiceSessions: PracticeSessionRepository;
   strummingPatterns: StrummingPatternRepository;
 }
+
+type CorruptRowsListener = (counts: CorruptRowCounts) => void;
 
 function createMemoryRepositories(): MemoryRepositories {
   return {
@@ -176,6 +182,8 @@ export class StorageService {
     new MemoryChordProgressionFavoriteRepository();
   private chordProgressions: ChordProgressionRepository =
     new MemoryChordProgressionRepository();
+  private corruptRowCounts: CorruptRowCounts = {};
+  private readonly corruptRowsListeners = new Set<CorruptRowsListener>();
   private database: WebBandDatabase | null = null;
   private favorites: FavoriteRepository = new MemoryFavoriteRepository();
   private initializePromise: Promise<PersistenceStatus> | null = null;
@@ -192,6 +200,12 @@ export class StorageService {
   async initialize(databaseName = "web-band"): Promise<PersistenceStatus> {
     this.initializePromise ??= this.openDatabase(databaseName);
     return this.initializePromise;
+  }
+
+  subscribeToCorruptRows(listener: CorruptRowsListener): () => void {
+    this.corruptRowsListeners.add(listener);
+    listener({ ...this.corruptRowCounts });
+    return () => this.corruptRowsListeners.delete(listener);
   }
 
   async deleteCustomChordProgression(progressionId: string): Promise<void> {
@@ -477,6 +491,7 @@ export class StorageService {
   }
 
   private async openDatabase(databaseName: string): Promise<PersistenceStatus> {
+    this.replaceCorruptRowCounts({});
     if (typeof indexedDB === "undefined") {
       this.useFreshMemoryRepositories();
       this.status = { mode: "memory", warning: STORAGE_WARNING };
@@ -488,25 +503,32 @@ export class StorageService {
       await this.database.open();
       this.repository = new DexiePatternRepository(
         this.database.customPatterns,
+        (count) => this.reportCorruptRows("customPatterns", count),
       );
       this.favorites = new DexieFavoriteRepository(
         this.database.favoritePatterns,
+        (count) => this.reportCorruptRows("favoritePatterns", count),
       );
       this.chordProgressions = new DexieChordProgressionRepository(
         this.database.chordProgressions,
+        (count) => this.reportCorruptRows("chordProgressions", count),
       );
       this.chordProgressionFavorites =
         new DexieChordProgressionFavoriteRepository(
           this.database.favoriteChordProgressions,
+          (count) => this.reportCorruptRows("favoriteChordProgressions", count),
         );
       this.practicePresets = new DexiePracticePresetRepository(
         this.database.practicePresets,
+        (count) => this.reportCorruptRows("practicePresets", count),
       );
       this.practiceSessions = new DexiePracticeSessionRepository(
         this.database.practiceSessions,
+        (count) => this.reportCorruptRows("practiceSessions", count),
       );
       this.strummingPatterns = new DexieStrummingPatternRepository(
         this.database.strummingPatterns,
+        (count) => this.reportCorruptRows("strummingPatterns", count),
       );
       this.status = { mode: "indexed-db", warning: null };
     } catch {
@@ -551,6 +573,10 @@ export class StorageService {
     return this.status;
   }
 
+  get currentCorruptRowCounts(): CorruptRowCounts {
+    return { ...this.corruptRowCounts };
+  }
+
   private assignMemoryRepositories(repositories: MemoryRepositories): void {
     this.repository = repositories.patterns;
     this.favorites = repositories.favorites;
@@ -565,6 +591,39 @@ export class StorageService {
     this.assignMemoryRepositories(createMemoryRepositories());
   }
 
+  private reportCorruptRows(
+    collection: IndexedDbCollection,
+    count: number,
+  ): void {
+    const nextCounts = { ...this.corruptRowCounts };
+    if (count > 0) nextCounts[collection] = count;
+    else delete nextCounts[collection];
+    this.replaceCorruptRowCounts(nextCounts);
+  }
+
+  private replaceCorruptRowCounts(counts: CorruptRowCounts): void {
+    const currentEntries = Object.entries(this.corruptRowCounts);
+    const nextEntries = Object.entries(counts);
+    if (
+      currentEntries.length === nextEntries.length &&
+      nextEntries.every(
+        ([collection, count]) =>
+          this.corruptRowCounts[collection as IndexedDbCollection] === count,
+      )
+    ) {
+      return;
+    }
+
+    this.corruptRowCounts = { ...counts };
+    for (const listener of this.corruptRowsListeners) {
+      try {
+        listener({ ...this.corruptRowCounts });
+      } catch {
+        // Diagnostics must not turn readable data into a storage failure.
+      }
+    }
+  }
+
   close(): void {
     this.database?.close();
     this.database = null;
@@ -572,6 +631,7 @@ export class StorageService {
     this.recoveryPromise = null;
     this.useFreshMemoryRepositories();
     this.status = { mode: "memory", warning: null };
+    this.replaceCorruptRowCounts({});
   }
 }
 

@@ -1,16 +1,23 @@
-import { clearOnboardingDismissal } from "@/db/repositories/onboarding-preferences-repository";
-import { clearRecentPatternIds } from "@/db/repositories/pattern-preferences-repository";
+import { clearAllAppPreferenceKeys } from "@/db/repositories/app-preferences-repository";
+import {
+  clearOnboardingDismissal,
+  saveOnboardingDismissal,
+  shouldShowOnboarding,
+} from "@/db/repositories/onboarding-preferences-repository";
+import { builtInPatterns } from "@/data/patterns";
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { storageService, type StorageService } from "@/db/storage-service";
 import { downloadBackupEnvelope } from "@/lib/backup-browser";
 import {
   createBackupEnvelope,
+  defaultBackupPreferences,
   normalizeBackupEnvelope,
   snapshotFromBackup,
 } from "@/lib/backup-envelope";
 import { executeStorageOperation } from "@/lib/storage-execution";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
+import { useAppearanceStore } from "@/stores/appearance-store";
 import {
   createDefaultGuidedPracticeValues,
   useGuidedPracticeStore,
@@ -20,9 +27,11 @@ import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
+import { reportPreferenceWrite } from "@/stores/storage-store";
 import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 import type {
   BackupEnvelope,
+  BackupPreferences,
   BackupSettings,
   ImportMode,
   ImportSummary,
@@ -45,14 +54,35 @@ type BackupStorage = Pick<
 >;
 
 export interface BackupServiceDependencies {
+  applyPreferences: (preferences: BackupPreferences) => boolean;
   applySettings: (settings: BackupSettings) => boolean;
   clearAppPreferences: () => boolean;
-  clearRecentPatterns: () => boolean;
   downloadEnvelope: (envelope: BackupEnvelope) => void;
   executeStorageOperation: <T>(operation: () => Promise<T>) => Promise<T>;
+  getPreferences: (snapshot: PersistenceSnapshot) => BackupPreferences;
   getSettings: () => BackupSettings;
   refreshStores: () => Promise<void>;
   storage: BackupStorage;
+}
+
+function getCurrentPreferences(
+  snapshot: PersistenceSnapshot,
+): BackupPreferences {
+  const appearance = useAppearanceStore.getState();
+  const availablePatternIds = new Set([
+    ...builtInPatterns.map(({ id }) => id),
+    ...snapshot.customPatterns.map(({ id }) => id),
+  ]);
+  return structuredClone({
+    appearance: {
+      reducedMotion: appearance.reducedMotion,
+      theme: appearance.theme,
+    },
+    onboardingDismissed: !shouldShowOnboarding(),
+    recentPatternIds: usePatternStore
+      .getState()
+      .recentPatternIds.filter((id) => availablePatternIds.has(id)),
+  });
 }
 
 export interface BackupImportCompletion extends ImportSummary {
@@ -116,6 +146,33 @@ function applyCurrentSettings(settings: BackupSettings): boolean {
   return persisted;
 }
 
+function applyCurrentPreferences(preferences: BackupPreferences): boolean {
+  const operations = [
+    () =>
+      useAppearanceStore.getState().replacePreferences(preferences.appearance),
+    () =>
+      usePatternStore
+        .getState()
+        .replaceRecentPatternIds(preferences.recentPatternIds),
+    () => {
+      const persisted = preferences.onboardingDismissed
+        ? saveOnboardingDismissal()
+        : clearOnboardingDismissal();
+      reportPreferenceWrite("onboarding", persisted);
+      return persisted;
+    },
+  ];
+  let persisted = true;
+  for (const operation of operations) {
+    try {
+      persisted = operation() && persisted;
+    } catch {
+      persisted = false;
+    }
+  }
+  return persisted;
+}
+
 async function refreshCurrentStores(): Promise<void> {
   const results = await Promise.allSettled([
     usePatternStore.getState().refreshAfterImport(),
@@ -129,18 +186,13 @@ async function refreshCurrentStores(): Promise<void> {
   }
 }
 
-function clearCurrentPreferences(): boolean {
-  const recentPatternsCleared = clearRecentPatternIds();
-  const onboardingCleared = clearOnboardingDismissal();
-  return recentPatternsCleared && onboardingCleared;
-}
-
 const defaultDependencies: BackupServiceDependencies = {
+  applyPreferences: applyCurrentPreferences,
   applySettings: applyCurrentSettings,
-  clearAppPreferences: clearCurrentPreferences,
-  clearRecentPatterns: clearRecentPatternIds,
+  clearAppPreferences: clearAllAppPreferenceKeys,
   downloadEnvelope: downloadBackupEnvelope,
   executeStorageOperation,
+  getPreferences: getCurrentPreferences,
   getSettings: getCurrentSettings,
   refreshStores: refreshCurrentStores,
   storage: storageService,
@@ -153,7 +205,11 @@ export class BackupService {
     const snapshot = await this.dependencies.executeStorageOperation(() =>
       this.dependencies.storage.exportSnapshot(),
     );
-    return createBackupEnvelope(snapshot, this.dependencies.getSettings());
+    return createBackupEnvelope(
+      snapshot,
+      this.dependencies.getSettings(),
+      this.dependencies.getPreferences(snapshot),
+    );
   }
 
   async exportCurrentBackup(): Promise<BackupEnvelope> {
@@ -179,15 +235,6 @@ export class BackupService {
       ),
     );
     const issues: string[] = [];
-    if (mode === "replace") {
-      try {
-        if (!this.dependencies.clearRecentPatterns()) {
-          issues.push("recent pattern preferences could not be cleared");
-        }
-      } catch {
-        issues.push("recent pattern preferences could not be cleared");
-      }
-    }
 
     let settingsPersisted = false;
     try {
@@ -200,6 +247,17 @@ export class BackupService {
     if (!settingsPersisted) {
       issues.push("some app settings could not be saved for the next visit");
     }
+    let preferencesPersisted = false;
+    try {
+      preferencesPersisted = this.dependencies.applyPreferences(
+        envelope.data.preferences,
+      );
+    } catch {
+      preferencesPersisted = false;
+    }
+    if (!preferencesPersisted) {
+      issues.push("some app preferences could not be saved for the next visit");
+    }
     try {
       await this.dependencies.refreshStores();
     } catch {
@@ -208,7 +266,7 @@ export class BackupService {
 
     return {
       ...summary,
-      settingsPersisted,
+      settingsPersisted: settingsPersisted && preferencesPersisted,
       warning:
         issues.length === 0
           ? null
@@ -233,7 +291,18 @@ export class BackupService {
       settingsPersisted = false;
     }
     if (!settingsPersisted) {
-      issues.push("some default settings could not be saved");
+      issues.push("some live settings could not be reset");
+    }
+    let preferencesReset = false;
+    try {
+      preferencesReset = this.dependencies.applyPreferences(
+        defaultBackupPreferences,
+      );
+    } catch {
+      preferencesReset = false;
+    }
+    if (!preferencesReset) {
+      issues.push("some live preferences could not be reset");
     }
     let preferencesCleared = false;
     try {
@@ -249,7 +318,8 @@ export class BackupService {
     } catch {
       issues.push("app data could not be fully refreshed");
     }
-    const persisted = settingsPersisted && preferencesCleared;
+    const persisted =
+      settingsPersisted && preferencesReset && preferencesCleared;
     return {
       cleared: true,
       settingsPersisted: persisted,

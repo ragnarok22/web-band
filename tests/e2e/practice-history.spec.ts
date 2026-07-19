@@ -17,7 +17,7 @@ test("records, persists, and deletes a real practice session", async ({
     window.localStorage.setItem(
       "web-band-history-settings-v1",
       JSON.stringify({
-        settings: { enabled: true, minimumDurationSeconds: 0 },
+        settings: { enabled: true, minimumDurationSeconds: 1 },
         version: 1,
       }),
     );
@@ -29,11 +29,7 @@ test("records, persists, and deletes a real practice session", async ({
   await expect(page.getByTestId("transport-status")).toHaveText(
     "Groove playing",
   );
-  await page.waitForTimeout(1_100);
-  await page.getByRole("button", { name: "Stop playback" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove stopped",
-  );
+  await page.waitForTimeout(1_500);
 
   await page.getByRole("link", { name: "History" }).click();
   await expect(page).toHaveURL(/\/history$/);

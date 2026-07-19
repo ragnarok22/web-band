@@ -1,6 +1,9 @@
 import type { EntityTable } from "dexie";
 
-import { cloneValidRecords } from "@/db/repositories/repository-helpers";
+import {
+  cloneValidRecords,
+  type ReportCorruptRows,
+} from "@/db/repositories/repository-helpers";
 import { isCustomChordProgression } from "@/lib/practice-validation";
 import type { CustomChordProgression } from "@/types/persistence";
 
@@ -30,6 +33,7 @@ function sortProgressions(
 export class DexieChordProgressionRepository implements ChordProgressionRepository {
   constructor(
     private readonly table: EntityTable<CustomChordProgression, "id">,
+    private readonly reportCorruptRows?: ReportCorruptRows,
   ) {}
 
   async delete(progressionId: string): Promise<void> {
@@ -50,7 +54,11 @@ export class DexieChordProgressionRepository implements ChordProgressionReposito
   async list(): Promise<CustomChordProgression[]> {
     const progressions = await this.table.toArray();
     return sortProgressions(
-      cloneValidRecords(progressions, isCustomChordProgression),
+      cloneValidRecords(
+        progressions,
+        isCustomChordProgression,
+        this.reportCorruptRows,
+      ),
     );
   }
 

@@ -43,8 +43,9 @@ export function DeleteLocalDataDialog({
         </h2>
         <p className="text-muted mt-3 leading-6">
           A safety backup download is started before deletion. Then custom
-          patterns, favorites, presets, sessions, and app settings are reset on
-          this device.
+          patterns, favorites, presets, sessions, app settings, appearance,
+          recents, onboarding state, and legacy Web Band preferences are removed
+          from this device.
         </p>
         <label className="border-danger/30 bg-danger/8 mt-5 flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 text-sm font-bold">
           <input

@@ -9,6 +9,7 @@ import {
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import {
   createBackupEnvelope,
+  defaultBackupPreferences,
   serializeBackupEnvelope,
 } from "@/lib/backup-envelope";
 import { createDefaultGuidedPracticeValues } from "@/stores/guided-practice-store";
@@ -30,6 +31,7 @@ function envelope(): BackupEnvelope {
       history: { enabled: true, minimumDurationSeconds: 30 },
       practice: structuredClone(defaultPracticeSettings),
     },
+    defaultBackupPreferences,
     new Date("2026-07-18T12:00:00.000Z"),
   );
 }
