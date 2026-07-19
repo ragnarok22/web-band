@@ -83,7 +83,7 @@ export const bluesPatterns = [
     description: "Energetic twelve-eight shuffle with a walking kick feel.",
     difficulty: "advanced",
     id: "texas-style-shuffle",
-    name: "Texas-Style Shuffle Practice",
+    name: "Texas-Style Shuffle-Inspired Practice Groove",
     recommendedBpmRange: { min: 88, max: 162 },
     subdivision: 8,
     swing: 0.4,

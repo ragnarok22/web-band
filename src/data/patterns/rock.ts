@@ -115,7 +115,7 @@ export const rockPatterns = [
   }),
   createPattern({
     bars: 1,
-    category: "ballad",
+    category: "rock",
     defaultBpm: 68,
     description: "A spacious six-eight rock pulse for slow chord changes.",
     difficulty: "beginner",

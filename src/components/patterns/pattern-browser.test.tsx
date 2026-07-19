@@ -114,6 +114,17 @@ describe("pattern browser", () => {
     );
   });
 
+  it("shows the recommended BPM range on pattern cards", () => {
+    render(<PatternBrowser />);
+    const card = screen
+      .getByRole("heading", { name: "Basic Rock" })
+      .closest("article");
+    expect(card).not.toBeNull();
+
+    expect(within(card!).getByText("Recommended")).toBeInTheDocument();
+    expect(within(card!).getByText("70-130 BPM")).toBeInTheDocument();
+  });
+
   it("previews a pattern with its declared swing", async () => {
     const user = userEvent.setup();
     render(<PatternBrowser />);

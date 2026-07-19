@@ -45,7 +45,7 @@ export const latinPatterns = [
       "Cha-cha-inspired bell and cross-stick pattern for steady comping.",
     difficulty: "intermediate",
     id: "basic-cha-cha-inspired",
-    name: "Basic Cha-Cha-Inspired Groove",
+    name: "Basic Cha-Cha-Inspired Practice Groove",
     recommendedBpmRange: { min: 88, max: 134 },
     subdivision: 16,
     timeSignature: { denominator: 4, numerator: 4 },

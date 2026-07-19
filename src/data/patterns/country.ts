@@ -41,7 +41,7 @@ export const countryPatterns = [
   }),
   createPattern({
     bars: 1,
-    category: "ballad",
+    category: "country",
     defaultBpm: 70,
     description:
       "Gentle cross-stick country ballad groove with sparse kick support.",

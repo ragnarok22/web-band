@@ -65,7 +65,7 @@ export const popPatterns = [
   }),
   createPattern({
     bars: 1,
-    category: "ballad",
+    category: "pop",
     defaultBpm: 72,
     description: "Soft cross-stick ballad pulse with restrained kick movement.",
     difficulty: "beginner",

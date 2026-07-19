@@ -71,7 +71,7 @@ export function PatternCard({
         {pattern.description}
       </p>
 
-      <dl className="my-4 grid grid-cols-3 gap-2 text-sm">
+      <dl className="my-4 grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
         <div>
           <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
             Meter
@@ -90,9 +90,18 @@ export function PatternCard({
         </div>
         <div>
           <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
+            Recommended
+          </dt>
+          <dd className="text-foreground mt-1 font-extrabold tabular-nums">
+            {pattern.recommendedBpmRange.min}-{pattern.recommendedBpmRange.max}{" "}
+            BPM
+          </dd>
+        </div>
+        <div>
+          <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
             Grid
           </dt>
-          <dd className="text-foreground mt-1 font-extrabold">
+          <dd className="text-foreground mt-1 font-extrabold tabular-nums">
             {pattern.subdivision}ths
           </dd>
         </div>

@@ -10,7 +10,8 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Tone.js transport with 44 built-in educational patterns across 11 practice categories.
 - Searchable pattern browser with genre, difficulty, meter, and subdivision filters.
 - Pattern sorting by name, default BPM, recently used, and favorites.
-- Persistent IndexedDB favorites and lightweight rhythm previews.
+- Pattern cards with default and recommended BPM, meter, grid, and lightweight rhythm previews.
+- Persistent IndexedDB favorites.
 - Pattern changes quantized to the next measure during playback, with an explicit same-meter immediate-switch option.
 - Support for 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, and 12/8 patterns on eighth- and sixteenth-note grids.
 - Smooth BPM changes from 40 to 220 without restarting playback.

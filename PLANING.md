@@ -52,8 +52,8 @@ Last audited against the source on 2026-07-19.
 - [x] **Implement library discovery.** Search, filter by genre/difficulty/meter/subdivision, and sort by name, BPM, recent use, or favorites.
 - [x] **Implement pattern actions.** Preview, favorite, open in Practice, export custom patterns, and duplicate built-ins into the editor.
 - [x] **Render lightweight rhythm previews.** Show an understandable per-instrument groove summary without starting full playback.
-- [ ] **Show recommended BPM ranges.** Add each pattern's recommended minimum and maximum BPM to library cards and component tests.
-- [ ] **Lock the catalog contract with tests.** Verify required pattern names and intended categories, resolving current title/category deviations instead of testing only count and validity.
+- [x] **Show recommended BPM ranges.** Add each pattern's recommended minimum and maximum BPM to library cards and component tests.
+- [x] **Lock the catalog contract with tests.** Verify required pattern names and intended categories, resolving current title/category deviations instead of testing only count and validity.
 
 ## Phase 4: Practice Experience
 
