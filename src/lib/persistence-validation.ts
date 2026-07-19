@@ -709,6 +709,56 @@ export function validateBackupEnvelope(
     }
   }
 
+  const availableStrummingPatternIds = new Set(builtInStrummingPatternIds);
+  if (Array.isArray(data.customStrummingPatterns)) {
+    for (const pattern of data.customStrummingPatterns) {
+      if (
+        validateCustomStrummingPattern(pattern).success &&
+        isRecord(pattern)
+      ) {
+        availableStrummingPatternIds.add(pattern.id as string);
+      }
+    }
+  }
+  if (
+    isRecord(data.settings) &&
+    isRecord(data.settings.guidedPractice) &&
+    isRecord(data.settings.guidedPractice.strummingPattern) &&
+    typeof data.settings.guidedPractice.strummingPattern.id === "string" &&
+    !availableStrummingPatternIds.has(
+      data.settings.guidedPractice.strummingPattern.id,
+    )
+  ) {
+    errors.push(
+      `Guided practice strumming pattern ID ${data.settings.guidedPractice.strummingPattern.id} is not included in this backup.`,
+    );
+  }
+  if (Array.isArray(data.practicePresets)) {
+    for (const preset of data.practicePresets) {
+      const guidedPractice =
+        isRecord(preset) &&
+        isRecord(preset.configuration) &&
+        isRecord(preset.configuration.guidedPractice)
+          ? preset.configuration.guidedPractice
+          : undefined;
+      const strummingPattern =
+        guidedPractice?.mode === "strumming" &&
+        isRecord(guidedPractice.strummingPattern)
+          ? guidedPractice.strummingPattern
+          : undefined;
+      if (
+        validatePracticePreset(preset).success &&
+        isRecord(preset) &&
+        typeof strummingPattern?.id === "string" &&
+        !availableStrummingPatternIds.has(strummingPattern.id)
+      ) {
+        errors.push(
+          `Practice preset ${String(preset.id)} strumming pattern ID ${strummingPattern.id} is not included in this backup.`,
+        );
+      }
+    }
+  }
+
   return { errors, success: errors.length === 0 };
 }
 

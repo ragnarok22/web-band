@@ -16,6 +16,7 @@ import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { useStorageStore } from "@/stores/storage-store";
+import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -39,6 +40,9 @@ export function AppProviders({ children }: AppProvidersProps) {
   const hydratePracticePresets = usePracticePresetStore(
     (state) => state.hydrate,
   );
+  const hydrateStrummingPatterns = useStrummingPatternStore(
+    (state) => state.hydrate,
+  );
   const setStorageStatus = useStorageStore((state) => state.setStorageStatus);
   const hydrateAppearance = useAppearanceStore((state) => state.hydrate);
 
@@ -60,6 +64,7 @@ export function AppProviders({ children }: AppProvidersProps) {
         hydrateChordProgressions(),
         hydratePracticePresets(),
         hydratePracticeHistory(),
+        hydrateStrummingPatterns(),
       ]);
       if (
         isActive &&
@@ -73,6 +78,7 @@ export function AppProviders({ children }: AppProvidersProps) {
           hydrateChordProgressions(),
           hydratePracticePresets(),
           hydratePracticeHistory(),
+          hydrateStrummingPatterns(),
         ]);
       }
     });
@@ -89,6 +95,7 @@ export function AppProviders({ children }: AppProvidersProps) {
     hydratePatterns,
     hydratePracticePresets,
     hydratePracticeHistory,
+    hydrateStrummingPatterns,
     setStorageStatus,
   ]);
 

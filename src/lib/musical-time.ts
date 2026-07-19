@@ -28,7 +28,9 @@ export function getSubdivisionNotation(subdivision: 8 | 16): "8n" | "16n" {
   return subdivision === 8 ? "8n" : "16n";
 }
 
-export function getBeatLabels(pattern: DrumPattern): string[] {
+export function getBeatLabels(
+  pattern: Pick<DrumPattern, "subdivision" | "timeSignature">,
+): string[] {
   const stepsPerBeat = pattern.subdivision / pattern.timeSignature.denominator;
   const sixteenthLabels = ["", "e", "&", "a"];
   const eighthLabels = ["", "&"];

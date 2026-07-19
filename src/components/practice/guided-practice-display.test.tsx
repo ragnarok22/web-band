@@ -109,7 +109,11 @@ describe("guided practice display", () => {
 
     expect(screen.getByText("Current strum")).toBeInTheDocument();
     expect(screen.getAllByText("Down")).not.toHaveLength(0);
+    expect(document.querySelector('[aria-current="step"]')).toBeNull();
     expect(container.querySelector("[aria-live]")).toBeNull();
+
+    const currentStep = downDownUpUpDownUpPattern.steps[3]!;
+    const nextStep = downDownUpUpDownUpPattern.steps[4]!;
 
     act(() => {
       guidanceTimeline.begin();
@@ -120,18 +124,22 @@ describe("guided practice display", () => {
         mode: "strumming",
         position: {
           accent: false,
-          currentAction: "up",
-          currentStepId: "step-up",
+          currentAction: currentStep.action,
+          currentStepId: currentStep.id,
           isStepBoundary: true,
-          nextAction: "rest",
-          nextStepId: "step-rest",
+          nextAction: nextStep.action,
+          nextStepId: nextStep.id,
           stepIndex: 3,
         },
       });
     });
 
-    expect(screen.getByText("Up")).toBeInTheDocument();
-    expect(screen.getByText("Rest")).toBeInTheDocument();
+    expect(screen.getAllByText("Up")).not.toHaveLength(0);
+    expect(screen.getAllByText("Rest")).not.toHaveLength(0);
+    expect(document.querySelector('[aria-current="step"]')).toHaveAttribute(
+      "data-position",
+      "&",
+    );
     expect(container.querySelector("[aria-live]")).toBeNull();
   });
 

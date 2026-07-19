@@ -25,8 +25,10 @@ import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePracticeUiStore } from "@/stores/practice-ui-store";
+import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 import type {
   CustomChordProgression,
+  CustomStrummingPattern,
   PracticePreset,
 } from "@/types/persistence";
 
@@ -62,6 +64,15 @@ const deletedCustomProgression: CustomChordProgression = {
   updatedAt: "2026-07-18T10:00:00.000Z",
 };
 
+const deletedCustomStrummingPattern: CustomStrummingPattern = {
+  ...structuredClone(quarterDownstrokesPattern),
+  createdAt: "2026-07-18T10:00:00.000Z",
+  id: "deleted-custom-strumming-pattern",
+  isBuiltIn: false,
+  name: "Deleted strumming pattern",
+  updatedAt: "2026-07-18T10:00:00.000Z",
+};
+
 vi.mock("@/audio/audio-engine", () => ({
   disposeAudioEngine: vi.fn(),
   getAudioEngine: () => engine,
@@ -94,6 +105,10 @@ describe("practice screen", () => {
     useChordProgressionStore.setState({
       customProgressions: [],
       favoriteProgressionIds: [],
+      isHydrated: true,
+    });
+    useStrummingPatternStore.setState({
+      customPatterns: [],
       isHydrated: true,
     });
     usePracticeStore.setState({
@@ -499,6 +514,37 @@ describe("practice screen", () => {
       /strumming pattern.*does not match.*drum pattern/i,
     );
     expect(usePracticeStore.getState().selectedPatternId).toBe("basic-rock");
+    expect(useGuidedPracticeStore.getState().mode).toBe("drums");
+  });
+
+  it("rejects a preset whose custom strumming pattern was deleted", async () => {
+    const user = userEvent.setup();
+    const preset = createPreset("Missing Strum", {
+      bpm: 90,
+      countInMeasures: 1,
+      fillFrequency: null,
+      guidedPractice: {
+        mode: "strumming",
+        strummingPattern: deletedCustomStrummingPattern,
+      },
+      humanization: 0,
+      patternId: "basic-rock",
+      swing: 0,
+    });
+    usePracticePresetStore.setState({
+      presets: [preset],
+      recentPresetIds: [preset.id],
+    });
+    render(<PracticeScreen />);
+
+    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await user.click(
+      screen.getByRole("button", { name: `Load ${preset.name}` }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      /references a custom strumming pattern that is no longer available/i,
+    );
     expect(useGuidedPracticeStore.getState().mode).toBe("drums");
   });
 

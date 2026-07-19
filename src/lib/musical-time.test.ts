@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { basicRockPattern } from "@/data/patterns/rock";
+import { balladPattern } from "@/data/strumming-patterns";
 import {
   clampBpm,
   getBeatLabels,
@@ -33,6 +34,27 @@ describe("musical time", () => {
       "&",
       "4",
       "&",
+    ]);
+  });
+
+  it("creates readable sixteenth-note labels for strumming patterns", () => {
+    expect(getBeatLabels(balladPattern)).toEqual([
+      "1",
+      "e",
+      "&",
+      "a",
+      "2",
+      "e",
+      "&",
+      "a",
+      "3",
+      "e",
+      "&",
+      "a",
+      "4",
+      "e",
+      "&",
+      "a",
     ]);
   });
 });

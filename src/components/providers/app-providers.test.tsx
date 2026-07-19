@@ -12,6 +12,7 @@ import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { useStorageStore } from "@/stores/storage-store";
+import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 
 beforeEach(async () => {
   storageService.close();
@@ -24,6 +25,10 @@ beforeEach(async () => {
   useChordProgressionStore.setState({
     customProgressions: [],
     favoriteProgressionIds: [],
+    isHydrated: false,
+  });
+  useStrummingPatternStore.setState({
+    customPatterns: [],
     isHydrated: false,
   });
   usePracticePresetStore.setState({
@@ -73,6 +78,7 @@ describe("app providers", () => {
       expect(useStorageStore.getState().mode).toBe("memory");
       expect(usePatternStore.getState().isHydrated).toBe(true);
       expect(useChordProgressionStore.getState().isHydrated).toBe(true);
+      expect(useStrummingPatternStore.getState().isHydrated).toBe(true);
       expect(usePracticePresetStore.getState().isHydrated).toBe(true);
       expect(usePracticeHistoryStore.getState().isHydrated).toBe(true);
     });

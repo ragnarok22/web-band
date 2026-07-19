@@ -1,6 +1,7 @@
 "use client";
 
 import { strumActionDetails } from "@/components/practice/strum-action-details";
+import { StrummingSequence } from "@/components/practice/strumming-sequence";
 import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
 import { getChordTrainerPosition } from "@/lib/guided-practice";
 import type { TimeSignature } from "@/types/pattern";
@@ -244,6 +245,13 @@ export function GuidedPracticeDisplay({
           </p>
         )}
       </div>
+      <StrummingSequence
+        activeStepId={
+          frame?.mode === "strumming" ? frame.position.currentStepId : null
+        }
+        className="mt-4"
+        pattern={configuration.strummingPattern}
+      />
       <p className="text-muted mt-3 text-center text-sm font-bold">
         Step {(position?.stepIndex ?? 0) + 1} of{" "}
         {configuration.strummingPattern.steps.length}

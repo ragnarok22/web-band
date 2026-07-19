@@ -274,6 +274,7 @@ Playwright runs the real browser audio engine and verifies:
 - Pattern-only download, removal, import, and reload persistence.
 - Meaningful practice-session recording, journal persistence, and deletion.
 - JSON backup download, validation, merge, clear, restore, and reload persistence.
+- Custom strumming-pattern creation, editing, deletion, backup restore, and reload persistence.
 - Reload persistence across Chromium, Firefox, WebKit, and mobile Chromium profiles.
 - Production service-worker control and offline loading for every local-first route.
 
@@ -281,7 +282,6 @@ The Web Audio implementation remains real in production. Unit component tests mo
 
 ## Known Limitations
 
-- Custom strumming-pattern editing remains future work.
 - Wake Lock depends on browser support and a secure context.
 - Fills are generic meter-aware practice fills rather than category-specific arrangements.
 - Chord symbols are text guidance only; Web Band does not synthesize guitar chords.
@@ -291,6 +291,6 @@ The Web Audio implementation remains real in production. Unit component tests mo
 
 ## Future Improvements
 
-- Add custom strumming-pattern creation and sharing.
+- Add custom strumming-pattern sharing.
 - Add category-specific fill arrangements and optional alternate synthesis characters.
 - Continue physical-device listening checks, especially installed iOS PWA audio and Wake Lock behavior.

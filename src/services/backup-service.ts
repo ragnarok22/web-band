@@ -20,6 +20,7 @@ import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
+import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 import type {
   BackupEnvelope,
   BackupSettings,
@@ -120,6 +121,7 @@ async function refreshCurrentStores(): Promise<void> {
     useChordProgressionStore.getState().refreshAfterImport(),
     usePracticePresetStore.getState().refreshAfterImport(),
     usePracticeHistoryStore.getState().refreshAfterImport(),
+    useStrummingPatternStore.getState().refreshAfterImport(),
   ]);
   if (results.some(({ status }) => status === "rejected")) {
     throw new Error("Some stores could not be refreshed.");

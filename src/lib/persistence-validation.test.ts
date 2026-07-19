@@ -339,6 +339,29 @@ describe("persistence validation", () => {
     );
   });
 
+  it("requires standalone custom strumming references to resolve", () => {
+    const backup = createBackup();
+    const customPattern = createStrummingPattern();
+    backup.data.settings.guidedPractice.strummingPattern = customPattern;
+    expect(validateBackupEnvelope(backup).success).toBe(true);
+
+    backup.data.customStrummingPatterns = [];
+    expect(validateBackupEnvelope(backup).errors).toContain(
+      `Guided practice strumming pattern ID ${customPattern.id} is not included in this backup.`,
+    );
+
+    const presetBackup = createBackup();
+    presetBackup.data.practicePresets[0]!.configuration.guidedPractice = {
+      mode: "strumming",
+      strummingPattern: customPattern,
+    };
+    expect(validateBackupEnvelope(presetBackup).success).toBe(true);
+    presetBackup.data.customStrummingPatterns = [];
+    expect(validateBackupEnvelope(presetBackup).errors).toContain(
+      `Practice preset preset-1 strumming pattern ID ${customPattern.id} is not included in this backup.`,
+    );
+  });
+
   it("rejects custom chord progressions that collide with built-in IDs", () => {
     const backup = createBackup();
     backup.data.customChordProgressions[0]!.id = gDEmCProgression.id;

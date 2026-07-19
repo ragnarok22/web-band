@@ -269,3 +269,31 @@ test("advances the tempo trainer on a musical boundary", async ({ page }) => {
   await page.getByRole("button", { name: "Stop playback" }).click();
   expect(browserErrors).toEqual([]);
 });
+
+test("moves the strumming sequence highlight at audible time", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.goto("/practice");
+  await expandMobileSettings(page, "Show guided practice settings");
+  await page
+    .getByRole("radiogroup", { name: "Practice mode" })
+    .getByRole("radio", { name: /Strumming/ })
+    .locator("..")
+    .click();
+  await page.getByText("Off", { exact: true }).click();
+
+  const activeStep = page
+    .getByRole("region", { name: "Strumming trainer guidance" })
+    .locator('[aria-current="step"]');
+  await expect(activeStep).toHaveCount(0);
+  await page.getByRole("button", { exact: true, name: "Play" }).click();
+  await expect(activeStep).toHaveCount(1);
+  const firstPosition = await activeStep.getAttribute("data-position");
+  await expect
+    .poll(() => activeStep.getAttribute("data-position"), { timeout: 3_000 })
+    .not.toBe(firstPosition);
+
+  await page.getByRole("button", { name: "Stop playback" }).click();
+  expect(browserErrors).toEqual([]);
+});

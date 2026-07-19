@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { builtInPatterns, getPatternById } from "@/data/patterns";
+import { getBuiltInStrummingPattern } from "@/data/strumming-patterns";
 import {
   saveOnboardingDismissal,
   shouldShowOnboarding,
@@ -31,6 +32,7 @@ import {
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import { usePracticeUiStore } from "@/stores/practice-ui-store";
+import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 import type { FillFrequency, MixerGroup } from "@/types/audio";
 import type {
   PracticePreset,
@@ -112,6 +114,12 @@ export function usePracticeController() {
   const customPatterns = usePatternStore((state) => state.customPatterns);
   const patternsHydrated = usePatternStore((state) => state.isHydrated);
   const markRecent = usePatternStore((state) => state.markRecent);
+  const customStrummingPatterns = useStrummingPatternStore(
+    (state) => state.customPatterns,
+  );
+  const strummingPatternsHydrated = useStrummingPatternStore(
+    (state) => state.isHydrated,
+  );
   const [loadedPreset, setLoadedPreset] = useState<{
     configuration: PracticePresetConfiguration;
     name: string;
@@ -128,7 +136,10 @@ export function usePracticeController() {
   const pattern = getPatternById(selectedPatternId, customPatterns);
   const active = isSessionActive(status);
   const isReady =
-    practiceHydrated && guidedPracticeHydrated && patternsHydrated;
+    practiceHydrated &&
+    guidedPracticeHydrated &&
+    patternsHydrated &&
+    strummingPatternsHydrated;
   const guidedPractice = getGuidedPracticeConfiguration({
     chordTrainer,
     mode,
@@ -257,6 +268,19 @@ export function usePracticeController() {
       useAudioStore
         .getState()
         .setError("Starting and target BPM must be different.");
+      return;
+    }
+    if (
+      guidedPractice.mode === "strumming" &&
+      (guidedPractice.strummingPattern.isBuiltIn
+        ? !getBuiltInStrummingPattern(guidedPractice.strummingPattern.id)
+        : !customStrummingPatterns.some(
+            ({ id }) => id === guidedPractice.strummingPattern.id,
+          ))
+    ) {
+      useAudioStore
+        .getState()
+        .setError("The selected strumming pattern is no longer available.");
       return;
     }
     if (
@@ -390,6 +414,25 @@ export function usePracticeController() {
       ) {
         throw new Error(
           `${preset.name} references a custom chord progression that is no longer available.`,
+        );
+      }
+    }
+    if (
+      nextGuidedPractice.mode === "strumming" &&
+      !nextGuidedPractice.strummingPattern.isBuiltIn
+    ) {
+      if (!strummingPatternsHydrated) {
+        throw new Error(
+          `${preset.name}'s custom strumming pattern is still loading. Try again in a moment.`,
+        );
+      }
+      if (
+        !customStrummingPatterns.some(
+          ({ id }) => id === nextGuidedPractice.strummingPattern.id,
+        )
+      ) {
+        throw new Error(
+          `${preset.name} references a custom strumming pattern that is no longer available.`,
         );
       }
     }
