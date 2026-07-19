@@ -1,0 +1,208 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-journey-dont-stop-believin",
+        "name": "Journey - Don't Stop Believin'",
+        "description": "A simplified two-bar practice approximation of the song's steady rock pulse, strong backbeat, and forward-moving kick syncopation.",
+        "category": "rock",
+        "difficulty": "intermediate",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 119,
+        "recommendedBpmRange": { "min": 95, "max": 140 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "journey-crash-0",
+            "instrument": "crash",
+            "step": 0,
+            "velocity": 0.86
+          },
+          {
+            "id": "journey-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.8
+          },
+          {
+            "id": "journey-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.58
+          },
+          {
+            "id": "journey-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.74
+          },
+          {
+            "id": "journey-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.59
+          },
+          {
+            "id": "journey-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.79
+          },
+          {
+            "id": "journey-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.58
+          },
+          {
+            "id": "journey-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.75
+          },
+          {
+            "id": "journey-open-14",
+            "instrument": "openHat",
+            "step": 14,
+            "velocity": 0.68
+          },
+          {
+            "id": "journey-hat-16",
+            "instrument": "closedHat",
+            "step": 16,
+            "velocity": 0.82
+          },
+          {
+            "id": "journey-hat-18",
+            "instrument": "closedHat",
+            "step": 18,
+            "velocity": 0.58
+          },
+          {
+            "id": "journey-hat-20",
+            "instrument": "closedHat",
+            "step": 20,
+            "velocity": 0.75
+          },
+          {
+            "id": "journey-hat-22",
+            "instrument": "closedHat",
+            "step": 22,
+            "velocity": 0.59
+          },
+          {
+            "id": "journey-hat-24",
+            "instrument": "closedHat",
+            "step": 24,
+            "velocity": 0.8
+          },
+          {
+            "id": "journey-hat-26",
+            "instrument": "closedHat",
+            "step": 26,
+            "velocity": 0.58
+          },
+          {
+            "id": "journey-hat-28",
+            "instrument": "closedHat",
+            "step": 28,
+            "velocity": 0.76
+          },
+          {
+            "id": "journey-open-30",
+            "instrument": "openHat",
+            "step": 30,
+            "velocity": 0.72
+          },
+          {
+            "id": "journey-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "journey-kick-6",
+            "instrument": "kick",
+            "step": 6,
+            "velocity": 0.72
+          },
+          {
+            "id": "journey-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.92
+          },
+          {
+            "id": "journey-kick-11",
+            "instrument": "kick",
+            "step": 11,
+            "velocity": 0.68
+          },
+          {
+            "id": "journey-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 1
+          },
+          {
+            "id": "journey-kick-22",
+            "instrument": "kick",
+            "step": 22,
+            "velocity": 0.72
+          },
+          {
+            "id": "journey-kick-24",
+            "instrument": "kick",
+            "step": 24,
+            "velocity": 0.92
+          },
+          {
+            "id": "journey-kick-27",
+            "instrument": "kick",
+            "step": 27,
+            "velocity": 0.68
+          },
+          {
+            "id": "journey-kick-30",
+            "instrument": "kick",
+            "step": 30,
+            "velocity": 0.7
+          },
+          {
+            "id": "journey-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 0.92
+          },
+          {
+            "id": "journey-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 0.98
+          },
+          {
+            "id": "journey-snare-20",
+            "instrument": "snare",
+            "step": 20,
+            "velocity": 0.92
+          },
+          {
+            "id": "journey-snare-28",
+            "instrument": "snare",
+            "step": 28,
+            "velocity": 1
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-mana-en-el-muelle-de-san-blas",
+        "name": "Mana - En el muelle de San Blas",
+        "description": "A simplified two-bar practice approximation of the song's flowing Latin-rock pocket, with syncopated kicks and an open-hat lift.",
+        "category": "rock",
+        "difficulty": "intermediate",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 97,
+        "recommendedBpmRange": { "min": 80, "max": 115 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "mana-crash-0",
+            "instrument": "crash",
+            "step": 0,
+            "velocity": 0.82
+          },
+          {
+            "id": "mana-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.78
+          },
+          {
+            "id": "mana-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.57
+          },
+          {
+            "id": "mana-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.72
+          },
+          {
+            "id": "mana-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.58
+          },
+          {
+            "id": "mana-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.76
+          },
+          {
+            "id": "mana-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.56
+          },
+          {
+            "id": "mana-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.72
+          },
+          {
+            "id": "mana-open-14",
+            "instrument": "openHat",
+            "step": 14,
+            "velocity": 0.66
+          },
+          {
+            "id": "mana-hat-16",
+            "instrument": "closedHat",
+            "step": 16,
+            "velocity": 0.79
+          },
+          {
+            "id": "mana-hat-18",
+            "instrument": "closedHat",
+            "step": 18,
+            "velocity": 0.57
+          },
+          {
+            "id": "mana-hat-20",
+            "instrument": "closedHat",
+            "step": 20,
+            "velocity": 0.72
+          },
+          {
+            "id": "mana-hat-22",
+            "instrument": "closedHat",
+            "step": 22,
+            "velocity": 0.58
+          },
+          {
+            "id": "mana-hat-24",
+            "instrument": "closedHat",
+            "step": 24,
+            "velocity": 0.77
+          },
+          {
+            "id": "mana-hat-26",
+            "instrument": "closedHat",
+            "step": 26,
+            "velocity": 0.56
+          },
+          {
+            "id": "mana-hat-28",
+            "instrument": "closedHat",
+            "step": 28,
+            "velocity": 0.73
+          },
+          {
+            "id": "mana-open-30",
+            "instrument": "openHat",
+            "step": 30,
+            "velocity": 0.7
+          },
+          {
+            "id": "mana-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "mana-kick-3",
+            "instrument": "kick",
+            "step": 3,
+            "velocity": 0.65
+          },
+          {
+            "id": "mana-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.9
+          },
+          {
+            "id": "mana-kick-10",
+            "instrument": "kick",
+            "step": 10,
+            "velocity": 0.7
+          },
+          {
+            "id": "mana-kick-14",
+            "instrument": "kick",
+            "step": 14,
+            "velocity": 0.66
+          },
+          {
+            "id": "mana-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 0.96
+          },
+          {
+            "id": "mana-kick-19",
+            "instrument": "kick",
+            "step": 19,
+            "velocity": 0.65
+          },
+          {
+            "id": "mana-kick-24",
+            "instrument": "kick",
+            "step": 24,
+            "velocity": 0.91
+          },
+          {
+            "id": "mana-kick-27",
+            "instrument": "kick",
+            "step": 27,
+            "velocity": 0.69
+          },
+          {
+            "id": "mana-kick-30",
+            "instrument": "kick",
+            "step": 30,
+            "velocity": 0.68
+          },
+          {
+            "id": "mana-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 0.9
+          },
+          {
+            "id": "mana-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 0.96
+          },
+          {
+            "id": "mana-snare-20",
+            "instrument": "snare",
+            "step": 20,
+            "velocity": 0.9
+          },
+          {
+            "id": "mana-snare-28",
+            "instrument": "snare",
+            "step": 28,
+            "velocity": 0.97
+          },
+          {
+            "id": "mana-rim-11",
+            "instrument": "rim",
+            "step": 11,
+            "velocity": 0.34
+          },
+          {
+            "id": "mana-rim-27",
+            "instrument": "rim",
+            "step": 27,
+            "velocity": 0.36
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

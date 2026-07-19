@@ -1,3 +1,5 @@
+import { join } from "node:path";
+
 import { expect, test, type Page } from "@playwright/test";
 
 function trackBrowserErrors(page: Page): string[] {
@@ -68,5 +70,47 @@ test("exports, removes, and imports a shared custom pattern", async ({
   await page.reload();
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
+  expect(browserErrors).toEqual([]);
+});
+
+test("imports a committed song preset and opens it in practice", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  const patternName = "Mana - En el muelle de San Blas";
+
+  await page.goto("/patterns");
+  await page
+    .getByLabel("Choose shared pattern file")
+    .setInputFiles(
+      join(
+        process.cwd(),
+        "presets",
+        "web-band-pattern-mana-en-el-muelle-de-san-blas.json",
+      ),
+    );
+
+  const importDialog = page.getByRole("dialog", {
+    name: "Import this pattern?",
+  });
+  await expect(importDialog.getByText(patternName)).toBeVisible();
+  await importDialog.getByRole("button", { name: "Add to library" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Imported 1 pattern." }),
+  ).toBeVisible();
+
+  await page.getByRole("searchbox").fill(patternName);
+  const card = page
+    .getByRole("article")
+    .filter({ has: page.getByRole("heading", { name: patternName }) });
+  await card.getByRole("button", { name: "Practice" }).click();
+
+  await expect(page).toHaveURL(/\/practice$/);
+  await expect(page.getByRole("heading", { name: patternName })).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(
+    page.getByRole("spinbutton", { name: "Current BPM" }),
+  ).toHaveValue("97");
   expect(browserErrors).toEqual([]);
 });

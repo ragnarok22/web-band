@@ -1,0 +1,100 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-queen-we-will-rock-you",
+        "name": "Queen - We Will Rock You",
+        "description": "A simplified one-bar practice approximation of the iconic stomp-stomp-clap pulse, using layered kick, low tom, snare, and clap voices.",
+        "category": "rock",
+        "difficulty": "beginner",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 8,
+        "bars": 1,
+        "defaultBpm": 81,
+        "recommendedBpmRange": { "min": 65, "max": 105 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "rockyou-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "rockyou-kick-1",
+            "instrument": "kick",
+            "step": 1,
+            "velocity": 0.9
+          },
+          {
+            "id": "rockyou-kick-4",
+            "instrument": "kick",
+            "step": 4,
+            "velocity": 1
+          },
+          {
+            "id": "rockyou-kick-5",
+            "instrument": "kick",
+            "step": 5,
+            "velocity": 0.9
+          },
+          {
+            "id": "rockyou-tom-0",
+            "instrument": "lowTom",
+            "step": 0,
+            "velocity": 0.72
+          },
+          {
+            "id": "rockyou-tom-1",
+            "instrument": "lowTom",
+            "step": 1,
+            "velocity": 0.66
+          },
+          {
+            "id": "rockyou-tom-4",
+            "instrument": "lowTom",
+            "step": 4,
+            "velocity": 0.72
+          },
+          {
+            "id": "rockyou-tom-5",
+            "instrument": "lowTom",
+            "step": 5,
+            "velocity": 0.66
+          },
+          {
+            "id": "rockyou-snare-2",
+            "instrument": "snare",
+            "step": 2,
+            "velocity": 0.9
+          },
+          {
+            "id": "rockyou-snare-6",
+            "instrument": "snare",
+            "step": 6,
+            "velocity": 0.94
+          },
+          {
+            "id": "rockyou-clap-2",
+            "instrument": "clap",
+            "step": 2,
+            "velocity": 1
+          },
+          {
+            "id": "rockyou-clap-6",
+            "instrument": "clap",
+            "step": 6,
+            "velocity": 1
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

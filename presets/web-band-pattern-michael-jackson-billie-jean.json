@@ -1,0 +1,112 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-michael-jackson-billie-jean",
+        "name": "Michael Jackson - Billie Jean",
+        "description": "A simplified one-bar practice approximation of the song's precise pop groove: steady eighth-note hats, four-beat pulse, and crisp backbeat.",
+        "category": "pop",
+        "difficulty": "beginner",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 1,
+        "defaultBpm": 117,
+        "recommendedBpmRange": { "min": 95, "max": 135 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "billie-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.82
+          },
+          {
+            "id": "billie-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.58
+          },
+          {
+            "id": "billie-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.76
+          },
+          {
+            "id": "billie-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.57
+          },
+          {
+            "id": "billie-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.8
+          },
+          {
+            "id": "billie-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.58
+          },
+          {
+            "id": "billie-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.76
+          },
+          {
+            "id": "billie-hat-14",
+            "instrument": "closedHat",
+            "step": 14,
+            "velocity": 0.6
+          },
+          {
+            "id": "billie-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "billie-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.96
+          },
+          {
+            "id": "billie-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 0.94
+          },
+          {
+            "id": "billie-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 1
+          },
+          {
+            "id": "billie-clap-4",
+            "instrument": "clap",
+            "step": 4,
+            "velocity": 0.48
+          },
+          {
+            "id": "billie-clap-12",
+            "instrument": "clap",
+            "step": 12,
+            "velocity": 0.52
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

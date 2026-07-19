@@ -213,6 +213,8 @@ data:
 
 Pattern files are capped at 10 MB and cannot contain built-in IDs, malformed hits, duplicate pattern IDs, or more than 100 grooves. The import preview lists every groove before saving. If an imported ID already exists locally, Web Band creates a new pattern and hit IDs so shared files never overwrite the recipient's work.
 
+The repository includes ten directly importable song-groove examples under `presets/`. See [`docs/PRESETS.md`](docs/PRESETS.md) for the catalog, complete schema, grid notation, manual authoring workflow, and guidance for creating additional files with AI.
+
 Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 1 envelope contains:
 
 ```text

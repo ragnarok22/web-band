@@ -1,0 +1,232 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-nirvana-smells-like-teen-spirit",
+        "name": "Nirvana - Smells Like Teen Spirit",
+        "description": "A simplified two-bar practice approximation of the explosive grunge groove, emphasizing syncopated kicks, open hats, and forceful backbeats.",
+        "category": "rock",
+        "difficulty": "intermediate",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 117,
+        "recommendedBpmRange": { "min": 95, "max": 140 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "nirvana-crash-0",
+            "instrument": "crash",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "nirvana-crash-16",
+            "instrument": "crash",
+            "step": 16,
+            "velocity": 0.92
+          },
+          {
+            "id": "nirvana-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.88
+          },
+          {
+            "id": "nirvana-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.68
+          },
+          {
+            "id": "nirvana-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.84
+          },
+          {
+            "id": "nirvana-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.7
+          },
+          {
+            "id": "nirvana-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.88
+          },
+          {
+            "id": "nirvana-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.69
+          },
+          {
+            "id": "nirvana-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.84
+          },
+          {
+            "id": "nirvana-open-14",
+            "instrument": "openHat",
+            "step": 14,
+            "velocity": 0.84
+          },
+          {
+            "id": "nirvana-hat-16",
+            "instrument": "closedHat",
+            "step": 16,
+            "velocity": 0.9
+          },
+          {
+            "id": "nirvana-hat-18",
+            "instrument": "closedHat",
+            "step": 18,
+            "velocity": 0.68
+          },
+          {
+            "id": "nirvana-hat-20",
+            "instrument": "closedHat",
+            "step": 20,
+            "velocity": 0.85
+          },
+          {
+            "id": "nirvana-hat-22",
+            "instrument": "closedHat",
+            "step": 22,
+            "velocity": 0.7
+          },
+          {
+            "id": "nirvana-hat-24",
+            "instrument": "closedHat",
+            "step": 24,
+            "velocity": 0.88
+          },
+          {
+            "id": "nirvana-hat-26",
+            "instrument": "closedHat",
+            "step": 26,
+            "velocity": 0.69
+          },
+          {
+            "id": "nirvana-hat-28",
+            "instrument": "closedHat",
+            "step": 28,
+            "velocity": 0.85
+          },
+          {
+            "id": "nirvana-open-30",
+            "instrument": "openHat",
+            "step": 30,
+            "velocity": 0.88
+          },
+          {
+            "id": "nirvana-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "nirvana-kick-2",
+            "instrument": "kick",
+            "step": 2,
+            "velocity": 0.84
+          },
+          {
+            "id": "nirvana-kick-7",
+            "instrument": "kick",
+            "step": 7,
+            "velocity": 0.78
+          },
+          {
+            "id": "nirvana-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.96
+          },
+          {
+            "id": "nirvana-kick-10",
+            "instrument": "kick",
+            "step": 10,
+            "velocity": 0.82
+          },
+          {
+            "id": "nirvana-kick-15",
+            "instrument": "kick",
+            "step": 15,
+            "velocity": 0.78
+          },
+          {
+            "id": "nirvana-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 1
+          },
+          {
+            "id": "nirvana-kick-18",
+            "instrument": "kick",
+            "step": 18,
+            "velocity": 0.84
+          },
+          {
+            "id": "nirvana-kick-23",
+            "instrument": "kick",
+            "step": 23,
+            "velocity": 0.78
+          },
+          {
+            "id": "nirvana-kick-24",
+            "instrument": "kick",
+            "step": 24,
+            "velocity": 0.96
+          },
+          {
+            "id": "nirvana-kick-26",
+            "instrument": "kick",
+            "step": 26,
+            "velocity": 0.82
+          },
+          {
+            "id": "nirvana-kick-31",
+            "instrument": "kick",
+            "step": 31,
+            "velocity": 0.82
+          },
+          {
+            "id": "nirvana-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 1
+          },
+          {
+            "id": "nirvana-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 1
+          },
+          {
+            "id": "nirvana-snare-20",
+            "instrument": "snare",
+            "step": 20,
+            "velocity": 1
+          },
+          {
+            "id": "nirvana-snare-28",
+            "instrument": "snare",
+            "step": 28,
+            "velocity": 1
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

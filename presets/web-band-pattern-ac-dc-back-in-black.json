@@ -1,0 +1,196 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-ac-dc-back-in-black",
+        "name": "AC/DC - Back in Black",
+        "description": "A simplified two-bar practice approximation of the song's spacious hard-rock backbeat, open-hat lift, and economical kick placement.",
+        "category": "rock",
+        "difficulty": "beginner",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 8,
+        "bars": 2,
+        "defaultBpm": 94,
+        "recommendedBpmRange": { "min": 75, "max": 115 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "acdc-crash-0",
+            "instrument": "crash",
+            "step": 0,
+            "velocity": 0.88
+          },
+          {
+            "id": "acdc-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.8
+          },
+          {
+            "id": "acdc-hat-1",
+            "instrument": "closedHat",
+            "step": 1,
+            "velocity": 0.58
+          },
+          {
+            "id": "acdc-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.74
+          },
+          {
+            "id": "acdc-hat-3",
+            "instrument": "closedHat",
+            "step": 3,
+            "velocity": 0.57
+          },
+          {
+            "id": "acdc-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.78
+          },
+          {
+            "id": "acdc-hat-5",
+            "instrument": "closedHat",
+            "step": 5,
+            "velocity": 0.58
+          },
+          {
+            "id": "acdc-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.75
+          },
+          {
+            "id": "acdc-open-7",
+            "instrument": "openHat",
+            "step": 7,
+            "velocity": 0.68
+          },
+          {
+            "id": "acdc-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.8
+          },
+          {
+            "id": "acdc-hat-9",
+            "instrument": "closedHat",
+            "step": 9,
+            "velocity": 0.57
+          },
+          {
+            "id": "acdc-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.74
+          },
+          {
+            "id": "acdc-hat-11",
+            "instrument": "closedHat",
+            "step": 11,
+            "velocity": 0.56
+          },
+          {
+            "id": "acdc-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.79
+          },
+          {
+            "id": "acdc-hat-13",
+            "instrument": "closedHat",
+            "step": 13,
+            "velocity": 0.58
+          },
+          {
+            "id": "acdc-hat-14",
+            "instrument": "closedHat",
+            "step": 14,
+            "velocity": 0.76
+          },
+          {
+            "id": "acdc-open-15",
+            "instrument": "openHat",
+            "step": 15,
+            "velocity": 0.72
+          },
+          {
+            "id": "acdc-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 1
+          },
+          {
+            "id": "acdc-kick-4",
+            "instrument": "kick",
+            "step": 4,
+            "velocity": 0.9
+          },
+          {
+            "id": "acdc-kick-5",
+            "instrument": "kick",
+            "step": 5,
+            "velocity": 0.68
+          },
+          {
+            "id": "acdc-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.96
+          },
+          {
+            "id": "acdc-kick-12",
+            "instrument": "kick",
+            "step": 12,
+            "velocity": 0.9
+          },
+          {
+            "id": "acdc-kick-13",
+            "instrument": "kick",
+            "step": 13,
+            "velocity": 0.65
+          },
+          {
+            "id": "acdc-kick-15",
+            "instrument": "kick",
+            "step": 15,
+            "velocity": 0.7
+          },
+          {
+            "id": "acdc-snare-2",
+            "instrument": "snare",
+            "step": 2,
+            "velocity": 0.92
+          },
+          {
+            "id": "acdc-snare-6",
+            "instrument": "snare",
+            "step": 6,
+            "velocity": 0.98
+          },
+          {
+            "id": "acdc-snare-10",
+            "instrument": "snare",
+            "step": 10,
+            "velocity": 0.92
+          },
+          {
+            "id": "acdc-snare-14",
+            "instrument": "snare",
+            "step": 14,
+            "velocity": 1
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

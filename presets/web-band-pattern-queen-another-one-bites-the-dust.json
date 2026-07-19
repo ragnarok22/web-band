@@ -1,0 +1,220 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-queen-another-one-bites-the-dust",
+        "name": "Queen - Another One Bites the Dust",
+        "description": "A simplified two-bar practice approximation of the song's dry, minimal dance-rock pocket with a restrained backbeat and syncopated kick.",
+        "category": "pop",
+        "difficulty": "beginner",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 110,
+        "recommendedBpmRange": { "min": 90, "max": 130 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "dust-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.76
+          },
+          {
+            "id": "dust-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.52
+          },
+          {
+            "id": "dust-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.7
+          },
+          {
+            "id": "dust-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.52
+          },
+          {
+            "id": "dust-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.74
+          },
+          {
+            "id": "dust-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.52
+          },
+          {
+            "id": "dust-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.7
+          },
+          {
+            "id": "dust-open-14",
+            "instrument": "openHat",
+            "step": 14,
+            "velocity": 0.6
+          },
+          {
+            "id": "dust-hat-16",
+            "instrument": "closedHat",
+            "step": 16,
+            "velocity": 0.76
+          },
+          {
+            "id": "dust-hat-18",
+            "instrument": "closedHat",
+            "step": 18,
+            "velocity": 0.52
+          },
+          {
+            "id": "dust-hat-20",
+            "instrument": "closedHat",
+            "step": 20,
+            "velocity": 0.7
+          },
+          {
+            "id": "dust-hat-22",
+            "instrument": "closedHat",
+            "step": 22,
+            "velocity": 0.52
+          },
+          {
+            "id": "dust-hat-24",
+            "instrument": "closedHat",
+            "step": 24,
+            "velocity": 0.74
+          },
+          {
+            "id": "dust-hat-26",
+            "instrument": "closedHat",
+            "step": 26,
+            "velocity": 0.52
+          },
+          {
+            "id": "dust-hat-28",
+            "instrument": "closedHat",
+            "step": 28,
+            "velocity": 0.7
+          },
+          {
+            "id": "dust-open-30",
+            "instrument": "openHat",
+            "step": 30,
+            "velocity": 0.62
+          },
+          {
+            "id": "dust-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 0.98
+          },
+          {
+            "id": "dust-kick-6",
+            "instrument": "kick",
+            "step": 6,
+            "velocity": 0.7
+          },
+          {
+            "id": "dust-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.9
+          },
+          {
+            "id": "dust-kick-11",
+            "instrument": "kick",
+            "step": 11,
+            "velocity": 0.64
+          },
+          {
+            "id": "dust-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 0.98
+          },
+          {
+            "id": "dust-kick-22",
+            "instrument": "kick",
+            "step": 22,
+            "velocity": 0.7
+          },
+          {
+            "id": "dust-kick-24",
+            "instrument": "kick",
+            "step": 24,
+            "velocity": 0.9
+          },
+          {
+            "id": "dust-kick-27",
+            "instrument": "kick",
+            "step": 27,
+            "velocity": 0.66
+          },
+          {
+            "id": "dust-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 0.86
+          },
+          {
+            "id": "dust-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 0.9
+          },
+          {
+            "id": "dust-snare-20",
+            "instrument": "snare",
+            "step": 20,
+            "velocity": 0.86
+          },
+          {
+            "id": "dust-snare-28",
+            "instrument": "snare",
+            "step": 28,
+            "velocity": 0.92
+          },
+          {
+            "id": "dust-clap-4",
+            "instrument": "clap",
+            "step": 4,
+            "velocity": 0.42
+          },
+          {
+            "id": "dust-clap-12",
+            "instrument": "clap",
+            "step": 12,
+            "velocity": 0.45
+          },
+          {
+            "id": "dust-clap-20",
+            "instrument": "clap",
+            "step": 20,
+            "velocity": 0.42
+          },
+          {
+            "id": "dust-clap-28",
+            "instrument": "clap",
+            "step": 28,
+            "velocity": 0.46
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,196 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-the-police-every-breath-you-take",
+        "name": "The Police - Every Breath You Take",
+        "description": "A simplified two-bar practice approximation of the song's controlled pop-rock groove, with restrained dynamics and subtle open-hat releases.",
+        "category": "pop",
+        "difficulty": "intermediate",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 117,
+        "recommendedBpmRange": { "min": 95, "max": 140 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "police-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.74
+          },
+          {
+            "id": "police-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.5
+          },
+          {
+            "id": "police-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.68
+          },
+          {
+            "id": "police-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.5
+          },
+          {
+            "id": "police-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.72
+          },
+          {
+            "id": "police-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.5
+          },
+          {
+            "id": "police-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.68
+          },
+          {
+            "id": "police-open-14",
+            "instrument": "openHat",
+            "step": 14,
+            "velocity": 0.58
+          },
+          {
+            "id": "police-hat-16",
+            "instrument": "closedHat",
+            "step": 16,
+            "velocity": 0.74
+          },
+          {
+            "id": "police-hat-18",
+            "instrument": "closedHat",
+            "step": 18,
+            "velocity": 0.5
+          },
+          {
+            "id": "police-hat-20",
+            "instrument": "closedHat",
+            "step": 20,
+            "velocity": 0.68
+          },
+          {
+            "id": "police-hat-22",
+            "instrument": "closedHat",
+            "step": 22,
+            "velocity": 0.5
+          },
+          {
+            "id": "police-hat-24",
+            "instrument": "closedHat",
+            "step": 24,
+            "velocity": 0.72
+          },
+          {
+            "id": "police-hat-26",
+            "instrument": "closedHat",
+            "step": 26,
+            "velocity": 0.5
+          },
+          {
+            "id": "police-hat-28",
+            "instrument": "closedHat",
+            "step": 28,
+            "velocity": 0.68
+          },
+          {
+            "id": "police-open-30",
+            "instrument": "openHat",
+            "step": 30,
+            "velocity": 0.6
+          },
+          {
+            "id": "police-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 0.94
+          },
+          {
+            "id": "police-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.86
+          },
+          {
+            "id": "police-kick-14",
+            "instrument": "kick",
+            "step": 14,
+            "velocity": 0.58
+          },
+          {
+            "id": "police-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 0.94
+          },
+          {
+            "id": "police-kick-24",
+            "instrument": "kick",
+            "step": 24,
+            "velocity": 0.86
+          },
+          {
+            "id": "police-kick-30",
+            "instrument": "kick",
+            "step": 30,
+            "velocity": 0.6
+          },
+          {
+            "id": "police-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 0.82
+          },
+          {
+            "id": "police-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 0.86
+          },
+          {
+            "id": "police-snare-20",
+            "instrument": "snare",
+            "step": 20,
+            "velocity": 0.82
+          },
+          {
+            "id": "police-snare-28",
+            "instrument": "snare",
+            "step": 28,
+            "velocity": 0.88
+          },
+          {
+            "id": "police-rim-3",
+            "instrument": "rim",
+            "step": 3,
+            "velocity": 0.28
+          },
+          {
+            "id": "police-rim-19",
+            "instrument": "rim",
+            "step": 19,
+            "velocity": 0.28
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}
