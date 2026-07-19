@@ -88,9 +88,9 @@ describe("strumming trainer panel", () => {
   it("creates and selects a custom strumming pattern", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    const create = vi.fn(
-      async (_input: StrummingPatternInput) => customPattern,
-    );
+    const create = vi
+      .fn<(input: StrummingPatternInput) => Promise<CustomStrummingPattern>>()
+      .mockResolvedValue(customPattern);
     useStrummingPatternStore.setState({ create });
     render(
       <StrummingTrainerPanel

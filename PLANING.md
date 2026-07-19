@@ -77,8 +77,8 @@ Last audited against the source on 2026-07-19.
 - [x] **Provide built-in chord progressions.** Include the requested pop progressions, I-IV-V progression, and 12-bar blues example.
 - [x] **Implement built-in strumming guidance.** Support down, up, mute, rest, hold, accents, meter matching, and audio-synchronized current/next actions.
 - [x] **Provide the beginner strumming catalog.** Include beat downstrokes, eighth-note downstrokes, common pop/ballad patterns, and 3/4 and 6/8 patterns.
-- [ ] **Render strumming subdivision labels.** Show musical positions such as `1 & 2 & 3 & 4 &` and highlight the active sequence step at audible time.
-- [ ] **Complete custom strumming workflows.** Hydrate persisted custom patterns, include them in selection and backup restore, and provide create/edit/delete management.
+- [x] **Render strumming subdivision labels.** Show musical positions such as `1 & 2 & 3 & 4 &` and highlight the active sequence step at audible time.
+- [x] **Complete custom strumming workflows.** Hydrate persisted custom patterns, include them in selection and backup restore, and provide create/edit/delete management.
 - [x] **Implement complete practice presets.** Save, load, rename, duplicate, delete, favorite, and reopen recent drum and guided-practice configurations.
 
 ## Phase 6: Pattern Editor
