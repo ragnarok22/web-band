@@ -10,7 +10,7 @@ interface FillValidationResult {
   success: boolean;
 }
 
-const instruments: DrumInstrument[] = [
+const instruments = new Set<DrumInstrument>([
   "kick",
   "snare",
   "closedHat",
@@ -22,7 +22,7 @@ const instruments: DrumInstrument[] = [
   "ride",
   "rim",
   "clap",
-];
+]);
 
 export const fillCategories: PatternCategory[] = [
   "rock",
@@ -48,15 +48,22 @@ export const fillMeters: SupportedFillMeter[] = [
   "12/8",
 ];
 
+const fillCategorySet = new Set(fillCategories);
+const fillMeterSet = new Set(fillMeters);
+const fillArrangementKeys = new Set(["compatibility", "id", "name", "tail"]);
+const fillCompatibilityKeys = new Set(["categories", "meters"]);
+const fillCellKeys = new Set(["instrument", "velocity"]);
+const fillTailKeys = new Set(["8", "16"]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function hasOnlyKeys(
   value: Record<string, unknown>,
-  keys: readonly string[],
+  keys: ReadonlySet<string>,
 ): boolean {
-  return Object.keys(value).every((key) => keys.includes(key));
+  return Object.keys(value).every((key) => keys.has(key));
 }
 
 function hasUniqueValues(values: readonly unknown[]): boolean {
@@ -77,8 +84,8 @@ function validateCell(value: unknown, label: string, errors: string[]): void {
   for (const hit of value) {
     if (
       !isRecord(hit) ||
-      !hasOnlyKeys(hit, ["instrument", "velocity"]) ||
-      !instruments.includes(hit.instrument as DrumInstrument)
+      !hasOnlyKeys(hit, fillCellKeys) ||
+      !instruments.has(hit.instrument as DrumInstrument)
     ) {
       errors.push(`${label} contains an invalid instrument.`);
       continue;
@@ -103,7 +110,7 @@ export function validateFillArrangement(value: unknown): FillValidationResult {
   if (!isRecord(value)) {
     return { errors: ["Fill arrangement must be an object."], success: false };
   }
-  if (!hasOnlyKeys(value, ["compatibility", "id", "name", "tail"])) {
+  if (!hasOnlyKeys(value, fillArrangementKeys)) {
     errors.push("Fill arrangement contains unsupported fields.");
   }
   if (
@@ -125,7 +132,7 @@ export function validateFillArrangement(value: unknown): FillValidationResult {
   let meters: SupportedFillMeter[] = [];
   if (
     !isRecord(compatibility) ||
-    !hasOnlyKeys(compatibility, ["categories", "meters"])
+    !hasOnlyKeys(compatibility, fillCompatibilityKeys)
   ) {
     errors.push("Fill compatibility is invalid.");
   } else {
@@ -137,21 +144,21 @@ export function validateFillArrangement(value: unknown): FillValidationResult {
       : [];
     if (
       categories.length === 0 ||
-      !categories.every((category) => fillCategories.includes(category)) ||
+      !categories.every((category) => fillCategorySet.has(category)) ||
       !hasUniqueValues(categories)
     ) {
       errors.push("Fill categories must be valid and unique.");
     }
     if (
       meters.length === 0 ||
-      !meters.every((meter) => fillMeters.includes(meter)) ||
+      !meters.every((meter) => fillMeterSet.has(meter)) ||
       !hasUniqueValues(meters)
     ) {
       errors.push("Fill meters must be valid and unique.");
     }
   }
 
-  if (!isRecord(value.tail) || !hasOnlyKeys(value.tail, ["8", "16"])) {
+  if (!isRecord(value.tail) || !hasOnlyKeys(value.tail, fillTailKeys)) {
     errors.push("Fill tail must define only eighth and sixteenth grids.");
   } else {
     for (const subdivision of [8, 16] as const) {
