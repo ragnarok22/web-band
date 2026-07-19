@@ -18,7 +18,7 @@ export class OpenHatVoice implements DrumVoice {
   }
 
   trigger(time: number, velocity = 1): void {
-    this.stop();
+    this.stop(time);
     const start = safeStartTime(this.context, time);
     const level = normalizeVelocity(velocity);
     const noise = this.context.createBufferSource();
@@ -50,8 +50,8 @@ export class OpenHatVoice implements DrumVoice {
     noise.stop(start + 0.46);
   }
 
-  stop(): void {
-    this.resources.stop();
+  stop(time?: number): void {
+    this.resources.stop(time);
   }
 
   dispose(): void {

@@ -27,7 +27,7 @@ export type MixerSettings = Record<MixerGroup, MixerChannelSettings>;
 
 export interface DrumVoice {
   trigger(time: number, velocity?: number): void;
-  stop?(): void;
+  stop?(time?: number): void;
   dispose(): void;
 }
 

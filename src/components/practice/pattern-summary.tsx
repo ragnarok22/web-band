@@ -4,6 +4,8 @@ import { formatPatternCategory } from "@/lib/pattern-filters";
 import type { DrumPattern } from "@/types/pattern";
 
 interface PatternSummaryProps {
+  immediatePatternSwitch: boolean;
+  onImmediatePatternSwitchChange: (enabled: boolean) => void;
   onPatternChange: (patternId: string) => void;
   pattern: DrumPattern;
   patterns: DrumPattern[];
@@ -12,6 +14,8 @@ interface PatternSummaryProps {
 }
 
 export function PatternSummary({
+  immediatePatternSwitch,
+  onImmediatePatternSwitchChange,
   onPatternChange,
   pattern,
   patterns,
@@ -60,6 +64,17 @@ export function PatternSummary({
             Queued for the next measure
           </p>
         ) : null}
+        <label className="text-muted-strong mt-3 flex cursor-pointer items-start gap-2 text-xs leading-5 font-bold">
+          <input
+            checked={immediatePatternSwitch}
+            className="accent-accent mt-1 size-4 shrink-0"
+            onChange={(event) =>
+              onImmediatePatternSwitchChange(event.target.checked)
+            }
+            type="checkbox"
+          />
+          <span>Switch same-meter patterns immediately</span>
+        </label>
         <p className="text-muted mt-3 text-sm leading-6">
           {pattern.description}
         </p>
@@ -78,8 +93,7 @@ export function PatternSummary({
               Feel
             </dt>
             <dd className="text-foreground mt-1 font-extrabold">
-              {pattern.swing || swing > 0 ? "Swing" : "Straight"}{" "}
-              {pattern.subdivision}ths
+              {swing > 0 ? "Swing" : "Straight"} {pattern.subdivision}ths
             </dd>
           </div>
         </dl>

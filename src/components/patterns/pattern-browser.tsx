@@ -55,6 +55,7 @@ export function PatternBrowser() {
   const setSelectedPatternId = usePracticeStore(
     (state) => state.setSelectedPatternId,
   );
+  const setSwing = usePracticeStore((state) => state.setSwing);
   const customPatterns = usePatternStore((state) => state.customPatterns);
   const isHydrated = usePatternStore((state) => state.isHydrated);
   const favoritePatternIds = usePatternStore(
@@ -102,9 +103,13 @@ export function PatternBrowser() {
     }
 
     if (
-      engine.changePattern(pattern, (changedPattern) => {
-        setPreviewPatternId(changedPattern.id);
-      })
+      engine.changePattern(
+        pattern,
+        (changedPattern) => {
+          setPreviewPatternId(changedPattern.id);
+        },
+        false,
+      )
     ) {
       return;
     }
@@ -121,7 +126,7 @@ export function PatternBrowser() {
         masterVolume,
         mixer: settings.mixer,
         pattern,
-        swing: settings.swing,
+        swing: pattern.swing ?? settings.swing,
       });
     } catch (error) {
       setPreviewPatternId(null);
@@ -141,6 +146,7 @@ export function PatternBrowser() {
     disposeAudioEngine();
     setSelectedPatternId(pattern.id);
     setBpm(pattern.defaultBpm);
+    setSwing(pattern.swing ?? 0);
     markRecent(pattern.id);
     router.push("/practice");
   }

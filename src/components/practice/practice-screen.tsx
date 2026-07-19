@@ -55,7 +55,9 @@ export function PracticeScreen() {
       <div className="grid flex-1 gap-4 pt-4 xl:grid-cols-[minmax(16rem,0.78fr)_minmax(25rem,1.5fr)_minmax(16rem,0.78fr)] xl:items-start xl:gap-5">
         <aside className="order-2 grid gap-4 sm:grid-cols-2 xl:order-1 xl:grid-cols-1">
           <PatternSummary
+            immediatePatternSwitch={practice.immediatePatternSwitch}
             onPatternChange={practice.changePattern}
+            onImmediatePatternSwitchChange={practice.setImmediatePatternSwitch}
             pattern={practice.pattern}
             patterns={practice.patterns}
             pendingPatternId={practice.pendingPatternId}

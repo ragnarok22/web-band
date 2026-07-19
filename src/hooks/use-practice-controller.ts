@@ -118,6 +118,7 @@ export function usePracticeController() {
   } | null>(null);
   const [masterMuted, setMasterMuted] = useState(false);
   const [historyNotice, setHistoryNotice] = useState<string | null>(null);
+  const [immediatePatternSwitch, setImmediatePatternSwitch] = useState(false);
   const [patternAnnouncement, setPatternAnnouncement] = useState("");
   const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -299,6 +300,7 @@ export function usePracticeController() {
 
     const commitPattern = () => {
       usePracticeStore.getState().setSelectedPatternId(nextPattern.id);
+      usePracticeStore.getState().setSwing(nextPattern.swing ?? 0);
       markRecent(nextPattern.id);
       setPendingPatternId(null);
       setPatternAnnouncement(`Pattern changed to ${nextPattern.name}.`);
@@ -309,7 +311,20 @@ export function usePracticeController() {
       return;
     }
 
-    if (getAudioEngine().changePattern(nextPattern, commitPattern)) {
+    const meterChanged =
+      nextPattern.timeSignature.numerator !== pattern.timeSignature.numerator ||
+      nextPattern.timeSignature.denominator !==
+        pattern.timeSignature.denominator;
+    const changeImmediately = immediatePatternSwitch && !meterChanged;
+
+    if (
+      getAudioEngine().changePattern(
+        nextPattern,
+        commitPattern,
+        changeImmediately,
+      )
+    ) {
+      if (changeImmediately) return;
       setPendingPatternId(nextPattern.id);
       setPatternAnnouncement(
         `${nextPattern.name} queued for the next measure.`,
@@ -317,10 +332,6 @@ export function usePracticeController() {
       return;
     }
 
-    const meterChanged =
-      nextPattern.timeSignature.numerator !== pattern.timeSignature.numerator ||
-      nextPattern.timeSignature.denominator !==
-        pattern.timeSignature.denominator;
     setPatternAnnouncement(
       meterChanged && (mode === "chords" || mode === "strumming")
         ? `Pattern change rejected. Stop the active guided session before changing meter to ${nextPattern.timeSignature.numerator}/${nextPattern.timeSignature.denominator}. ${pattern.name} remains selected.`
@@ -436,6 +447,7 @@ export function usePracticeController() {
     guidedPractice,
     humanization,
     historyNotice,
+    immediatePatternSwitch,
     isFocusMode,
     isReady,
     loadPreset,
@@ -453,6 +465,7 @@ export function usePracticeController() {
     resetMixer: restoreMixer,
     setCountInMeasures: usePracticeStore.getState().setCountInMeasures,
     setFocusMode,
+    setImmediatePatternSwitch,
     setShortcutsOpen,
     setWakeLockEnabled: usePracticeStore.getState().setWakeLockEnabled,
     shortcutsOpen,

@@ -114,6 +114,19 @@ describe("pattern browser", () => {
     );
   });
 
+  it("previews a pattern with its declared swing", async () => {
+    const user = userEvent.setup();
+    render(<PatternBrowser />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Preview Shuffle Blues" }),
+    );
+
+    expect(engine.play).toHaveBeenCalledWith(
+      expect.objectContaining({ swing: 0.34 }),
+    );
+  });
+
   it("gates library actions until custom patterns hydrate", () => {
     usePatternStore.setState({ isHydrated: false });
     render(<PatternBrowser />);

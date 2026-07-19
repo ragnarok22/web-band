@@ -25,6 +25,9 @@ import type {
 import type { DrumPattern } from "@/types/pattern";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
 
+const FLAM_DELAY_SECONDS = 0.03;
+const FLAM_VELOCITY_SCALE = 0.7;
+
 export interface PatternSchedulerOptions {
   bpm: number;
   countInMeasures: CountInMeasures;
@@ -320,7 +323,7 @@ export class PatternScheduler {
       if (playableStep) {
         for (const hit of playableStep.hits) {
           const shouldPlay =
-            hit.probability === undefined || this.random() <= hit.probability;
+            hit.probability === undefined || this.random() < hit.probability;
           if (!shouldPlay) continue;
 
           const humanized = humanizeHit(
@@ -329,11 +332,22 @@ export class PatternScheduler {
             this.humanization,
             this.random,
           );
+          const timeOffset = (hit.timingOffset ?? 0) + humanized.timeOffset;
+          const velocity = hit.flam
+            ? Math.max(Number.EPSILON, humanized.velocity)
+            : humanized.velocity;
           hits.push({
             instrument: hit.instrument,
-            timeOffset: (hit.timingOffset ?? 0) + humanized.timeOffset,
-            velocity: humanized.velocity,
+            timeOffset,
+            velocity,
           });
+          if (hit.flam) {
+            hits.push({
+              instrument: hit.instrument,
+              timeOffset: timeOffset + FLAM_DELAY_SECONDS,
+              velocity: velocity * FLAM_VELOCITY_SCALE,
+            });
+          }
         }
         visual = {
           isAccent: playableStep.hits.some((hit) => hit.velocity >= 0.8),
@@ -427,10 +441,7 @@ export class PatternScheduler {
       pattern.timeSignature.numerator,
       pattern.timeSignature.denominator,
     );
-    this.runtime.setSwing(
-      this.swing,
-      getSubdivisionNotation(pattern.subdivision),
-    );
+    this.setSwing(pattern.swing ?? 0);
     this.isCurrentMeasureFill = false;
     this.previousMeasureWasFill = false;
   }

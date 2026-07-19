@@ -38,11 +38,11 @@ Last audited against the source on 2026-07-19.
 - [x] **Preserve musical lifecycle behavior.** Pause keeps transport position; stop and disposal clear owned schedules, semantic callbacks, visual work, voices, and nodes.
 - [x] **Quantize normal pattern changes.** Queue active pattern changes for the next measure and publish the selection at audible time.
 - [x] **Synchronize visuals from audio time.** Drive beat and guidance timelines from scheduled Tone callbacks rather than React render timing.
-- [ ] **Schedule hi-hat choking at audio time.** Pass the closed-hat hit time into open-hat stopping so Tone lookahead cannot choke the sound early; add a regression test.
-- [ ] **Implement audible flam behavior.** Convert `flam` metadata into a bounded second hit while preserving velocity, timing, pause replay, and disposal behavior.
-- [ ] **Fix zero-probability semantics.** Guarantee a hit with probability `0` never triggers, including when the random source returns exactly zero.
-- [ ] **Apply pattern swing consistently.** Decide whether selecting a pattern adopts its `swing` metadata or remove the misleading metadata-driven Swing label; test selection and preview behavior.
-- [ ] **Expose immediate pattern switching.** Add an explicit same-meter immediate-switch option while retaining next-measure switching as the safe default.
+- [x] **Schedule hi-hat choking at audio time.** Pass the closed-hat hit time into open-hat stopping so Tone lookahead cannot choke the sound early; add a regression test.
+- [x] **Implement audible flam behavior.** Convert `flam` metadata into a bounded second hit while preserving velocity, timing, pause replay, and disposal behavior.
+- [x] **Fix zero-probability semantics.** Guarantee a hit with probability `0` never triggers, including when the random source returns exactly zero.
+- [x] **Apply pattern swing consistently.** Decide whether selecting a pattern adopts its `swing` metadata or remove the misleading metadata-driven Swing label; test selection and preview behavior.
+- [x] **Expose immediate pattern switching.** Add an explicit same-meter immediate-switch option while retaining next-measure switching as the safe default.
 
 ## Phase 3: Pattern Data And Library
 

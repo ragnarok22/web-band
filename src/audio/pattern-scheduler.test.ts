@@ -319,6 +319,104 @@ describe("pattern scheduler", () => {
     expect(nonDownbeatCall?.[2]).toBeLessThanOrEqual(1);
   });
 
+  it("schedules a bounded second hit for flam metadata", () => {
+    const runtime = new FakeAudioRuntime();
+    const trigger = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    const flamPattern = {
+      ...basicRockPattern,
+      hits: [
+        {
+          ...basicRockPattern.hits[0]!,
+          flam: true,
+          id: "flam-hit",
+          step: 0,
+        },
+      ],
+      id: "flam-pattern",
+      name: "Flam pattern",
+    };
+    scheduler.schedule(flamPattern, schedulerOptions(vi.fn(), 0));
+
+    runtime.repeats[0]?.callback(5, 0);
+
+    expect(trigger).toHaveBeenCalledTimes(2);
+    expect(trigger.mock.calls[0]).toEqual([
+      flamPattern.hits[0].instrument,
+      5,
+      flamPattern.hits[0].velocity,
+    ]);
+    expect(trigger.mock.calls[1]?.[0]).toBe(flamPattern.hits[0].instrument);
+    expect(trigger.mock.calls[1]?.[1]).toBeGreaterThan(5);
+    expect(trigger.mock.calls[1]?.[1]).toBeLessThanOrEqual(5.04);
+    expect(trigger.mock.calls[1]?.[2]).toBeGreaterThan(0);
+    expect(trigger.mock.calls[1]?.[2]).toBeLessThanOrEqual(
+      flamPattern.hits[0].velocity,
+    );
+  });
+
+  it("never schedules a zero-probability hit when random returns zero", () => {
+    const runtime = new FakeAudioRuntime();
+    const trigger = vi.fn();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger, triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+      () => 0,
+    );
+    const silentPattern = {
+      ...basicRockPattern,
+      hits: [
+        {
+          ...basicRockPattern.hits[0]!,
+          id: "zero-probability-hit",
+          probability: 0,
+          step: 0,
+        },
+      ],
+      id: "zero-probability-pattern",
+      name: "Zero probability pattern",
+    };
+    scheduler.schedule(silentPattern, schedulerOptions(vi.fn(), 0));
+
+    runtime.repeats[0]?.callback(5, 0);
+
+    expect(trigger).not.toHaveBeenCalled();
+  });
+
+  it("adopts a queued pattern's swing at the measure boundary", () => {
+    const runtime = new FakeAudioRuntime();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      new VisualTimeline(),
+    );
+    const swingPattern = {
+      ...basicRockPattern,
+      id: "swing-pattern",
+      name: "Swing pattern",
+      swing: 0.34,
+    };
+    scheduler.schedule(basicRockPattern, {
+      ...schedulerOptions(vi.fn(), 0),
+      swing: 0.1,
+    });
+    const callback = runtime.repeats[0]?.callback;
+    callback?.(0, 0);
+    scheduler.changePattern(swingPattern, vi.fn());
+
+    for (let step = 1; step <= 16; step += 1) callback?.(step, step);
+
+    expect(runtime.swingCalls.at(-1)).toEqual({
+      amount: 0.34,
+      subdivision: "8n",
+    });
+  });
+
   it("keeps the post-fill crash when a pattern change is queued", () => {
     const runtime = new FakeAudioRuntime();
     const trigger = vi.fn();

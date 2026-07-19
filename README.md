@@ -11,7 +11,7 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Searchable pattern browser with genre, difficulty, meter, and subdivision filters.
 - Pattern sorting by name, default BPM, recently used, and favorites.
 - Persistent IndexedDB favorites and lightweight rhythm previews.
-- Pattern changes quantized to the next measure during playback.
+- Pattern changes quantized to the next measure during playback, with an explicit same-meter immediate-switch option.
 - Support for 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, and 12/8 patterns on eighth- and sixteenth-note grids.
 - Smooth BPM changes from 40 to 220 without restarting playback.
 - Play, Pause, Resume, and Stop behavior.
@@ -28,7 +28,7 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Strumming guidance with down, up, mute, rest, hold, and accent cues across seven built-in 4/4, 3/4, and 6/8 patterns.
 - Practice presets that save and atomically restore the groove and guided setup, with rename, duplicate, favorite, recent, and delete controls.
 - A responsive step-sequencer editor for creating, duplicating, previewing, saving, and deleting custom one-, two-, or four-bar drum patterns.
-- Per-hit velocity cycling plus advanced probability, flam, and timing controls, measure copy/paste, row clearing, and audio-synchronized editor playhead guidance.
+- Per-hit velocity cycling plus advanced probability, audible flam, and timing controls, measure copy/paste, row clearing, and audio-synchronized editor playhead guidance.
 - Pattern-only JSON sharing for one groove or the full custom library, with previewed imports that create copies instead of overwriting ID collisions.
 - A local practice journal with configurable session thresholds, weekly and lifetime totals, most-used groove and BPM range, grouped recent sessions, and deletion controls.
 - Versioned JSON export and validated merge or replace import for custom content, favorites, presets, history, and practice settings.
@@ -115,7 +115,7 @@ Components do not access IndexedDB directly. They initialize and consume storage
 3. The scheduler registers an optional meter-aware count-in and one continuous sixteenth-note pattern and guidance pulse on `Tone.getTransport()`.
 4. Tone's callback time is passed directly to Web Audio nodes for sample-accurate scheduling.
 5. `Tone.getDraw().schedule()` publishes visual steps at the audible time and never owns semantic transport state.
-6. Queued pattern changes replace the active pattern at the next measure and may change meter or subdivision without rebuilding the transport loop.
+6. Queued pattern changes replace the active pattern at the next measure and may change meter or subdivision without rebuilding the transport loop; same-meter changes can switch immediately when explicitly enabled, and pattern swing defaults are adopted with the new groove.
 7. Swing updates Tone Transport directly; humanization and fills alter individual scheduled hits without changing the transport grid.
 8. The guided-practice controller derives tempo, chord, and strumming positions from that same pulse; cancellable Tone context-clock callbacks publish semantic state and target stops without depending on animation frames.
 9. Six retained kit buses apply channel volume, mute, and solo automation without rebuilding voices or schedules.
@@ -251,7 +251,7 @@ Graceful degradation:
 
 ## Testing
 
-Vitest covers musical calculations, BPM clamping, built-in and custom content validation, editor transformations and grid interaction, pattern-share parsing and collision-safe imports, tempo, chord, and strumming positions, practice-history lifecycle and aggregation, Dexie repositories and migrations, backup validation and orchestration, runtime storage recovery, measure-aligned Tone scheduling, and core UI controls.
+Vitest covers musical calculations, BPM clamping, built-in and custom content validation, editor transformations and grid interaction, pattern-share parsing and collision-safe imports, tempo, chord, and strumming positions, practice-history lifecycle and aggregation, Dexie repositories and migrations, backup validation and orchestration, runtime storage recovery, measure-aligned Tone scheduling, timed hi-hat choking, audible flams, and core UI controls.
 
 Playwright runs the real browser audio engine and verifies:
 

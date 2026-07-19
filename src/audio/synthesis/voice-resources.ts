@@ -1,33 +1,50 @@
+interface TrackedSource {
+  cleanup: () => void;
+  stopTime: number | null;
+}
+
 export class VoiceResources {
-  private readonly sources = new Map<AudioScheduledSourceNode, () => void>();
+  private readonly sources = new Map<AudioScheduledSourceNode, TrackedSource>();
 
   track(
     source: AudioScheduledSourceNode,
     cleanup = () => source.disconnect(),
   ): void {
-    this.sources.set(source, cleanup);
+    this.sources.set(source, { cleanup, stopTime: null });
     source.addEventListener(
       "ended",
       () => {
-        const trackedCleanup = this.sources.get(source);
-        if (!trackedCleanup) return;
+        const tracked = this.sources.get(source);
+        if (!tracked) return;
 
         this.sources.delete(source);
-        trackedCleanup();
+        tracked.cleanup();
       },
       { once: true },
     );
   }
 
-  stop(): void {
-    for (const [source, cleanup] of this.sources) {
+  stop(time?: number): void {
+    for (const [source, tracked] of this.sources) {
+      if (time !== undefined) {
+        if (tracked.stopTime !== null && tracked.stopTime <= time) continue;
+
+        try {
+          source.stop(time);
+          tracked.stopTime = time;
+        } catch {
+          // A one-shot source may already have ended between iteration and stop.
+        }
+        continue;
+      }
+
       this.sources.delete(source);
       try {
         source.stop();
       } catch {
         // A one-shot source may already have ended between iteration and stop.
       } finally {
-        cleanup();
+        tracked.cleanup();
       }
     }
   }

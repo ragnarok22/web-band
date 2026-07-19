@@ -86,7 +86,7 @@ export class InstrumentManager {
 
   trigger(instrument: DrumInstrument, time: number, velocity: number): void {
     if (instrument === "closedHat") {
-      this.voices.openHat?.stop?.();
+      this.voices.openHat?.stop?.(time);
     }
     this.voices[instrument]?.trigger(time, velocity);
   }

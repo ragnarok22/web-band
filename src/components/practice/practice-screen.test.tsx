@@ -31,7 +31,10 @@ import type {
 } from "@/types/persistence";
 
 const engine = vi.hoisted(() => ({
-  changePattern: vi.fn(() => false),
+  changePattern: vi.fn((...arguments_: [unknown?, (() => void)?, boolean?]) => {
+    void arguments_;
+    return false;
+  }),
   pause: vi.fn(),
   play: vi.fn(() => Promise.resolve()),
   setBpm: vi.fn(),
@@ -125,6 +128,97 @@ describe("practice screen", () => {
       screen.getByRole("heading", { name: "One Drop" }),
     ).toBeInTheDocument();
     expect(usePracticeStore.getState().selectedPatternId).toBe("one-drop");
+  });
+
+  it("adopts a selected pattern's default swing", async () => {
+    const user = userEvent.setup();
+    render(<PracticeScreen />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+      "shuffle-blues",
+    );
+
+    expect(usePracticeStore.getState().swing).toBe(0.34);
+    expect(screen.getByText("Swing 8ths")).toBeInTheDocument();
+  });
+
+  it("queues active pattern changes by default", async () => {
+    const user = userEvent.setup();
+    useAudioStore.setState({ status: "playing" });
+    engine.changePattern.mockReturnValueOnce(true);
+    render(<PracticeScreen />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+      "driving-eighths",
+    );
+
+    expect(engine.changePattern).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "driving-eighths" }),
+      expect.any(Function),
+      false,
+    );
+    expect(screen.getByText("Queued for the next measure")).toBeInTheDocument();
+  });
+
+  it("switches an active same-meter pattern immediately when requested", async () => {
+    const user = userEvent.setup();
+    useAudioStore.setState({ status: "playing" });
+    usePracticeStore.setState({ swing: 0.34 });
+    render(<PracticeScreen />);
+    const immediateSwitch = screen.getByRole("checkbox", {
+      name: "Switch same-meter patterns immediately",
+    });
+    engine.changePattern.mockImplementationOnce(
+      (
+        _pattern: unknown,
+        onPatternChanged?: () => void,
+        immediate?: boolean,
+      ) => {
+        expect(immediate).toBe(true);
+        onPatternChanged?.();
+        return true;
+      },
+    );
+
+    await user.click(immediateSwitch);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+      "driving-eighths",
+    );
+
+    expect(usePracticeStore.getState()).toMatchObject({
+      selectedPatternId: "driving-eighths",
+      swing: 0,
+    });
+    expect(
+      screen.queryByText("Queued for the next measure"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps cross-meter changes queued when immediate switching is enabled", async () => {
+    const user = userEvent.setup();
+    useAudioStore.setState({ status: "playing" });
+    engine.changePattern.mockReturnValueOnce(true);
+    render(<PracticeScreen />);
+
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "Switch same-meter patterns immediately",
+      }),
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+      "simple-six-eight",
+    );
+
+    expect(engine.changePattern).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "simple-six-eight" }),
+      expect.any(Function),
+      false,
+    );
+    expect(screen.getByText("Queued for the next measure")).toBeInTheDocument();
   });
 
   it("shows Basic Rock and starts only after Play is pressed", async () => {

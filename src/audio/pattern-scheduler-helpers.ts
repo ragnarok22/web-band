@@ -4,6 +4,7 @@ import { clampUnit } from "@/lib/mixer";
 import type { DrumInstrument, DrumPattern } from "@/types/pattern";
 
 export interface PlayableHit {
+  flam?: boolean;
   instrument: DrumInstrument;
   probability?: number;
   timingOffset?: number;
