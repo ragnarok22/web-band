@@ -9,13 +9,68 @@ function trackBrowserErrors(page: Page): string[] {
   return errors;
 }
 
-test("keeps the practice document within a 1024px viewport", async ({
+async function expandMobileSettings(page: Page, name: string): Promise<void> {
+  if ((page.viewportSize()?.width ?? 1_280) < 640) {
+    await page.getByRole("button", { name }).click();
+  }
+}
+
+test("uses a two-column control layout within a 1024px viewport", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1024 });
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+
+  const patternTools = await page
+    .getByRole("complementary", { name: "Pattern and mixer" })
+    .boundingBox();
+  const practiceSettings = await page
+    .getByRole("complementary", { name: "Practice settings" })
+    .boundingBox();
+  expect(patternTools).not.toBeNull();
+  expect(practiceSettings).not.toBeNull();
+  expect(Math.abs(patternTools!.y - practiceSettings!.y)).toBeLessThan(2);
+  expect(patternTools!.x).toBeLessThan(practiceSettings!.x);
+});
+
+test("keeps advanced controls reachable without overflow at 320px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 720, width: 320 });
+  await page.goto("/practice");
+  await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
+
+  const guidedPractice = page.getByRole("button", {
+    name: "Show guided practice settings",
+  });
+  await expect(guidedPractice).toHaveAttribute("aria-expanded", "false");
+  await expect(
+    page.getByRole("radiogroup", { name: "Practice mode" }),
+  ).toBeHidden();
+  await guidedPractice.click();
+  await expect(
+    page.getByRole("radiogroup", { name: "Practice mode" }),
+  ).toBeVisible();
+
+  const groove = page.getByRole("button", { name: "Show groove settings" });
+  await expect(groove).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("slider", { name: "Swing" })).toBeHidden();
+  await groove.click();
+  await expect(page.getByRole("slider", { name: "Swing" })).toBeVisible();
+
+  await page
+    .getByRole("link", { name: "Browse all patterns" })
+    .scrollIntoViewIfNeeded();
+  await expect(
+    page.getByRole("link", { name: "Browse all patterns" }),
+  ).toBeVisible();
   const dimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
     scrollWidth: document.documentElement.scrollWidth,
@@ -84,6 +139,8 @@ test("persists groove controls and supports focus keyboard practice", async ({
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
 
+  await expandMobileSettings(page, "Show groove settings");
+
   await page.getByText("Off", { exact: true }).click();
   await page.getByRole("combobox", { name: "Phrase fills" }).selectOption("8");
   await page.getByRole("slider", { name: "Swing" }).fill("0.25");
@@ -118,6 +175,7 @@ test("persists groove controls and supports focus keyboard practice", async ({
   ).toBeVisible();
 
   await page.reload();
+  await expandMobileSettings(page, "Show groove settings");
   await expect(page.getByRole("radio", { name: "Off" })).toBeChecked();
   await expect(
     page.getByRole("combobox", { name: "Phrase fills" }),
@@ -135,6 +193,7 @@ test("persists and restores a guided tempo practice preset", async ({
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
+  await expandMobileSettings(page, "Show guided practice settings");
   const practiceMode = page.getByRole("radiogroup", {
     name: "Practice mode",
   });
@@ -182,6 +241,7 @@ test("persists and restores a guided tempo practice preset", async ({
 test("advances the tempo trainer on a musical boundary", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
+  await expandMobileSettings(page, "Show guided practice settings");
   const practiceMode = page.getByRole("radiogroup", {
     name: "Practice mode",
   });

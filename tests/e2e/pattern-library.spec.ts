@@ -34,6 +34,36 @@ test("filters patterns and persists a favorite", async ({ page }) => {
   expect(browserErrors).toEqual([]);
 });
 
+test("swipes through patterns without document overflow at 320px", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.setViewportSize({ height: 720, width: 320 });
+  await page.goto("/patterns");
+  await expect(
+    page.getByRole("heading", { name: "Find your pocket" }),
+  ).toBeVisible();
+
+  const patterns = page.getByRole("region", { name: "Patterns" });
+  await expect(patterns.getByRole("article")).toHaveCount(44);
+  const rail = await patterns.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(rail.scrollWidth).toBeGreaterThan(rail.clientWidth);
+  await patterns.evaluate((element) => element.scrollTo({ left: 300 }));
+  await expect
+    .poll(() => patterns.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(0);
+
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
+  expect(browserErrors).toEqual([]);
+});
+
 test("opens a library pattern in practice and restores it after reload", async ({
   page,
 }) => {

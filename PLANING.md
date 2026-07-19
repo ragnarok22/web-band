@@ -65,10 +65,10 @@ Last audited against the source on 2026-07-19.
 - [x] **Implement session tools.** Provide the practice timer, Wake Lock toggle/status, shortcuts dialog, and master mute.
 - [x] **Implement keyboard shortcuts.** Support transport, BPM, tap, focus, mute, and pattern navigation without firing inside editable controls.
 - [x] **Provide usable mobile and desktop layouts.** Keep primary transport controls large and provide horizontal editor scrolling with sticky labels.
-- [ ] **Collapse advanced mobile controls.** Add accessible disclosure controls for guided practice and groove settings so the mobile screen stays focused.
-- [ ] **Improve tablet composition.** Introduce the intended two-column pattern/control layout before the current extra-large breakpoint.
-- [ ] **Make mobile pattern browsing swipe-friendly.** Provide a deliberate touch browsing interaction rather than relying only on a vertical card list.
-- [ ] **Verify the 320px layout.** Add an E2E viewport assertion and fix any overflow or unreachable controls at approximately 320 CSS pixels.
+- [x] **Collapse advanced mobile controls.** Add accessible disclosure controls for guided practice and groove settings so the mobile screen stays focused.
+- [x] **Improve tablet composition.** Introduce the intended two-column pattern/control layout before the current extra-large breakpoint.
+- [x] **Make mobile pattern browsing swipe-friendly.** Provide a deliberate touch browsing interaction rather than relying only on a vertical card list.
+- [x] **Verify the 320px layout.** Add an E2E viewport assertion and fix any overflow or unreachable controls at approximately 320 CSS pixels.
 
 ## Phase 5: Guided Practice And Presets
 

@@ -1,5 +1,8 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
+
 import { PracticeModeSelector } from "@/components/practice/practice-mode-selector";
 import { ChordTrainerPanel } from "@/components/practice/chord-trainer-panel";
 import { StrummingTrainerPanel } from "@/components/practice/strumming-trainer-panel";
@@ -16,6 +19,7 @@ export function GuidedPracticePanel({
   activeTimeSignature,
   sessionDisabled,
 }: GuidedPracticePanelProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const mode = useGuidedPracticeStore((state) => state.mode);
   const tempoTrainer = useGuidedPracticeStore((state) => state.tempoTrainer);
   const chordTrainer = useGuidedPracticeStore((state) => state.chordTrainer);
@@ -52,43 +56,64 @@ export function GuidedPracticePanel({
         </p>
       </div>
 
-      <PracticeModeSelector
-        disabled={sessionDisabled}
-        mode={mode}
-        onChange={setMode}
-      />
+      <button
+        aria-controls="guided-practice-settings"
+        aria-expanded={settingsOpen}
+        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
+        onClick={() => setSettingsOpen((open) => !open)}
+        type="button"
+      >
+        {settingsOpen
+          ? "Hide guided practice settings"
+          : "Show guided practice settings"}
+        <ChevronDown
+          aria-hidden="true"
+          className={`size-5 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-      {mode === "drums" ? (
-        <div className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
-          <p className="text-foreground font-extrabold">Groove only</p>
-          <p className="text-muted mt-1 text-sm leading-6">
-            Practice the selected drum pattern without tempo, chord, or strum
-            cues.
-          </p>
-        </div>
-      ) : null}
-      {mode === "tempoTrainer" ? (
-        <TempoTrainerPanel
-          configuration={tempoTrainer}
+      <div
+        className={`${settingsOpen ? "grid" : "hidden"} gap-3 sm:grid`}
+        id="guided-practice-settings"
+      >
+        <PracticeModeSelector
           disabled={sessionDisabled}
-          onChange={setTempoTrainerConfiguration}
+          mode={mode}
+          onChange={setMode}
         />
-      ) : null}
-      {mode === "chords" ? (
-        <ChordTrainerPanel
-          configuration={chordTrainer}
-          disabled={sessionDisabled}
-          onChange={setChordTrainerConfiguration}
-        />
-      ) : null}
-      {mode === "strumming" ? (
-        <StrummingTrainerPanel
-          disabled={sessionDisabled}
-          onChange={setStrummingPattern}
-          pattern={strummingPattern}
-          timeSignature={activeTimeSignature}
-        />
-      ) : null}
+
+        {mode === "drums" ? (
+          <div className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
+            <p className="text-foreground font-extrabold">Groove only</p>
+            <p className="text-muted mt-1 text-sm leading-6">
+              Practice the selected drum pattern without tempo, chord, or strum
+              cues.
+            </p>
+          </div>
+        ) : null}
+        {mode === "tempoTrainer" ? (
+          <TempoTrainerPanel
+            configuration={tempoTrainer}
+            disabled={sessionDisabled}
+            onChange={setTempoTrainerConfiguration}
+          />
+        ) : null}
+        {mode === "chords" ? (
+          <ChordTrainerPanel
+            configuration={chordTrainer}
+            disabled={sessionDisabled}
+            onChange={setChordTrainerConfiguration}
+          />
+        ) : null}
+        {mode === "strumming" ? (
+          <StrummingTrainerPanel
+            disabled={sessionDisabled}
+            onChange={setStrummingPattern}
+            pattern={strummingPattern}
+            timeSignature={activeTimeSignature}
+          />
+        ) : null}
+      </div>
     </section>
   );
 }

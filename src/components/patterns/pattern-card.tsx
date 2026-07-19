@@ -111,7 +111,7 @@ export function PatternCard({
         <RhythmPreview pattern={pattern} />
       </div>
 
-      <div className="mt-auto grid grid-cols-3 gap-2">
+      <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Link
           aria-label={`${pattern.isBuiltIn ? "Duplicate" : "Edit"} ${pattern.name}`}
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-extrabold transition-colors"
@@ -138,7 +138,7 @@ export function PatternCard({
           {isPreviewing ? "Stop" : "Preview"}
         </button>
         <button
-          className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-extrabold transition-colors"
+          className="bg-accent text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-extrabold transition-colors sm:col-span-1"
           onClick={onOpen}
           type="button"
         >

@@ -52,8 +52,11 @@ export function PracticeScreen() {
         />
       </div>
 
-      <div className="grid flex-1 gap-4 pt-4 xl:grid-cols-[minmax(16rem,0.78fr)_minmax(25rem,1.5fr)_minmax(16rem,0.78fr)] xl:items-start xl:gap-5">
-        <aside className="order-2 grid gap-4 sm:grid-cols-2 xl:order-1 xl:grid-cols-1">
+      <div className="grid flex-1 gap-4 pt-4 md:grid-cols-2 md:items-start md:gap-5 xl:grid-cols-[minmax(16rem,0.78fr)_minmax(25rem,1.5fr)_minmax(16rem,0.78fr)]">
+        <aside
+          aria-label="Pattern and mixer"
+          className="order-2 grid gap-4 sm:grid-cols-2 md:grid-cols-1 xl:order-1"
+        >
           <PatternSummary
             immediatePatternSwitch={practice.immediatePatternSwitch}
             onPatternChange={practice.changePattern}
@@ -77,7 +80,10 @@ export function PracticeScreen() {
           />
         </aside>
 
-        <section className="order-1 flex flex-col gap-5 xl:order-2">
+        <section
+          aria-label="Practice session"
+          className="order-1 col-span-full flex flex-col gap-5 xl:order-2 xl:col-span-1"
+        >
           <SessionToolbar
             elapsedSeconds={practice.elapsedSeconds}
             focusButtonRef={practice.focusButtonRef}

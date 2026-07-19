@@ -116,6 +116,30 @@ describe("practice screen", () => {
     });
   });
 
+  it("provides disclosure controls for advanced mobile settings", async () => {
+    const user = userEvent.setup();
+    render(<PracticeScreen />);
+
+    const guidedPractice = screen.getByRole("button", {
+      name: "Show guided practice settings",
+    });
+    const groove = screen.getByRole("button", {
+      name: "Show groove settings",
+    });
+    expect(guidedPractice).toHaveAttribute("aria-expanded", "false");
+    expect(groove).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(guidedPractice);
+    await user.click(groove);
+
+    expect(
+      screen.getByRole("button", { name: "Hide guided practice settings" }),
+    ).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getByRole("button", { name: "Hide groove settings" }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("changes a stopped pattern immediately", async () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);

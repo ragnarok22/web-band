@@ -50,7 +50,10 @@ export function PracticeSettings({
   timeSignature,
 }: PracticeSettingsProps) {
   return (
-    <aside className="order-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+    <aside
+      aria-label="Practice settings"
+      className="order-3 grid gap-4 sm:grid-cols-2 md:grid-cols-1"
+    >
       <GuidedPracticePanel
         activeTimeSignature={timeSignature}
         sessionDisabled={isSessionActive(status)}
@@ -82,7 +85,7 @@ export function PracticeSettings({
       />
 
       <Link
-        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 xl:col-span-1"
+        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:col-span-2 md:col-span-1"
         href="/patterns"
       >
         <LibraryBig aria-hidden="true" className="size-4" />

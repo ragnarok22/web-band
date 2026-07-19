@@ -24,7 +24,11 @@ import {
 import { useAudioStore } from "@/stores/audio-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
-import type { PatternCategory, PatternDifficulty } from "@/types/pattern";
+import type {
+  DrumPattern,
+  PatternCategory,
+  PatternDifficulty,
+} from "@/types/pattern";
 
 const categories: Array<PatternCategory | "all"> = [
   "all",
@@ -315,24 +319,14 @@ export function PatternBrowser() {
       ) : null}
 
       {visiblePatterns.length > 0 ? (
-        <section
-          aria-label="Patterns"
-          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-        >
-          {visiblePatterns.map((pattern) => (
-            <PatternCard
-              isFavorite={favoritePatternIdSet.has(pattern.id)}
-              isPreviewing={
-                previewPatternId === pattern.id && status !== "stopped"
-              }
-              key={`${pattern.isBuiltIn ? "built-in" : "custom"}:${pattern.id}`}
-              onFavorite={() => void favoritePattern(pattern.id)}
-              onOpen={() => openPattern(pattern.id)}
-              onPreview={() => void previewPattern(pattern.id)}
-              pattern={pattern}
-            />
-          ))}
-        </section>
+        <PatternRail
+          favoritePatternIdSet={favoritePatternIdSet}
+          onFavorite={(patternId) => void favoritePattern(patternId)}
+          onOpen={openPattern}
+          onPreview={(patternId) => void previewPattern(patternId)}
+          patterns={visiblePatterns}
+          previewPatternId={status === "stopped" ? null : previewPatternId}
+        />
       ) : (
         <section className="border-border bg-surface rounded-2xl border border-dashed px-5 py-16 text-center">
           <h2 className="text-foreground text-xl font-black">
@@ -344,6 +338,53 @@ export function PatternBrowser() {
         </section>
       )}
     </main>
+  );
+}
+
+interface PatternRailProps {
+  favoritePatternIdSet: ReadonlySet<string>;
+  onFavorite: (patternId: string) => void;
+  onOpen: (patternId: string) => void;
+  onPreview: (patternId: string) => void;
+  patterns: DrumPattern[];
+  previewPatternId: string | null;
+}
+
+function PatternRail({
+  favoritePatternIdSet,
+  onFavorite,
+  onOpen,
+  onPreview,
+  patterns,
+  previewPatternId,
+}: PatternRailProps) {
+  return (
+    <>
+      <p className="text-muted mb-3 flex items-center gap-2 text-xs font-bold md:hidden">
+        <span aria-hidden="true" className="bg-accent h-px w-8" />
+        Swipe the cards to explore more grooves
+      </p>
+      <section
+        aria-label="Patterns"
+        className="-mx-3 flex touch-pan-x snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain scroll-smooth px-3 pb-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-x-visible md:px-0 md:pb-0 xl:grid-cols-3"
+      >
+        {patterns.map((pattern) => (
+          <div
+            className="w-[calc(100vw-2.5rem)] shrink-0 snap-start sm:w-[calc(100vw-5rem)] md:w-auto md:shrink md:snap-none"
+            key={`${pattern.isBuiltIn ? "built-in" : "custom"}:${pattern.id}`}
+          >
+            <PatternCard
+              isFavorite={favoritePatternIdSet.has(pattern.id)}
+              isPreviewing={previewPatternId === pattern.id}
+              onFavorite={() => onFavorite(pattern.id)}
+              onOpen={() => onOpen(pattern.id)}
+              onPreview={() => onPreview(pattern.id)}
+              pattern={pattern}
+            />
+          </div>
+        ))}
+      </section>
+    </>
   );
 }
 
