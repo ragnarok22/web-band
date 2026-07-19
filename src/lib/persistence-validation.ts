@@ -1,6 +1,7 @@
 import { builtInChordProgressions } from "@/data/chord-progressions";
 import { builtInPatterns } from "@/data/patterns";
 import { builtInStrummingPatterns } from "@/data/strumming-patterns";
+import { isSoundCharacter } from "@/audio/synthesis/sound-profiles";
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 import { validatePattern } from "@/lib/pattern-validation";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/lib/practice-validation";
 import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type {
-  BackupEnvelope,
+  VersionedBackupEnvelope,
   CustomDrumPattern,
   CustomStrummingPattern,
   HistorySettings,
@@ -415,7 +416,10 @@ export function validateHistorySettings(
   return { errors, success: errors.length === 0 };
 }
 
-function validatePracticeSettings(value: unknown): PersistenceValidationResult {
+function validatePracticeSettings(
+  value: unknown,
+  version: 1 | 2,
+): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value)) {
     return { errors: ["Practice settings must be an object."], success: false };
@@ -429,6 +433,7 @@ function validatePracticeSettings(value: unknown): PersistenceValidationResult {
       "masterVolume",
       "mixer",
       "selectedPatternId",
+      ...(version === 2 ? ["soundCharacter"] : []),
       "swing",
       "wakeLockEnabled",
     ])
@@ -447,6 +452,8 @@ function validatePracticeSettings(value: unknown): PersistenceValidationResult {
     errors.push("Practice settings volume is invalid.");
   if (!hasBoundedText(value.selectedPatternId, MAX_ID_LENGTH))
     errors.push("Practice settings pattern ID is invalid.");
+  if (version === 2 && !isSoundCharacter(value.soundCharacter))
+    errors.push("Practice settings sound character is invalid.");
   if (!isNumberInRange(value.swing, 0, 0.65))
     errors.push("Practice settings swing is invalid.");
   if (typeof value.wakeLockEnabled !== "boolean")
@@ -543,7 +550,8 @@ export function validateBackupEnvelope(
   if (!hasExactKeys(value, ["app", "version", "exportedAt", "data"]))
     errors.push("Backup envelope fields are invalid.");
   if (value.app !== "web-band") errors.push("Backup app ID is unsupported.");
-  if (value.version !== 1) errors.push("Backup version is unsupported.");
+  if (value.version !== 1 && value.version !== 2)
+    errors.push("Backup version is unsupported.");
   if (!isCanonicalUtcIsoTimestamp(value.exportedAt))
     errors.push("Backup export date is invalid.");
   if (!isRecord(value.data)) {
@@ -628,7 +636,8 @@ export function validateBackupEnvelope(
   } else {
     if (!hasExactKeys(data.settings, ["practice", "guidedPractice", "history"]))
       errors.push("Backup settings fields are invalid.");
-    if (!validatePracticeSettings(data.settings.practice).success)
+    const version = value.version === 1 ? 1 : 2;
+    if (!validatePracticeSettings(data.settings.practice, version).success)
       errors.push("Backup practice settings are invalid.");
     if (!validateGuidedPracticeSettings(data.settings.guidedPractice).success)
       errors.push("Backup guided practice settings are invalid.");
@@ -782,6 +791,8 @@ export function isHistorySettings(value: unknown): value is HistorySettings {
   return validateHistorySettings(value).success;
 }
 
-export function isBackupEnvelope(value: unknown): value is BackupEnvelope {
+export function isBackupEnvelope(
+  value: unknown,
+): value is VersionedBackupEnvelope {
   return validateBackupEnvelope(value).success;
 }

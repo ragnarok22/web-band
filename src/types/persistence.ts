@@ -2,6 +2,7 @@ import type {
   CountInMeasures,
   FillFrequency,
   MixerSettings,
+  SoundCharacter,
 } from "@/types/audio";
 import type {
   ChordProgression,
@@ -57,6 +58,7 @@ export interface PracticeSettings {
   masterVolume: number;
   mixer: MixerSettings;
   selectedPatternId: string;
+  soundCharacter: SoundCharacter;
   swing: number;
   wakeLockEnabled: boolean;
 }
@@ -137,8 +139,16 @@ export interface BackupSettings {
   history: HistorySettings;
 }
 
+export type PracticeSettingsV1 = Omit<PracticeSettings, "soundCharacter">;
+
+export interface BackupSettingsV1 {
+  practice: PracticeSettingsV1;
+  guidedPractice: GuidedPracticeSettings;
+  history: HistorySettings;
+}
+
 export interface BackupDataV1 extends PersistenceSnapshot {
-  settings: BackupSettings;
+  settings: BackupSettingsV1;
 }
 
 export interface BackupEnvelopeV1 {
@@ -148,8 +158,19 @@ export interface BackupEnvelopeV1 {
   data: BackupDataV1;
 }
 
-export type BackupEnvelope = BackupEnvelopeV1;
-export type VersionedBackupEnvelope = BackupEnvelopeV1;
+export interface BackupDataV2 extends PersistenceSnapshot {
+  settings: BackupSettings;
+}
+
+export interface BackupEnvelopeV2 {
+  app: "web-band";
+  version: 2;
+  exportedAt: string;
+  data: BackupDataV2;
+}
+
+export type BackupEnvelope = BackupEnvelopeV2;
+export type VersionedBackupEnvelope = BackupEnvelopeV1 | BackupEnvelopeV2;
 
 export type ImportMode = "merge" | "replace";
 

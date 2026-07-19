@@ -33,7 +33,7 @@ function settings(): BackupSettings {
 }
 
 describe("backup envelope", () => {
-  it("creates a detached, canonical version 1 envelope", () => {
+  it("creates a detached, canonical version 2 envelope", () => {
     const snapshot = structuredClone(emptySnapshot);
     const backupSettings = settings();
     const envelope = createBackupEnvelope(
@@ -45,7 +45,7 @@ describe("backup envelope", () => {
     expect(envelope).toMatchObject({
       app: "web-band",
       exportedAt: "2026-07-18T12:34:56.789Z",
-      version: 1,
+      version: 2,
     });
     backupSettings.practice.bpm = 150;
     snapshot.favoritePatternIds.push("later");
@@ -72,6 +72,38 @@ describe("backup envelope", () => {
     });
     expect(parsed.counts.practiceSessions).toBe(0);
     expect(parsed.envelope).toEqual(envelope);
+  });
+
+  it("strictly migrates version 1 backups to Balanced without mutation", () => {
+    const current = createBackupEnvelope(
+      emptySnapshot,
+      settings(),
+      new Date("2026-07-18T12:34:56.789Z"),
+    );
+    const legacyPractice = structuredClone(
+      current.data.settings.practice,
+    ) as unknown as Record<string, unknown>;
+    delete legacyPractice.soundCharacter;
+    const legacy = {
+      ...current,
+      data: {
+        ...current.data,
+        settings: {
+          ...current.data.settings,
+          practice: legacyPractice,
+        },
+      },
+      version: 1,
+    };
+    const before = structuredClone(legacy);
+
+    const parsed = parseBackupText(JSON.stringify(legacy));
+
+    expect(parsed.envelope.version).toBe(2);
+    expect(parsed.envelope.data.settings.practice.soundCharacter).toBe(
+      "balanced",
+    );
+    expect(legacy).toEqual(before);
   });
 
   it("enforces the byte limit before attempting JSON parsing", () => {

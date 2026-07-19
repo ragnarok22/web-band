@@ -13,6 +13,7 @@ import type {
   FillFrequency,
   MixerGroup,
   MixerSettings,
+  SoundCharacter,
 } from "@/types/audio";
 import type {
   PracticePresetConfiguration,
@@ -35,6 +36,7 @@ interface PracticeStore extends PracticeSettings {
   setMixerSolo: (group: MixerGroup, solo: boolean) => void;
   setMixerVolume: (group: MixerGroup, volume: number) => void;
   setSelectedPatternId: (patternId: string) => void;
+  setSoundCharacter: (soundCharacter: SoundCharacter) => void;
   setSwing: (amount: number) => void;
   setWakeLockEnabled: (enabled: boolean) => void;
 }
@@ -48,6 +50,7 @@ function settingsFromState(state: PracticeStore): PracticeSettings {
     masterVolume: state.masterVolume,
     mixer: state.mixer,
     selectedPatternId: state.selectedPatternId,
+    soundCharacter: state.soundCharacter,
     swing: state.swing,
     wakeLockEnabled: state.wakeLockEnabled,
   };
@@ -113,6 +116,7 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
       update({}, mixer);
     },
     setSelectedPatternId: (selectedPatternId) => update({ selectedPatternId }),
+    setSoundCharacter: (soundCharacter) => update({ soundCharacter }),
     setSwing: (swing) => update({ swing: Math.min(0.65, Math.max(0, swing)) }),
     setWakeLockEnabled: (wakeLockEnabled) => update({ wakeLockEnabled }),
   };

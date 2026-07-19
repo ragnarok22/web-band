@@ -127,4 +127,26 @@ describe("instrument manager", () => {
     expect(voices.openHat.stop).toHaveBeenCalledWith(4.25);
     expect(voices.closedHat.trigger).toHaveBeenCalledWith(4.25, 0.7);
   });
+
+  it("applies Balanced exactly and updates output dynamics by character", () => {
+    const context = createContext();
+    const manager = new InstrumentManager(context, 0.8);
+    const compressor = vi.mocked(context.createDynamicsCompressor).mock
+      .results[0]?.value;
+
+    expect(compressor).toBeDefined();
+    expect(compressor?.threshold.value).toBe(-8);
+    expect(compressor?.knee.value).toBe(12);
+    expect(compressor?.ratio.value).toBe(5);
+    expect(compressor?.attack.value).toBe(0.003);
+    expect(compressor?.release.value).toBe(0.16);
+
+    manager.setSoundCharacter("punchy");
+
+    expect(compressor?.threshold.value).toBe(-9);
+    expect(compressor?.knee.value).toBe(8);
+    expect(compressor?.ratio.value).toBe(6);
+    expect(compressor?.attack.value).toBe(0.0015);
+    expect(compressor?.release.value).toBe(0.1);
+  });
 });

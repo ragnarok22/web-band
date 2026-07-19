@@ -6,9 +6,9 @@ import { storageService, type StorageService } from "@/db/storage-service";
 import { downloadBackupEnvelope } from "@/lib/backup-browser";
 import {
   createBackupEnvelope,
+  normalizeBackupEnvelope,
   snapshotFromBackup,
 } from "@/lib/backup-envelope";
-import { validateBackupEnvelope } from "@/lib/persistence-validation";
 import { executeStorageOperation } from "@/lib/storage-execution";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
 import {
@@ -89,6 +89,7 @@ function getCurrentSettings(): BackupSettings {
       masterVolume: practice.masterVolume,
       mixer: practice.mixer,
       selectedPatternId: practice.selectedPatternId,
+      soundCharacter: practice.soundCharacter,
       swing: practice.swing,
       wakeLockEnabled: practice.wakeLockEnabled,
     },
@@ -168,13 +169,7 @@ export class BackupService {
     if (mode !== "merge" && mode !== "replace") {
       throw new Error("Import mode is invalid.");
     }
-    const validation = validateBackupEnvelope(value);
-    if (!validation.success) {
-      throw new Error(
-        `This is not a valid Web Band backup. ${validation.errors[0] ?? "The backup is incomplete."}`,
-      );
-    }
-    const envelope = structuredClone(value as BackupEnvelope);
+    const envelope = normalizeBackupEnvelope(value);
 
     if (mode === "replace") await this.exportCurrentBackup();
     const summary = await this.dependencies.executeStorageOperation(() =>

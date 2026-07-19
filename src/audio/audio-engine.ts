@@ -13,6 +13,7 @@ import type {
   CountInMeasures,
   FillFrequency,
   MixerSettings,
+  SoundCharacter,
 } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
@@ -26,6 +27,7 @@ export interface PlaybackConfiguration {
   masterVolume: number;
   mixer: MixerSettings;
   pattern: DrumPattern;
+  soundCharacter: SoundCharacter;
   swing: number;
 }
 
@@ -33,6 +35,7 @@ export interface ManagedInstruments extends PatternInstrumentPlayer {
   dispose: () => void;
   setMasterVolume: (volume: number) => void;
   setMixer: (settings: MixerSettings) => void;
+  setSoundCharacter: (soundCharacter: SoundCharacter) => void;
   stop: () => void;
 }
 
@@ -68,6 +71,8 @@ export class AudioEngine {
         generation,
       );
       if (!initialized) return;
+
+      this.instruments?.setSoundCharacter(configuration.soundCharacter);
 
       if (this.runtime.getContextState() === "suspended") {
         await this.runtime.startAudio();

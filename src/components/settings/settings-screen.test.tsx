@@ -4,11 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SettingsScreen } from "@/components/settings/settings-screen";
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
+import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import {
   defaultAppearancePreferences,
   useAppearanceStore,
 } from "@/stores/appearance-store";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
+import { usePracticeStore } from "@/stores/practice-store";
 import { useStorageStore } from "@/stores/storage-store";
 
 function actions() {
@@ -31,6 +33,10 @@ describe("settings screen", () => {
     });
     useHistorySettingsStore.setState({
       ...defaultHistorySettings,
+      hasHydrated: true,
+    });
+    usePracticeStore.setState({
+      ...structuredClone(defaultPracticeSettings),
       hasHydrated: true,
     });
     useStorageStore.setState({
@@ -71,6 +77,23 @@ describe("settings screen", () => {
 
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(document.documentElement.dataset.reduceMotion).toBe("true");
+  });
+
+  it("persists a global sound character", async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen actions={actions()} />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Sound character" }),
+      "punchy",
+    );
+
+    expect(usePracticeStore.getState().soundCharacter).toBe("punchy");
+    expect(
+      JSON.parse(
+        window.localStorage.getItem("web-band-practice-settings-v3") ?? "null",
+      ),
+    ).toMatchObject({ soundCharacter: "punchy" });
   });
 
   it("requires destructive confirmation and announces successful deletion", async () => {

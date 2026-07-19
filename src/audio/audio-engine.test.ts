@@ -24,6 +24,7 @@ function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
     masterVolume: 0.8,
     mixer: createDefaultMixerSettings(),
     pattern: basicRockPattern,
+    soundCharacter: "balanced",
     swing: 0,
   } as const;
 }
@@ -110,6 +111,7 @@ function createInstruments(): ManagedInstruments {
     dispose: vi.fn(),
     setMasterVolume: vi.fn(),
     setMixer: vi.fn(),
+    setSoundCharacter: vi.fn(),
     stop: vi.fn(),
     trigger: vi.fn(),
     triggerCountIn: vi.fn(),
@@ -254,6 +256,23 @@ describe("audio engine", () => {
     await engine.play(configuration);
 
     expect(instruments.setMixer).toHaveBeenCalledWith(configuration.mixer);
+    expect(instruments.setSoundCharacter).toHaveBeenCalledWith("balanced");
+  });
+
+  it("reapplies the selected sound character on a later start", async () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments = createInstruments();
+    const engine = new AudioEngine(runtime, () => instruments);
+
+    await engine.play({ ...playbackConfiguration(0), soundCharacter: "soft" });
+    engine.stop();
+    await engine.play({
+      ...playbackConfiguration(0),
+      soundCharacter: "punchy",
+    });
+
+    expect(instruments.setSoundCharacter).toHaveBeenNthCalledWith(1, "soft");
+    expect(instruments.setSoundCharacter).toHaveBeenNthCalledWith(2, "punchy");
   });
 
   it("starts tempo training at its start BPM and ignores manual BPM changes", async () => {

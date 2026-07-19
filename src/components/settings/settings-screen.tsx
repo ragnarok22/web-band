@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, Palette, Settings2, Trash2 } from "lucide-react";
+import { Database, Music2, Palette, Settings2, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -13,8 +13,10 @@ import {
   type ClearLocalDataCompletion,
 } from "@/services/backup-service";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
+import { usePracticeStore } from "@/stores/practice-store";
 import { type ColorTheme, useAppearanceStore } from "@/stores/appearance-store";
 import { useStorageStore } from "@/stores/storage-store";
+import type { SoundCharacter } from "@/types/audio";
 
 interface SettingsActions extends DataBackupActions {
   clearAllLocalData: () => Promise<ClearLocalDataCompletion>;
@@ -45,6 +47,13 @@ export function SettingsScreen({
   );
   const storageMode = useStorageStore((state) => state.mode);
   const storageWarning = useStorageStore((state) => state.warning);
+  const practiceSettingsHydrated = usePracticeStore(
+    (state) => state.hasHydrated,
+  );
+  const soundCharacter = usePracticeStore((state) => state.soundCharacter);
+  const setSoundCharacter = usePracticeStore(
+    (state) => state.setSoundCharacter,
+  );
   const reducedMotion = useAppearanceStore((state) => state.reducedMotion);
   const theme = useAppearanceStore((state) => state.theme);
   const setReducedMotion = useAppearanceStore(
@@ -135,6 +144,42 @@ export function SettingsScreen({
               />
             </label>
           </div>
+        </section>
+
+        <section
+          aria-labelledby="sound-settings-heading"
+          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
+        >
+          <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+            <Music2 aria-hidden="true" className="size-4" />
+            Sound
+          </p>
+          <h2 className="mt-2 text-2xl font-black" id="sound-settings-heading">
+            Shape the kit
+          </h2>
+          <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
+            Choose a synthesized drum character for practice, previews, and the
+            pattern editor. Balanced preserves the original Web Band kit.
+          </p>
+          <label
+            className="border-border mt-5 block max-w-sm border-t pt-5 text-sm font-extrabold"
+            htmlFor="sound-character"
+          >
+            Sound character
+            <select
+              className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
+              disabled={!practiceSettingsHydrated}
+              id="sound-character"
+              onChange={(event) =>
+                setSoundCharacter(event.currentTarget.value as SoundCharacter)
+              }
+              value={soundCharacter}
+            >
+              <option value="soft">Soft</option>
+              <option value="balanced">Balanced</option>
+              <option value="punchy">Punchy</option>
+            </select>
+          </label>
         </section>
 
         <section

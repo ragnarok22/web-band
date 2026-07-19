@@ -266,6 +266,12 @@ describe("practice validation", () => {
     expect(validatePracticePreset(preset).success).toBe(true);
     expect(isPracticePreset(preset)).toBe(true);
     expect(
+      validatePracticePresetConfiguration({
+        ...preset.configuration,
+        soundCharacter: "punchy",
+      }).errors,
+    ).toContain("Sound character is a global setting, not a practice preset.");
+    expect(
       validatePracticePreset({
         ...preset,
         configuration: { ...preset.configuration, swing: 0.9 },

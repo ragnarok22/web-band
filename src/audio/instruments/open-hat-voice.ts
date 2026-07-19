@@ -4,6 +4,10 @@ import {
   safeStartTime,
   VoiceResources,
 } from "@/audio/synthesis/voice-resources";
+import {
+  getBalancedSynthesisProfile,
+  type SoundProfileProvider,
+} from "@/audio/synthesis/sound-profiles";
 import type { DrumVoice } from "@/types/audio";
 
 export class OpenHatVoice implements DrumVoice {
@@ -13,6 +17,7 @@ export class OpenHatVoice implements DrumVoice {
   constructor(
     private readonly context: BaseAudioContext,
     private readonly output: AudioNode,
+    private readonly getProfile: SoundProfileProvider = getBalancedSynthesisProfile,
   ) {
     this.noiseBuffer = createNoiseBuffer(context, 0.8);
   }
@@ -21,6 +26,7 @@ export class OpenHatVoice implements DrumVoice {
     this.stop(time);
     const start = safeStartTime(this.context, time);
     const level = normalizeVelocity(velocity);
+    const profile = this.getProfile();
     const noise = this.context.createBufferSource();
     const highPass = this.context.createBiquadFilter();
     const bandPass = this.context.createBiquadFilter();
@@ -28,12 +34,15 @@ export class OpenHatVoice implements DrumVoice {
 
     noise.buffer = this.noiseBuffer;
     highPass.type = "highpass";
-    highPass.frequency.setValueAtTime(5_400, start);
+    highPass.frequency.setValueAtTime(5_400 * profile.brightness, start);
     bandPass.type = "bandpass";
-    bandPass.frequency.setValueAtTime(9_200, start);
+    bandPass.frequency.setValueAtTime(9_200 * profile.brightness, start);
     bandPass.Q.setValueAtTime(0.45, start);
-    envelope.gain.setValueAtTime(level * 0.27, start);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.42);
+    envelope.gain.setValueAtTime(level * 0.27 * profile.gain, start);
+    envelope.gain.exponentialRampToValueAtTime(
+      0.0001,
+      start + 0.42 * profile.decay,
+    );
 
     noise
       .connect(highPass)
@@ -47,7 +56,7 @@ export class OpenHatVoice implements DrumVoice {
       envelope.disconnect();
     });
     noise.start(start);
-    noise.stop(start + 0.46);
+    noise.stop(start + 0.46 * profile.decay);
   }
 
   stop(time?: number): void {

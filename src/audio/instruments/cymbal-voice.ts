@@ -4,6 +4,11 @@ import {
   safeStartTime,
   VoiceResources,
 } from "@/audio/synthesis/voice-resources";
+import {
+  getBalancedSynthesisProfile,
+  type SoundProfileProvider,
+  type SoundSynthesisProfile,
+} from "@/audio/synthesis/sound-profiles";
 import type { DrumVoice } from "@/types/audio";
 
 type CymbalKind = "crash" | "ride";
@@ -16,6 +21,7 @@ export class CymbalVoice implements DrumVoice {
     private readonly context: BaseAudioContext,
     private readonly output: AudioNode,
     private readonly kind: CymbalKind,
+    private readonly getProfile: SoundProfileProvider = getBalancedSynthesisProfile,
   ) {
     this.noiseBuffer = createNoiseBuffer(context, kind === "crash" ? 1.6 : 0.9);
   }
@@ -23,7 +29,8 @@ export class CymbalVoice implements DrumVoice {
   trigger(time: number, velocity = 1): void {
     const start = safeStartTime(this.context, time);
     const level = normalizeVelocity(velocity);
-    const decay = this.kind === "crash" ? 1.25 : 0.48;
+    const profile = this.getProfile();
+    const decay = (this.kind === "crash" ? 1.25 : 0.48) * profile.decay;
     const noise = this.context.createBufferSource();
     const highPass = this.context.createBiquadFilter();
     const noiseEnvelope = this.context.createGain();
@@ -31,11 +38,11 @@ export class CymbalVoice implements DrumVoice {
     noise.buffer = this.noiseBuffer;
     highPass.type = "highpass";
     highPass.frequency.setValueAtTime(
-      this.kind === "crash" ? 3_800 : 5_600,
+      (this.kind === "crash" ? 3_800 : 5_600) * profile.brightness,
       start,
     );
     noiseEnvelope.gain.setValueAtTime(
-      level * (this.kind === "crash" ? 0.3 : 0.16),
+      level * (this.kind === "crash" ? 0.3 : 0.16) * profile.gain,
       start,
     );
     noiseEnvelope.gain.exponentialRampToValueAtTime(0.0001, start + decay);
@@ -47,10 +54,10 @@ export class CymbalVoice implements DrumVoice {
       noiseEnvelope.disconnect();
     });
     noise.start(start);
-    noise.stop(start + decay + 0.05);
+    noise.stop(start + (this.kind === "crash" ? 1.3 : 0.53) * profile.decay);
 
     if (this.kind === "ride") {
-      this.triggerBell(start, level);
+      this.triggerBell(start, level, profile);
     }
   }
 
@@ -62,20 +69,27 @@ export class CymbalVoice implements DrumVoice {
     this.stop();
   }
 
-  private triggerBell(start: number, level: number): void {
+  private triggerBell(
+    start: number,
+    level: number,
+    profile: SoundSynthesisProfile,
+  ): void {
     const oscillator = this.context.createOscillator();
     const envelope = this.context.createGain();
 
     oscillator.type = "triangle";
-    oscillator.frequency.setValueAtTime(4_200, start);
-    envelope.gain.setValueAtTime(level * 0.055, start);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.32);
+    oscillator.frequency.setValueAtTime(4_200 * profile.brightness, start);
+    envelope.gain.setValueAtTime(level * 0.055 * profile.gain, start);
+    envelope.gain.exponentialRampToValueAtTime(
+      0.0001,
+      start + 0.32 * profile.decay,
+    );
     oscillator.connect(envelope).connect(this.output);
     this.resources.track(oscillator, () => {
       oscillator.disconnect();
       envelope.disconnect();
     });
     oscillator.start(start);
-    oscillator.stop(start + 0.34);
+    oscillator.stop(start + 0.34 * profile.decay);
   }
 }

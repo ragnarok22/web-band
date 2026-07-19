@@ -136,7 +136,7 @@ function createBackup(): BackupEnvelope {
       },
     },
     exportedAt: updatedAt,
-    version: 1,
+    version: 2,
   };
 }
 
@@ -235,7 +235,7 @@ describe("persistence validation", () => {
     );
   });
 
-  it("validates a complete version 1 backup without mutating it", () => {
+  it("validates a complete version 2 backup without mutating it", () => {
     const backup = createBackup();
     const before = structuredClone(backup);
 
@@ -252,9 +252,24 @@ describe("persistence validation", () => {
     expect(
       validateBackupEnvelope({ ...backup, app: "other-app" }).success,
     ).toBe(false);
-    expect(validateBackupEnvelope({ ...backup, version: 2 }).success).toBe(
+    expect(validateBackupEnvelope({ ...backup, version: 3 }).success).toBe(
       false,
     );
+    expect(
+      validateBackupEnvelope({
+        ...backup,
+        data: {
+          ...backup.data,
+          settings: {
+            ...backup.data.settings,
+            practice: {
+              ...backup.data.settings.practice,
+              soundCharacter: "unknown",
+            },
+          },
+        },
+      }).success,
+    ).toBe(false);
     expect(
       validateBackupEnvelope({
         ...backup,

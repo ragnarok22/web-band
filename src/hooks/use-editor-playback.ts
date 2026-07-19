@@ -74,6 +74,7 @@ export function useEditorPlayback(pattern: CustomDrumPattern | null) {
       masterVolume: settings.masterVolume,
       mixer: settings.mixer,
       pattern,
+      soundCharacter: settings.soundCharacter,
       swing: settings.swing,
     });
   }

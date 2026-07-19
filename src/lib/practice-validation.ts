@@ -417,6 +417,10 @@ export function validatePracticePresetConfiguration(
     };
   }
 
+  if (Object.hasOwn(value, "soundCharacter")) {
+    errors.push("Sound character is a global setting, not a practice preset.");
+  }
+
   if (!hasBoundedText(value.patternId, MAX_ID_LENGTH))
     errors.push("Practice preset pattern ID is invalid.");
   if (!isBpm(value.bpm)) errors.push("Practice preset BPM is invalid.");

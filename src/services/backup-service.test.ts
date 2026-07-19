@@ -130,6 +130,35 @@ describe("backup service", () => {
     expect(result).toMatchObject({ mode: "merge", settingsPersisted: true });
   });
 
+  it("normalizes direct version 1 imports to Balanced", async () => {
+    const current = envelope();
+    const legacyPractice = structuredClone(
+      current.data.settings.practice,
+    ) as unknown as Record<string, unknown>;
+    delete legacyPractice.soundCharacter;
+    const legacy = {
+      ...current,
+      data: {
+        ...current.data,
+        settings: {
+          ...current.data.settings,
+          practice: legacyPractice,
+        },
+      },
+      version: 1,
+    };
+    const deps = dependencies();
+    const service = new BackupService(deps);
+
+    await service.importBackup(legacy, "merge");
+
+    expect(deps.applySettings).toHaveBeenCalledWith(
+      expect.objectContaining({
+        practice: expect.objectContaining({ soundCharacter: "balanced" }),
+      }),
+    );
+  });
+
   it("downloads a current backup before a replace mutation", async () => {
     const order: string[] = [];
     const deps = dependencies(order);
@@ -147,7 +176,7 @@ describe("backup service", () => {
       "refresh",
     ]);
     expect(deps.downloadEnvelope).toHaveBeenCalledWith(
-      expect.objectContaining({ app: "web-band", version: 1 }),
+      expect.objectContaining({ app: "web-band", version: 2 }),
     );
   });
 

@@ -130,6 +130,7 @@ export function PatternBrowser() {
         masterVolume,
         mixer: settings.mixer,
         pattern,
+        soundCharacter: settings.soundCharacter,
         swing: pattern.swing ?? settings.swing,
       });
     } catch (error) {

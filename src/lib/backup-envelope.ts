@@ -4,6 +4,7 @@ import type {
   BackupSettings,
   ImportCollectionCounts,
   PersistenceSnapshot,
+  VersionedBackupEnvelope,
 } from "@/types/persistence";
 
 export const MAX_BACKUP_FILE_BYTES = 25 * 1024 * 1024;
@@ -50,7 +51,7 @@ export function createBackupEnvelope(
       settings: structuredClone(settings),
     },
     exportedAt: exportedAt.toISOString(),
-    version: 1,
+    version: 2,
   };
 }
 
@@ -78,14 +79,7 @@ export function parseBackupText(
     throw new BackupFileError("This file is not valid JSON.");
   }
 
-  const validation = validateBackupEnvelope(value);
-  if (!validation.success) {
-    throw new BackupFileError(
-      `This is not a valid Web Band backup. ${validation.errors[0] ?? "The backup is incomplete."}`,
-    );
-  }
-
-  const envelope = structuredClone(value as BackupEnvelope);
+  const envelope = normalizeBackupEnvelope(value);
   const counts = collectionCounts(envelope.data);
   return {
     byteSize,
@@ -97,6 +91,33 @@ export function parseBackupText(
       (total, count) => total + count,
       0,
     ),
+  };
+}
+
+export function normalizeBackupEnvelope(value: unknown): BackupEnvelope {
+  const validation = validateBackupEnvelope(value);
+  if (!validation.success) {
+    throw new BackupFileError(
+      `This is not a valid Web Band backup. ${validation.errors[0] ?? "The backup is incomplete."}`,
+    );
+  }
+
+  const envelope = structuredClone(value as VersionedBackupEnvelope);
+  if (envelope.version === 2) return envelope;
+
+  return {
+    ...envelope,
+    data: {
+      ...envelope.data,
+      settings: {
+        ...envelope.data.settings,
+        practice: {
+          ...envelope.data.settings.practice,
+          soundCharacter: "balanced",
+        },
+      },
+    },
+    version: 2,
   };
 }
 

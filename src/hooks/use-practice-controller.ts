@@ -91,6 +91,7 @@ export function usePracticeController() {
   const selectedPatternId = usePracticeStore(
     (state) => state.selectedPatternId,
   );
+  const soundCharacter = usePracticeStore((state) => state.soundCharacter);
   const swing = usePracticeStore((state) => state.swing);
   const wakeLockEnabled = usePracticeStore((state) => state.wakeLockEnabled);
   const mode = useGuidedPracticeStore((state) => state.mode);
@@ -312,6 +313,7 @@ export function usePracticeController() {
         masterVolume: masterMuted ? 0 : masterVolume,
         mixer,
         pattern,
+        soundCharacter,
         swing,
       });
     } catch {

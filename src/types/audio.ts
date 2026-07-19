@@ -13,6 +13,7 @@ export type AudioEngineStatus =
 
 export type CountInMeasures = 0 | 1 | 2 | 4;
 export type FillFrequency = null | 4 | 8 | 16 | "random";
+export type SoundCharacter = "soft" | "balanced" | "punchy";
 
 export type MixerGroup =
   "kick" | "snare" | "hiHat" | "toms" | "cymbals" | "percussion";

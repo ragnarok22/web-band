@@ -94,10 +94,10 @@ Last audited against the source on 2026-07-19.
 
 - [x] **Generate phrase fills.** Support off, every 4/8/16 measures, and controlled random fills that respect meter and return with a crash.
 - [x] **Implement the compact mixer.** Provide master, kick, snare, hats, toms, cymbals, and rim/clap volume plus mute, solo, reset, and persistence.
-- [ ] **Add fill-before-stop behavior.** Queue a musically bounded fill and stop cleanly after it, while retaining immediate Stop for emergency cancellation.
-- [ ] **Add fill-before-pattern-change behavior.** Schedule a transition fill before committing a queued compatible pattern change.
-- [ ] **Create a fill library.** Add several validated fill arrangements and category compatibility rules instead of one generic algorithm.
-- [ ] **Add sound-character presets.** Implement Soft, Balanced, and Punchy synthesis/mix presets without loading samples, then expose the setting consistently.
+- [x] **Add fill-before-stop behavior.** Queue a musically bounded fill and stop cleanly after it, while retaining immediate Stop for emergency cancellation.
+- [x] **Add fill-before-pattern-change behavior.** Schedule a transition fill before committing a queued compatible pattern change.
+- [x] **Create a fill library.** Add several validated fill arrangements and category compatibility rules instead of one generic algorithm.
+- [x] **Add sound-character presets.** Implement Soft, Balanced, and Punchy synthesis/mix presets without loading samples, then expose the setting consistently.
 
 ## Phase 8: Persistence, History, And Backup
 

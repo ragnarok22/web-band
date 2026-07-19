@@ -12,16 +12,17 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Pattern sorting by name, default BPM, recently used, and favorites.
 - Pattern cards with default and recommended BPM, meter, grid, and lightweight rhythm previews.
 - Persistent IndexedDB favorites.
-- Pattern changes quantized to the next measure during playback, with an explicit same-meter immediate-switch option.
+- Pattern changes use a compatible transition fill before committing, with an explicit same-meter immediate-switch option.
 - Support for 2/4, 3/4, 4/4, 5/4, 6/8, 7/8, and 12/8 patterns on eighth- and sixteenth-note grids.
 - Smooth BPM changes from 40 to 220 without restarting playback.
-- Play, Pause, Resume, and Stop behavior.
+- Play, Pause, Resume, graceful fill-to-finish, and immediate Stop behavior.
 - Configurable 0-, 1-, 2-, or 4-measure count-in with meter-aware clicks and accented downbeats.
 - Audio-synchronized beat and subdivision visualization.
 - Practice timer, distraction-free focus mode, and tap tempo.
 - Live swing and subtle timing and velocity humanization.
-- Meter-aware generated fills every 4, 8, or 16 measures or at controlled random intervals.
+- A validated category- and meter-aware fill library used every 4, 8, or 16 measures, at controlled random intervals, and for transitions.
 - Compact six-group mixer with volume, mute, solo, reset, and perceptual master-volume control.
+- Global Soft, Balanced, and Punchy synthesized kit characters; Balanced preserves the original sound.
 - Optional Screen Wake Lock during active practice.
 - Keyboard shortcuts for play/pause, stop, pattern changes, BPM, tap tempo, focus mode, and master mute.
 - Tempo training with ascending or descending targets, measure- or seconds-based intervals, configurable increments, and optional target stop.
@@ -176,7 +177,7 @@ Kick:       x       x
 
 ## Local Settings
 
-The versioned key `web-band-practice-settings-v2` stores:
+The versioned key `web-band-practice-settings-v3` stores:
 
 - Last BPM.
 - Last selected pattern ID.
@@ -185,9 +186,10 @@ The versioned key `web-band-practice-settings-v2` stores:
 - Swing and humanization.
 - Fill frequency.
 - Six mixer channel settings.
+- Soft, Balanced, or Punchy sound character.
 - Wake Lock preference.
 
-The repository reads the legacy `web-band-practice-settings-v1` shape and fills the Phase 4 fields with safe defaults. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its minimum meaningful duration. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. `web-band-appearance-v1` stores the device-only dark, light, or system theme choice and explicit reduced-motion preference. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
+The repository reads the legacy `web-band-practice-settings-v2` and `web-band-practice-settings-v1` shapes and supplies safe defaults, including Balanced sound character. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its minimum meaningful duration. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. `web-band-appearance-v1` stores the device-only dark, light, or system theme choice and explicit reduced-motion preference. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
 
 Values are parsed defensively and clamped before use. Corrupted settings fall back to Basic Rock at 90 BPM and 80% volume.
 
@@ -216,11 +218,11 @@ Pattern files are capped at 10 MB and cannot contain built-in IDs, malformed hit
 
 The repository includes ten directly importable song-groove examples under `presets/`. See [`docs/PRESETS.md`](docs/PRESETS.md) for the catalog, complete schema, grid notation, manual authoring workflow, and guidance for creating additional files with AI.
 
-Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 1 envelope contains:
+Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 2 envelope contains:
 
 ```text
 app: "web-band"
-version: 1
+version: 2
 exportedAt: canonical UTC ISO timestamp
 data:
   customPatterns, favoritePatternIds
@@ -229,7 +231,7 @@ data:
   settings: practice, guidedPractice, history
 ```
 
-Imports are parsed as data, capped at 25 MB, and fully validated before mutation. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Replace starts a safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the small versioned settings stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
+Imports are parsed as data, capped at 25 MB, and fully validated before mutation. Valid version 1 backups are migrated to version 2 with the historical Balanced sound character; unknown versions remain rejected. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Replace starts a safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the small versioned settings stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
 
 ## Browser Support
 

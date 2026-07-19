@@ -1,4 +1,5 @@
 import { clampBpm } from "@/lib/musical-time";
+import { isSoundCharacter } from "@/audio/synthesis/sound-profiles";
 import {
   clampUnit,
   createDefaultMixerSettings,
@@ -11,8 +12,11 @@ import type {
 } from "@/types/audio";
 import type { PracticeSettings } from "@/types/persistence";
 
-const SETTINGS_KEY = "web-band-practice-settings-v2";
-const LEGACY_SETTINGS_KEY = "web-band-practice-settings-v1";
+const SETTINGS_KEY = "web-band-practice-settings-v3";
+const LEGACY_SETTINGS_KEYS = [
+  "web-band-practice-settings-v2",
+  "web-band-practice-settings-v1",
+];
 
 export const defaultPracticeSettings: PracticeSettings = {
   bpm: 90,
@@ -22,6 +26,7 @@ export const defaultPracticeSettings: PracticeSettings = {
   masterVolume: 0.8,
   mixer: createDefaultMixerSettings(),
   selectedPatternId: "basic-rock",
+  soundCharacter: "balanced",
   swing: 0,
   wakeLockEnabled: true,
 };
@@ -38,7 +43,9 @@ export function loadPracticeSettings(): PracticeSettings {
   try {
     const rawSettings =
       window.localStorage.getItem(SETTINGS_KEY) ??
-      window.localStorage.getItem(LEGACY_SETTINGS_KEY);
+      LEGACY_SETTINGS_KEYS.map((key) => window.localStorage.getItem(key)).find(
+        (value) => value !== null,
+      );
     const parsed: unknown = rawSettings ? JSON.parse(rawSettings) : null;
 
     if (!isRecord(parsed)) {
@@ -70,6 +77,9 @@ export function loadPracticeSettings(): PracticeSettings {
         parsed.selectedPatternId.trim()
           ? parsed.selectedPatternId
           : defaultPracticeSettings.selectedPatternId,
+      soundCharacter: isSoundCharacter(parsed.soundCharacter)
+        ? parsed.soundCharacter
+        : defaultPracticeSettings.soundCharacter,
       swing:
         typeof parsed.swing === "number"
           ? Math.min(0.65, Math.max(0, parsed.swing))

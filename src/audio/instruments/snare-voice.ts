@@ -4,6 +4,10 @@ import {
   safeStartTime,
   VoiceResources,
 } from "@/audio/synthesis/voice-resources";
+import {
+  getBalancedSynthesisProfile,
+  type SoundProfileProvider,
+} from "@/audio/synthesis/sound-profiles";
 import type { DrumVoice } from "@/types/audio";
 
 export class SnareVoice implements DrumVoice {
@@ -13,6 +17,7 @@ export class SnareVoice implements DrumVoice {
   constructor(
     private readonly context: BaseAudioContext,
     private readonly output: AudioNode,
+    private readonly getProfile: SoundProfileProvider = getBalancedSynthesisProfile,
   ) {
     this.noiseBuffer = createNoiseBuffer(context);
   }
@@ -20,6 +25,7 @@ export class SnareVoice implements DrumVoice {
   trigger(time: number, velocity = 1): void {
     const start = safeStartTime(this.context, time);
     const level = normalizeVelocity(velocity);
+    const profile = this.getProfile();
     const noise = this.context.createBufferSource();
     const noiseFilter = this.context.createBiquadFilter();
     const noiseEnvelope = this.context.createGain();
@@ -28,16 +34,25 @@ export class SnareVoice implements DrumVoice {
 
     noise.buffer = this.noiseBuffer;
     noiseFilter.type = "bandpass";
-    noiseFilter.frequency.setValueAtTime(2_400, start);
+    noiseFilter.frequency.setValueAtTime(2_400 * profile.brightness, start);
     noiseFilter.Q.setValueAtTime(0.65, start);
-    noiseEnvelope.gain.setValueAtTime(level * 0.72, start);
-    noiseEnvelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+    noiseEnvelope.gain.setValueAtTime(level * 0.72 * profile.gain, start);
+    noiseEnvelope.gain.exponentialRampToValueAtTime(
+      0.0001,
+      start + 0.16 * profile.decay,
+    );
 
     body.type = "triangle";
-    body.frequency.setValueAtTime(190, start);
-    body.frequency.exponentialRampToValueAtTime(125, start + 0.085);
-    bodyEnvelope.gain.setValueAtTime(level * 0.34, start);
-    bodyEnvelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
+    body.frequency.setValueAtTime(190 * profile.brightness, start);
+    body.frequency.exponentialRampToValueAtTime(
+      125 * profile.brightness,
+      start + 0.085 * profile.decay,
+    );
+    bodyEnvelope.gain.setValueAtTime(level * 0.34 * profile.gain, start);
+    bodyEnvelope.gain.exponentialRampToValueAtTime(
+      0.0001,
+      start + 0.12 * profile.decay,
+    );
 
     noise.connect(noiseFilter).connect(noiseEnvelope).connect(this.output);
     body.connect(bodyEnvelope).connect(this.output);
@@ -52,9 +67,9 @@ export class SnareVoice implements DrumVoice {
       bodyEnvelope.disconnect();
     });
     noise.start(start);
-    noise.stop(start + 0.18);
+    noise.stop(start + 0.18 * profile.decay);
     body.start(start);
-    body.stop(start + 0.14);
+    body.stop(start + 0.14 * profile.decay);
   }
 
   stop(): void {

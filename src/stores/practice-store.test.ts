@@ -32,12 +32,12 @@ describe("practice store preset configuration", () => {
     expect(usePracticeStore.getState().mixer.kick.volume).not.toBe(0);
     expect(
       JSON.parse(
-        window.localStorage.getItem("web-band-practice-settings-v2") ?? "null",
+        window.localStorage.getItem("web-band-practice-settings-v3") ?? "null",
       ),
     ).toMatchObject({ bpm: 121, selectedPatternId: "one-drop" });
   });
 
-  it("applies every base preset field atomically and persists it", () => {
+  it("applies every preset field without changing global sound character", () => {
     const configuration: PracticePresetConfiguration = {
       bpm: 128,
       countInMeasures: 2,
@@ -47,6 +47,7 @@ describe("practice store preset configuration", () => {
       patternId: "one-drop",
       swing: 0.4,
     };
+    usePracticeStore.setState({ soundCharacter: "punchy" });
     const listener = vi.fn();
     const unsubscribe = usePracticeStore.subscribe(listener);
 
@@ -59,13 +60,18 @@ describe("practice store preset configuration", () => {
       fillFrequency: "random",
       humanization: 0.25,
       selectedPatternId: "one-drop",
+      soundCharacter: "punchy",
       swing: 0.4,
     });
     expect(
       JSON.parse(
-        window.localStorage.getItem("web-band-practice-settings-v2") ?? "null",
+        window.localStorage.getItem("web-band-practice-settings-v3") ?? "null",
       ),
-    ).toMatchObject({ bpm: 128, selectedPatternId: "one-drop" });
+    ).toMatchObject({
+      bpm: 128,
+      selectedPatternId: "one-drop",
+      soundCharacter: "punchy",
+    });
     unsubscribe();
   });
 

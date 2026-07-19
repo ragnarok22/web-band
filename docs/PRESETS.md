@@ -2,7 +2,7 @@
 
 The `presets/` directory contains portable drum grooves that can be imported through Web Band's existing Pattern Library. Each file is a version 1 `drum-patterns` share envelope containing one custom pattern.
 
-These are not saved Practice presets. A saved Practice preset stores BPM, count-in, fills, and guided-practice settings while referring to a drum pattern by ID. Saved Practice presets currently move between browsers only as part of a full application backup. The files in `presets/` carry the actual drum hits and can be imported independently.
+These are not saved Practice presets. A saved Practice preset stores BPM, count-in, fills, and guided-practice settings while referring to a drum pattern by ID. Global master volume, mixer state, and sound character stay unchanged when a Practice preset loads. Saved Practice presets currently move between browsers only as part of a full application backup. The files in `presets/` carry the actual drum hits and can be imported independently.
 
 The included song grooves are simplified educational practice approximations. They are short, loopable interpretations of recognizable rhythmic ideas, not official transcriptions or complete arrangements. They contain no recordings or external audio assets.
 

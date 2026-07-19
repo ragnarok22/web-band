@@ -20,6 +20,7 @@ describe("practice settings repository", () => {
         snare: { muted: true, solo: false, volume: 0.63 },
       },
       selectedPatternId: "custom-groove",
+      soundCharacter: "punchy" as const,
       swing: 0.34,
       wakeLockEnabled: false,
     };
@@ -29,7 +30,7 @@ describe("practice settings repository", () => {
   });
 
   it("falls back safely when stored settings are corrupted", () => {
-    window.localStorage.setItem("web-band-practice-settings-v2", "{broken");
+    window.localStorage.setItem("web-band-practice-settings-v3", "{broken");
     expect(loadPracticeSettings()).toEqual(defaultPracticeSettings);
   });
 
@@ -84,5 +85,14 @@ describe("practice settings repository", () => {
       swing: 0.65,
       wakeLockEnabled: false,
     });
+  });
+
+  it("migrates version 2 settings to the Balanced sound character", () => {
+    window.localStorage.setItem(
+      "web-band-practice-settings-v2",
+      JSON.stringify({ ...defaultPracticeSettings, soundCharacter: undefined }),
+    );
+
+    expect(loadPracticeSettings().soundCharacter).toBe("balanced");
   });
 });
