@@ -1,0 +1,208 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-guns-n-roses-knockin-on-heavens-door",
+        "name": "Guns N' Roses - Knockin' on Heaven's Door",
+        "description": "A simplified two-bar practice approximation of the rock-ballad groove, with laid-back eighth-note hats, a solid backbeat, and restrained syncopated kicks.",
+        "category": "ballad",
+        "difficulty": "intermediate",
+        "timeSignature": { "numerator": 4, "denominator": 4 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 70,
+        "recommendedBpmRange": { "min": 55, "max": 90 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "gnr-crash-0",
+            "instrument": "crash",
+            "step": 0,
+            "velocity": 0.78
+          },
+          {
+            "id": "gnr-hat-0",
+            "instrument": "closedHat",
+            "step": 0,
+            "velocity": 0.72
+          },
+          {
+            "id": "gnr-hat-2",
+            "instrument": "closedHat",
+            "step": 2,
+            "velocity": 0.48
+          },
+          {
+            "id": "gnr-hat-4",
+            "instrument": "closedHat",
+            "step": 4,
+            "velocity": 0.66
+          },
+          {
+            "id": "gnr-hat-6",
+            "instrument": "closedHat",
+            "step": 6,
+            "velocity": 0.48
+          },
+          {
+            "id": "gnr-hat-8",
+            "instrument": "closedHat",
+            "step": 8,
+            "velocity": 0.7
+          },
+          {
+            "id": "gnr-hat-10",
+            "instrument": "closedHat",
+            "step": 10,
+            "velocity": 0.48
+          },
+          {
+            "id": "gnr-hat-12",
+            "instrument": "closedHat",
+            "step": 12,
+            "velocity": 0.66
+          },
+          {
+            "id": "gnr-open-14",
+            "instrument": "openHat",
+            "step": 14,
+            "velocity": 0.58
+          },
+          {
+            "id": "gnr-hat-16",
+            "instrument": "closedHat",
+            "step": 16,
+            "velocity": 0.74
+          },
+          {
+            "id": "gnr-hat-18",
+            "instrument": "closedHat",
+            "step": 18,
+            "velocity": 0.49
+          },
+          {
+            "id": "gnr-hat-20",
+            "instrument": "closedHat",
+            "step": 20,
+            "velocity": 0.67
+          },
+          {
+            "id": "gnr-hat-22",
+            "instrument": "closedHat",
+            "step": 22,
+            "velocity": 0.49
+          },
+          {
+            "id": "gnr-hat-24",
+            "instrument": "closedHat",
+            "step": 24,
+            "velocity": 0.71
+          },
+          {
+            "id": "gnr-hat-26",
+            "instrument": "closedHat",
+            "step": 26,
+            "velocity": 0.5
+          },
+          {
+            "id": "gnr-hat-28",
+            "instrument": "closedHat",
+            "step": 28,
+            "velocity": 0.68
+          },
+          {
+            "id": "gnr-open-30",
+            "instrument": "openHat",
+            "step": 30,
+            "velocity": 0.62
+          },
+          {
+            "id": "gnr-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 0.92
+          },
+          {
+            "id": "gnr-kick-6",
+            "instrument": "kick",
+            "step": 6,
+            "velocity": 0.58
+          },
+          {
+            "id": "gnr-kick-8",
+            "instrument": "kick",
+            "step": 8,
+            "velocity": 0.82
+          },
+          {
+            "id": "gnr-kick-14",
+            "instrument": "kick",
+            "step": 14,
+            "velocity": 0.56
+          },
+          {
+            "id": "gnr-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 0.94
+          },
+          {
+            "id": "gnr-kick-22",
+            "instrument": "kick",
+            "step": 22,
+            "velocity": 0.6
+          },
+          {
+            "id": "gnr-kick-24",
+            "instrument": "kick",
+            "step": 24,
+            "velocity": 0.84
+          },
+          {
+            "id": "gnr-kick-26",
+            "instrument": "kick",
+            "step": 26,
+            "velocity": 0.56
+          },
+          {
+            "id": "gnr-kick-30",
+            "instrument": "kick",
+            "step": 30,
+            "velocity": 0.6
+          },
+          {
+            "id": "gnr-snare-4",
+            "instrument": "snare",
+            "step": 4,
+            "velocity": 0.84
+          },
+          {
+            "id": "gnr-snare-12",
+            "instrument": "snare",
+            "step": 12,
+            "velocity": 0.88
+          },
+          {
+            "id": "gnr-snare-20",
+            "instrument": "snare",
+            "step": 20,
+            "velocity": 0.85
+          },
+          {
+            "id": "gnr-snare-28",
+            "instrument": "snare",
+            "step": 28,
+            "velocity": 0.9
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

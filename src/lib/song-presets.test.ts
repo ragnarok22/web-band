@@ -20,6 +20,11 @@ const expectedPresets = [
     name: "Bon Jovi - Livin' on a Prayer",
   },
   {
+    bpm: 70,
+    fileName: "web-band-pattern-guns-n-roses-knockin-on-heaven-s-door.json",
+    name: "Guns N' Roses - Knockin' on Heaven's Door",
+  },
+  {
     bpm: 119,
     fileName: "web-band-pattern-journey-don-t-stop-believin.json",
     name: "Journey - Don't Stop Believin'",
@@ -62,7 +67,7 @@ const expectedPresets = [
 ] as const;
 
 describe("committed song presets", () => {
-  it("contains ten directly importable, uniquely identified patterns", () => {
+  it("contains eleven directly importable, uniquely identified patterns", () => {
     const presetsDirectory = join(process.cwd(), "presets");
     const files = readdirSync(presetsDirectory)
       .filter((fileName) => fileName.endsWith(".json"))
