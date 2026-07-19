@@ -20,6 +20,11 @@ const expectedPresets = [
     name: "Bon Jovi - Livin' on a Prayer",
   },
   {
+    bpm: 86,
+    fileName: "web-band-pattern-disturbed-the-sound-of-silence.json",
+    name: "Disturbed - The Sound of Silence",
+  },
+  {
     bpm: 70,
     fileName: "web-band-pattern-guns-n-roses-knockin-on-heaven-s-door.json",
     name: "Guns N' Roses - Knockin' on Heaven's Door",
@@ -67,7 +72,7 @@ const expectedPresets = [
 ] as const;
 
 describe("committed song presets", () => {
-  it("contains eleven directly importable, uniquely identified patterns", () => {
+  it("contains twelve directly importable, uniquely identified patterns", () => {
     const presetsDirectory = join(process.cwd(), "presets");
     const files = readdirSync(presetsDirectory)
       .filter((fileName) => fileName.endsWith(".json"))
@@ -97,5 +102,19 @@ describe("committed song presets", () => {
       expect(patternIds.has(pattern!.id)).toBe(false);
       patternIds.add(pattern!.id);
     }
+  });
+
+  it("keeps The Sound of Silence as a two-bar six-eight rock-ballad groove", () => {
+    const fileName = "web-band-pattern-disturbed-the-sound-of-silence.json";
+    const text = readFileSync(join(process.cwd(), "presets", fileName), "utf8");
+    const preview = parsePatternShareText(text, fileName);
+
+    expect(preview.envelope.data.patterns[0]).toMatchObject({
+      bars: 2,
+      category: "ballad",
+      difficulty: "intermediate",
+      subdivision: 16,
+      timeSignature: { denominator: 8, numerator: 6 },
+    });
   });
 });

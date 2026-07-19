@@ -1,0 +1,166 @@
+{
+  "app": "web-band",
+  "kind": "drum-patterns",
+  "version": 1,
+  "exportedAt": "2026-07-19T00:00:00.000Z",
+  "data": {
+    "patterns": [
+      {
+        "id": "song-disturbed-the-sound-of-silence",
+        "name": "Disturbed - The Sound of Silence",
+        "description": "A simplified two-bar practice approximation of the late-song rock-ballad crescendo, with a grouped six-eight ride pulse, broad backbeats, and a compact tom turnaround.",
+        "category": "ballad",
+        "difficulty": "intermediate",
+        "timeSignature": { "numerator": 6, "denominator": 8 },
+        "subdivision": 16,
+        "bars": 2,
+        "defaultBpm": 86,
+        "recommendedBpmRange": { "min": 60, "max": 100 },
+        "swing": 0,
+        "hits": [
+          {
+            "id": "disturbed-silence-crash-0",
+            "instrument": "crash",
+            "step": 0,
+            "velocity": 0.88
+          },
+          {
+            "id": "disturbed-silence-ride-0",
+            "instrument": "ride",
+            "step": 0,
+            "velocity": 0.82
+          },
+          {
+            "id": "disturbed-silence-ride-2",
+            "instrument": "ride",
+            "step": 2,
+            "velocity": 0.48
+          },
+          {
+            "id": "disturbed-silence-ride-4",
+            "instrument": "ride",
+            "step": 4,
+            "velocity": 0.56
+          },
+          {
+            "id": "disturbed-silence-ride-6",
+            "instrument": "ride",
+            "step": 6,
+            "velocity": 0.76
+          },
+          {
+            "id": "disturbed-silence-ride-8",
+            "instrument": "ride",
+            "step": 8,
+            "velocity": 0.48
+          },
+          {
+            "id": "disturbed-silence-ride-10",
+            "instrument": "ride",
+            "step": 10,
+            "velocity": 0.58
+          },
+          {
+            "id": "disturbed-silence-ride-12",
+            "instrument": "ride",
+            "step": 12,
+            "velocity": 0.84
+          },
+          {
+            "id": "disturbed-silence-ride-14",
+            "instrument": "ride",
+            "step": 14,
+            "velocity": 0.5
+          },
+          {
+            "id": "disturbed-silence-ride-16",
+            "instrument": "ride",
+            "step": 16,
+            "velocity": 0.58
+          },
+          {
+            "id": "disturbed-silence-ride-18",
+            "instrument": "ride",
+            "step": 18,
+            "velocity": 0.78
+          },
+          {
+            "id": "disturbed-silence-kick-0",
+            "instrument": "kick",
+            "step": 0,
+            "velocity": 0.95
+          },
+          {
+            "id": "disturbed-silence-kick-4",
+            "instrument": "kick",
+            "step": 4,
+            "velocity": 0.66
+          },
+          {
+            "id": "disturbed-silence-kick-10",
+            "instrument": "kick",
+            "step": 10,
+            "velocity": 0.58
+          },
+          {
+            "id": "disturbed-silence-kick-12",
+            "instrument": "kick",
+            "step": 12,
+            "velocity": 0.98
+          },
+          {
+            "id": "disturbed-silence-kick-16",
+            "instrument": "kick",
+            "step": 16,
+            "velocity": 0.7
+          },
+          {
+            "id": "disturbed-silence-kick-23",
+            "instrument": "kick",
+            "step": 23,
+            "velocity": 0.82
+          },
+          {
+            "id": "disturbed-silence-snare-6",
+            "instrument": "snare",
+            "step": 6,
+            "velocity": 0.88
+          },
+          {
+            "id": "disturbed-silence-snare-18",
+            "instrument": "snare",
+            "step": 18,
+            "velocity": 0.94
+          },
+          {
+            "id": "disturbed-silence-high-tom-20",
+            "instrument": "highTom",
+            "step": 20,
+            "velocity": 0.72
+          },
+          {
+            "id": "disturbed-silence-mid-tom-21",
+            "instrument": "midTom",
+            "step": 21,
+            "velocity": 0.78
+          },
+          {
+            "id": "disturbed-silence-low-tom-22",
+            "instrument": "lowTom",
+            "step": 22,
+            "velocity": 0.84
+          },
+          {
+            "id": "disturbed-silence-low-tom-23",
+            "instrument": "lowTom",
+            "step": 23,
+            "velocity": 0.96
+          }
+        ],
+        "isBuiltIn": false,
+        "createdAt": "2026-07-19T00:00:00.000Z",
+        "updatedAt": "2026-07-19T00:00:00.000Z"
+      }
+    ]
+  }
+}

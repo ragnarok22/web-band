@@ -23,6 +23,8 @@ Importing adds the groove to the local custom-pattern library. It does not autom
 | ----------------- | -------------------------- | ----------: | ----- | ----: | ---: |
 | Mana              | En el muelle de San Blas   |          97 | 4/4   | 16ths |    2 |
 | AC/DC             | Back in Black              |          94 | 4/4   |  8ths |    2 |
+| Disturbed         | The Sound of Silence       |          86 | 6/8   | 16ths |    2 |
+| Guns N' Roses     | Knockin' on Heaven's Door  |          70 | 4/4   | 16ths |    2 |
 | Michael Jackson   | Billie Jean                |         117 | 4/4   | 16ths |    1 |
 | Queen             | Another One Bites the Dust |         110 | 4/4   | 16ths |    2 |
 | Nirvana           | Smells Like Teen Spirit    |         117 | 4/4   | 16ths |    2 |
