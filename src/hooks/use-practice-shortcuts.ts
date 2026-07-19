@@ -4,6 +4,9 @@ import { useEffect, useEffectEvent } from "react";
 
 import { isPracticeRunning, isSessionActive } from "@/lib/audio-status";
 import type { AudioEngineStatus } from "@/types/audio";
+import type { BpmAdjustmentStep } from "@/types/persistence";
+
+export type { BpmAdjustmentStep } from "@/types/persistence";
 
 const interactiveSelector = [
   "input",
@@ -34,6 +37,7 @@ export function isInteractiveShortcutTarget(
 }
 
 interface PracticeShortcutOptions {
+  adjustmentStep?: BpmAdjustmentStep;
   disabled?: boolean;
   onBpmChange: (amount: number) => void;
   onFocusToggle: () => void;
@@ -83,7 +87,11 @@ export function usePracticeShortcuts(options: PracticeShortcutOptions): void {
     if (key === "arrowup" || key === "arrowdown") {
       event.preventDefault();
       const direction = key === "arrowup" ? 1 : -1;
-      options.onBpmChange(direction * (event.shiftKey ? 5 : 1));
+      const adjustmentStep = options.adjustmentStep ?? 1;
+      const alternateStep = adjustmentStep === 1 ? 5 : 1;
+      options.onBpmChange(
+        direction * (event.shiftKey ? alternateStep : adjustmentStep),
+      );
       return;
     }
 

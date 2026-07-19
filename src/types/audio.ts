@@ -32,15 +32,25 @@ export interface DrumVoice {
   dispose(): void;
 }
 
-export interface ScheduledVisualStep {
-  step: number;
-  measure: number;
+export interface CountInVisualFrame {
+  beat: number;
   isAccent: boolean;
-  phase: "count-in" | "pattern";
+  measure: number;
+  phase: "count-in";
 }
 
+export interface PatternVisualFrame {
+  isAccent: boolean;
+  measure: number;
+  patternStep: number;
+  phase: "pattern";
+  sixteenth: number;
+}
+
+export type VisualFrame = CountInVisualFrame | PatternVisualFrame;
+
 export interface VisualTimelineListener {
-  (step: ScheduledVisualStep): void;
+  (frame: VisualFrame | null): void;
 }
 
 export type VoiceMap = Partial<Record<DrumInstrument, DrumVoice>>;

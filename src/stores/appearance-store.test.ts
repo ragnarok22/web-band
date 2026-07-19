@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   appearanceStorageKey,
   defaultAppearancePreferences,
+  legacyAppearanceStorageKeys,
   useAppearanceStore,
 } from "@/stores/appearance-store";
 import { useStorageStore } from "@/stores/storage-store";
@@ -22,7 +23,7 @@ describe("appearance store", () => {
       vi.fn(() => ({ matches: true })),
     );
     window.localStorage.setItem(
-      appearanceStorageKey,
+      legacyAppearanceStorageKeys[0],
       JSON.stringify({ reducedMotion: true, theme: "system" }),
     );
 
@@ -30,8 +31,10 @@ describe("appearance store", () => {
 
     expect(useAppearanceStore.getState()).toMatchObject({
       hasHydrated: true,
+      beatFlashIntensity: "standard",
       reducedMotion: true,
       theme: "system",
+      visualSubdivisionDetail: "pattern",
     });
     expect(document.documentElement.dataset.theme).toBe("light");
     expect(document.documentElement.dataset.reduceMotion).toBe("true");
@@ -50,7 +53,26 @@ describe("appearance store", () => {
 
     expect(
       JSON.parse(window.localStorage.getItem(appearanceStorageKey)!),
-    ).toEqual({ reducedMotion: true, theme: "light" });
+    ).toEqual({
+      beatFlashIntensity: "standard",
+      reducedMotion: true,
+      theme: "light",
+      visualSubdivisionDetail: "pattern",
+    });
+  });
+
+  it("persists visual detail and beat intensity", () => {
+    useAppearanceStore.getState().setVisualSubdivisionDetail("sixteenths");
+    useAppearanceStore.getState().setBeatFlashIntensity("strong");
+
+    expect(
+      JSON.parse(window.localStorage.getItem(appearanceStorageKey)!),
+    ).toEqual({
+      beatFlashIntensity: "strong",
+      reducedMotion: false,
+      theme: "dark",
+      visualSubdivisionDetail: "sixteenths",
+    });
   });
 
   it("applies appearance for the visit and reports failed persistence", () => {

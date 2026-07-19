@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import {
   defaultPracticeSettings,
+  getStartupPracticeSettings,
   loadPracticeSettings,
   savePracticeSettings,
 } from "@/db/repositories/settings-repository";
@@ -17,6 +18,7 @@ import type {
   SoundCharacter,
 } from "@/types/audio";
 import type {
+  BpmAdjustmentStep,
   PracticePresetConfiguration,
   PracticeSettings,
 } from "@/types/persistence";
@@ -29,6 +31,7 @@ interface PracticeStore extends PracticeSettings {
   resetMixer: () => void;
   replaceSettings: (settings: PracticeSettings) => boolean;
   setBpm: (bpm: number) => void;
+  setBpmAdjustmentStep: (step: BpmAdjustmentStep) => void;
   setCountInMeasures: (measures: CountInMeasures) => void;
   setFillFrequency: (frequency: FillFrequency) => void;
   setHumanization: (amount: number) => void;
@@ -37,6 +40,7 @@ interface PracticeStore extends PracticeSettings {
   setMixerSolo: (group: MixerGroup, solo: boolean) => void;
   setMixerVolume: (group: MixerGroup, volume: number) => void;
   setSelectedPatternId: (patternId: string) => void;
+  setRestoreLastPractice: (enabled: boolean) => void;
   setSoundCharacter: (soundCharacter: SoundCharacter) => void;
   setSwing: (amount: number) => void;
   setWakeLockEnabled: (enabled: boolean) => void;
@@ -45,11 +49,13 @@ interface PracticeStore extends PracticeSettings {
 function settingsFromState(state: PracticeStore): PracticeSettings {
   return {
     bpm: state.bpm,
+    bpmAdjustmentStep: state.bpmAdjustmentStep,
     countInMeasures: state.countInMeasures,
     fillFrequency: state.fillFrequency,
     humanization: state.humanization,
     masterVolume: state.masterVolume,
     mixer: state.mixer,
+    restoreLastPractice: state.restoreLastPractice,
     selectedPatternId: state.selectedPatternId,
     soundCharacter: state.soundCharacter,
     swing: state.swing,
@@ -87,7 +93,11 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
       });
     },
     hasHydrated: false,
-    hydrate: () => set({ ...loadPracticeSettings(), hasHydrated: true }),
+    hydrate: () =>
+      set({
+        ...getStartupPracticeSettings(loadPracticeSettings()),
+        hasHydrated: true,
+      }),
     resetBpm: (bpm) => update({ bpm: clampBpm(bpm) }),
     resetMixer: () => update({}, createDefaultMixerSettings()),
     replaceSettings: (settings) => {
@@ -98,6 +108,7 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
       return persisted;
     },
     setBpm: (bpm) => update({ bpm: clampBpm(bpm) }),
+    setBpmAdjustmentStep: (bpmAdjustmentStep) => update({ bpmAdjustmentStep }),
     setCountInMeasures: (countInMeasures) => update({ countInMeasures }),
     setFillFrequency: (fillFrequency) => update({ fillFrequency }),
     setHumanization: (humanization) =>
@@ -120,6 +131,8 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
       update({}, mixer);
     },
     setSelectedPatternId: (selectedPatternId) => update({ selectedPatternId }),
+    setRestoreLastPractice: (restoreLastPractice) =>
+      update({ restoreLastPractice }),
     setSoundCharacter: (soundCharacter) => update({ soundCharacter }),
     setSwing: (swing) => update({ swing: Math.min(0.65, Math.max(0, swing)) }),
     setWakeLockEnabled: (wakeLockEnabled) => update({ wakeLockEnabled }),

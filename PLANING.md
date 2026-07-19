@@ -120,14 +120,14 @@ Last audited against the source on 2026-07-19.
 - [x] **Configure appearance.** Expose system/dark/light themes and explicit reduced-motion preference.
 - [x] **Configure practice history.** Expose recording enablement and minimum session duration.
 - [x] **Manage local data.** Provide backup export/import and confirmed deletion controls.
-- [ ] **Configure default count-in.** Expose the persisted count-in preference on Settings as well as Practice.
-- [ ] **Configure the BPM adjustment step.** Let users choose the default keyboard/button increment while retaining direct +/-1 and +/-5 controls.
-- [ ] **Configure Wake Lock.** Expose the persisted keep-screen-awake preference on Settings and keep it synchronized with Practice.
-- [ ] **Configure restore behavior.** Allow users to choose whether the last practice configuration is restored on startup.
-- [ ] **Configure visual subdivision detail.** Let users reduce or expand beat-grid detail without changing musical scheduling.
-- [ ] **Configure beat-flash intensity.** Apply a persisted accessible visual intensity without relying only on color.
-- [ ] **Configure master volume.** Expose the same persisted master level on Settings and in the Practice mixer.
-- [ ] **Implement reset settings.** Restore preference defaults without deleting user-created patterns, presets, progressions, or history.
+- [x] **Configure default count-in.** Expose the persisted count-in preference on Settings as well as Practice.
+- [x] **Configure the BPM adjustment step.** Let users choose the default keyboard/button increment while retaining direct +/-1 and +/-5 controls.
+- [x] **Configure Wake Lock.** Expose the persisted keep-screen-awake preference on Settings and keep it synchronized with Practice.
+- [x] **Configure restore behavior.** Allow users to choose whether the last practice configuration is restored on startup.
+- [x] **Configure visual subdivision detail.** Let users reduce or expand beat-grid detail without changing musical scheduling.
+- [x] **Configure beat-flash intensity.** Apply a persisted accessible visual intensity without relying only on color.
+- [x] **Configure master volume.** Expose the same persisted master level on Settings and in the Practice mixer.
+- [x] **Implement reset settings.** Restore preference defaults without deleting user-created patterns, presets, progressions, or history.
 
 ## Phase 10: Offline PWA
 

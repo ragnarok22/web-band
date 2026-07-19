@@ -5,6 +5,7 @@ import { BpmControls } from "@/components/practice/bpm-controls";
 import { CountInControl } from "@/components/practice/count-in-control";
 import { GrooveControls } from "@/components/practice/groove-controls";
 import { GuidedPracticePanel } from "@/components/practice/guided-practice-panel";
+import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 import { isSessionActive } from "@/lib/audio-status";
 import type {
   AudioEngineStatus,
@@ -15,6 +16,7 @@ import type { TimeSignature } from "@/types/pattern";
 import type { PracticeMode } from "@/types/practice";
 
 interface PracticeSettingsProps {
+  adjustmentStep?: BpmAdjustmentStep;
   bpm: number;
   countInMeasures: CountInMeasures;
   defaultBpm: number;
@@ -33,6 +35,7 @@ interface PracticeSettingsProps {
 }
 
 export function PracticeSettings({
+  adjustmentStep = 1,
   bpm,
   countInMeasures,
   defaultBpm,
@@ -61,6 +64,7 @@ export function PracticeSettings({
 
       {practiceMode === "tempoTrainer" ? null : (
         <BpmControls
+          adjustmentStep={adjustmentStep}
           bpm={bpm}
           defaultBpm={defaultBpm}
           onChange={onBpmChange}

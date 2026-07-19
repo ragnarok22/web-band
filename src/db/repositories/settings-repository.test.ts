@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultPracticeSettings,
+  getStartupPracticeSettings,
   loadPracticeSettings,
   savePracticeSettings,
 } from "@/db/repositories/settings-repository";
@@ -11,6 +12,7 @@ describe("practice settings repository", () => {
     const settings = {
       ...defaultPracticeSettings,
       bpm: 127,
+      bpmAdjustmentStep: 5 as const,
       countInMeasures: 2 as const,
       fillFrequency: 8 as const,
       humanization: 0.24,
@@ -19,6 +21,7 @@ describe("practice settings repository", () => {
         ...defaultPracticeSettings.mixer,
         snare: { muted: true, solo: false, volume: 0.63 },
       },
+      restoreLastPractice: false,
       selectedPatternId: "custom-groove",
       soundCharacter: "punchy" as const,
       swing: 0.34,
@@ -94,5 +97,53 @@ describe("practice settings repository", () => {
     );
 
     expect(loadPracticeSettings().soundCharacter).toBe("balanced");
+  });
+
+  it("migrates version 3 settings with Phase 9 defaults", () => {
+    const legacy = structuredClone(
+      defaultPracticeSettings,
+    ) as unknown as Record<string, unknown>;
+    delete legacy.bpmAdjustmentStep;
+    delete legacy.restoreLastPractice;
+    legacy.bpm = 135;
+    legacy.countInMeasures = 4;
+    legacy.wakeLockEnabled = false;
+    window.localStorage.setItem(
+      "web-band-practice-settings-v3",
+      JSON.stringify(legacy),
+    );
+
+    expect(loadPracticeSettings()).toMatchObject({
+      bpm: 135,
+      bpmAdjustmentStep: 1,
+      countInMeasures: 4,
+      restoreLastPractice: true,
+      wakeLockEnabled: false,
+    });
+  });
+
+  it("resets only session-specific values when restore is disabled", () => {
+    const settings = {
+      ...structuredClone(defaultPracticeSettings),
+      bpm: 144,
+      bpmAdjustmentStep: 5 as const,
+      countInMeasures: 4 as const,
+      fillFrequency: 8 as const,
+      humanization: 0.2,
+      masterVolume: 0.4,
+      restoreLastPractice: false,
+      selectedPatternId: "funk",
+      swing: 0.3,
+      wakeLockEnabled: false,
+    };
+
+    expect(getStartupPracticeSettings(settings)).toEqual({
+      ...settings,
+      bpm: defaultPracticeSettings.bpm,
+      fillFrequency: defaultPracticeSettings.fillFrequency,
+      humanization: defaultPracticeSettings.humanization,
+      selectedPatternId: defaultPracticeSettings.selectedPatternId,
+      swing: defaultPracticeSettings.swing,
+    });
   });
 });

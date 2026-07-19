@@ -11,9 +11,14 @@ import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
 import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
+import type {
+  BeatFlashIntensity,
+  VisualSubdivisionDetail,
+} from "@/types/persistence";
 
 interface FocusModeProps {
   bpm: number;
+  beatFlashIntensity: BeatFlashIntensity;
   configuration: GuidedPracticeConfiguration;
   countInMeasures: CountInMeasures;
   elapsedSeconds: number;
@@ -29,10 +34,12 @@ interface FocusModeProps {
   pattern: DrumPattern;
   showOnboarding: boolean;
   status: AudioEngineStatus;
+  visualSubdivisionDetail: VisualSubdivisionDetail;
 }
 
 export function FocusMode({
   bpm,
+  beatFlashIntensity,
   configuration,
   countInMeasures,
   elapsedSeconds,
@@ -48,6 +55,7 @@ export function FocusMode({
   pattern,
   showOnboarding,
   status,
+  visualSubdivisionDetail,
 }: FocusModeProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const snapshot = useGuidanceSnapshot();
@@ -126,6 +134,8 @@ export function FocusMode({
         />
         <BeatVisualizer
           countInMeasures={countInMeasures}
+          detail={visualSubdivisionDetail}
+          intensity={beatFlashIntensity}
           pattern={pattern}
           status={status}
         />

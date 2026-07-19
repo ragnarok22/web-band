@@ -152,6 +152,12 @@ describe("pattern scheduler", () => {
 
     runtime.repeats[0]?.callback(1, 0);
     expect(instruments.triggerCountIn).toHaveBeenCalledWith(1, true);
+    expect(visuals).toHaveBeenLastCalledWith({
+      beat: 0,
+      isAccent: true,
+      measure: 1,
+      phase: "count-in",
+    });
 
     runtime.repeats[1]?.callback(2, 16);
     expect(instruments.trigger).toHaveBeenCalledWith("closedHat", 2, 0.72);
@@ -160,9 +166,81 @@ describe("pattern scheduler", () => {
     expect(visuals).toHaveBeenLastCalledWith({
       isAccent: true,
       measure: 1,
+      patternStep: 0,
       phase: "pattern",
-      step: 0,
+      sixteenth: 0,
     });
+  });
+
+  it("advances an eighth-note visual playhead beyond its first native step", () => {
+    const runtime = new FakeAudioRuntime();
+    const timeline = new VisualTimeline();
+    const visuals = vi.fn();
+    const instruments: PatternInstrumentPlayer = {
+      trigger: vi.fn(),
+      triggerCountIn: vi.fn(),
+    };
+    timeline.subscribe(visuals);
+    const scheduler = new PatternScheduler(runtime, instruments, timeline);
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+
+    const callback = runtime.repeats[0]?.callback;
+    callback?.(0, 0);
+    callback?.(0.1, 1);
+    callback?.(0.2, 2);
+
+    expect(visuals).toHaveBeenCalledTimes(3);
+    expect(
+      visuals.mock.calls.map(([frame]) =>
+        frame?.phase === "pattern"
+          ? [frame.sixteenth, frame.patternStep]
+          : null,
+      ),
+    ).toEqual([
+      [0, 0],
+      [1, 0],
+      [2, 1],
+    ]);
+    expect(instruments.trigger).toHaveBeenCalledTimes(3);
+    expect(instruments.trigger).toHaveBeenLastCalledWith(
+      "closedHat",
+      0.2,
+      0.48,
+    );
+  });
+
+  it("retains the last audible visual frame until playback is cleared", () => {
+    const runtime = new FakeAudioRuntime();
+    const timeline = new VisualTimeline();
+    const scheduler = new PatternScheduler(
+      runtime,
+      { trigger: vi.fn(), triggerCountIn: vi.fn() },
+      timeline,
+    );
+    scheduler.schedule(basicRockPattern, schedulerOptions(vi.fn(), 0));
+    runtime.repeats[0]?.callback(0, 0);
+    runtime.repeats[0]?.callback(0.1, 1);
+
+    const remountedListener = vi.fn();
+    timeline.subscribe(remountedListener);
+    expect(remountedListener).toHaveBeenCalledOnce();
+    expect(remountedListener).toHaveBeenLastCalledWith({
+      isAccent: false,
+      measure: 1,
+      patternStep: 0,
+      phase: "pattern",
+      sixteenth: 1,
+    });
+
+    scheduler.cancelPendingVisuals();
+    const pausedRemountListener = vi.fn();
+    timeline.subscribe(pausedRemountListener);
+    expect(pausedRemountListener).toHaveBeenCalledWith(timeline.getSnapshot());
+
+    scheduler.clear();
+    expect(timeline.getSnapshot()).toBeNull();
+    expect(remountedListener).toHaveBeenLastCalledWith(null);
+    expect(pausedRemountListener).toHaveBeenLastCalledWith(null);
   });
 
   it("clears every owned Tone schedule before rebuilding", () => {

@@ -10,21 +10,24 @@ import type {
   FillFrequency,
   MixerSettings,
 } from "@/types/audio";
-import type { PracticeSettings } from "@/types/persistence";
+import type { BpmAdjustmentStep, PracticeSettings } from "@/types/persistence";
 
-export const SETTINGS_KEY = "web-band-practice-settings-v3";
+export const SETTINGS_KEY = "web-band-practice-settings-v4";
 export const LEGACY_SETTINGS_KEYS = [
+  "web-band-practice-settings-v3",
   "web-band-practice-settings-v2",
   "web-band-practice-settings-v1",
 ] as const;
 
 export const defaultPracticeSettings: PracticeSettings = {
   bpm: 90,
+  bpmAdjustmentStep: 1,
   countInMeasures: 1,
   fillFrequency: null,
   humanization: 0,
   masterVolume: 0.8,
   mixer: createDefaultMixerSettings(),
+  restoreLastPractice: true,
   selectedPatternId: "basic-rock",
   soundCharacter: "balanced",
   swing: 0,
@@ -58,6 +61,7 @@ export function loadPracticeSettings(): PracticeSettings {
           ? parsed.bpm
           : defaultPracticeSettings.bpm,
       ),
+      bpmAdjustmentStep: parseBpmAdjustmentStep(parsed.bpmAdjustmentStep),
       countInMeasures: parseCountIn(parsed.countInMeasures),
       fillFrequency: parseFillFrequency(parsed.fillFrequency),
       humanization:
@@ -72,6 +76,10 @@ export function loadPracticeSettings(): PracticeSettings {
           ? parsed.masterVolume
           : defaultPracticeSettings.masterVolume,
       mixer: parseMixer(parsed.mixer),
+      restoreLastPractice:
+        typeof parsed.restoreLastPractice === "boolean"
+          ? parsed.restoreLastPractice
+          : defaultPracticeSettings.restoreLastPractice,
       selectedPatternId:
         typeof parsed.selectedPatternId === "string" &&
         parsed.selectedPatternId.trim()
@@ -92,6 +100,24 @@ export function loadPracticeSettings(): PracticeSettings {
   } catch {
     return defaultPracticeSettings;
   }
+}
+
+export function getStartupPracticeSettings(
+  settings: PracticeSettings,
+): PracticeSettings {
+  if (settings.restoreLastPractice) return structuredClone(settings);
+  return {
+    ...structuredClone(settings),
+    bpm: defaultPracticeSettings.bpm,
+    fillFrequency: defaultPracticeSettings.fillFrequency,
+    humanization: defaultPracticeSettings.humanization,
+    selectedPatternId: defaultPracticeSettings.selectedPatternId,
+    swing: defaultPracticeSettings.swing,
+  };
+}
+
+function parseBpmAdjustmentStep(value: unknown): BpmAdjustmentStep {
+  return value === 5 ? 5 : 1;
 }
 
 function parseCountIn(value: unknown): CountInMeasures {

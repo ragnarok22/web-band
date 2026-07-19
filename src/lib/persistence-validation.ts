@@ -423,7 +423,7 @@ export function validateHistorySettings(
 
 function validatePracticeSettings(
   value: unknown,
-  version: 1 | 2 | 3,
+  version: 1 | 2 | 3 | 4,
 ): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value)) {
@@ -432,11 +432,13 @@ function validatePracticeSettings(
   if (
     !hasExactKeys(value, [
       "bpm",
+      ...(version >= 4 ? ["bpmAdjustmentStep"] : []),
       "countInMeasures",
       "fillFrequency",
       "humanization",
       "masterVolume",
       "mixer",
+      ...(version >= 4 ? ["restoreLastPractice"] : []),
       "selectedPatternId",
       ...(version >= 2 ? ["soundCharacter"] : []),
       "swing",
@@ -447,6 +449,12 @@ function validatePracticeSettings(
   }
   if (!isIntegerInRange(value.bpm, MIN_BPM, MAX_BPM))
     errors.push("Practice settings BPM is invalid.");
+  if (
+    version >= 4 &&
+    value.bpmAdjustmentStep !== 1 &&
+    value.bpmAdjustmentStep !== 5
+  )
+    errors.push("Practice settings BPM adjustment step is invalid.");
   if (![0, 1, 2, 4].includes(value.countInMeasures as number))
     errors.push("Practice settings count-in is invalid.");
   if (![null, 4, 8, 16, "random"].includes(value.fillFrequency as never))
@@ -455,6 +463,8 @@ function validatePracticeSettings(
     errors.push("Practice settings humanization is invalid.");
   if (!isNumberInRange(value.masterVolume, 0, 1))
     errors.push("Practice settings volume is invalid.");
+  if (version >= 4 && typeof value.restoreLastPractice !== "boolean")
+    errors.push("Practice settings restore behavior is invalid.");
   if (!hasBoundedText(value.selectedPatternId, MAX_ID_LENGTH))
     errors.push("Practice settings pattern ID is invalid.");
   if (version >= 2 && !isSoundCharacter(value.soundCharacter))
@@ -525,6 +535,7 @@ function validateGuidedPracticeSettings(
 
 function validateBackupPreferences(
   value: unknown,
+  version: 3 | 4,
 ): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value)) {
@@ -544,9 +555,22 @@ function validateBackupPreferences(
   }
   if (
     !isRecord(value.appearance) ||
-    !hasExactKeys(value.appearance, ["reducedMotion", "theme"]) ||
+    !hasExactKeys(value.appearance, [
+      ...(version >= 4 ? ["beatFlashIntensity"] : []),
+      "reducedMotion",
+      "theme",
+      ...(version >= 4 ? ["visualSubdivisionDetail"] : []),
+    ]) ||
     typeof value.appearance.reducedMotion !== "boolean" ||
-    !["dark", "light", "system"].includes(value.appearance.theme as string)
+    !["dark", "light", "system"].includes(value.appearance.theme as string) ||
+    (version >= 4 &&
+      !["minimal", "standard", "strong"].includes(
+        value.appearance.beatFlashIntensity as string,
+      )) ||
+    (version >= 4 &&
+      !["beats", "pattern", "sixteenths"].includes(
+        value.appearance.visualSubdivisionDetail as string,
+      ))
   ) {
     errors.push("Backup appearance preferences are invalid.");
   }
@@ -595,7 +619,12 @@ export function validateBackupEnvelope(
   if (!hasExactKeys(value, ["app", "version", "exportedAt", "data"]))
     errors.push("Backup envelope fields are invalid.");
   if (value.app !== "web-band") errors.push("Backup app ID is unsupported.");
-  if (value.version !== 1 && value.version !== 2 && value.version !== 3)
+  if (
+    value.version !== 1 &&
+    value.version !== 2 &&
+    value.version !== 3 &&
+    value.version !== 4
+  )
     errors.push("Backup version is unsupported.");
   if (!isCanonicalUtcIsoTimestamp(value.exportedAt))
     errors.push("Backup export date is invalid.");
@@ -606,7 +635,13 @@ export function validateBackupEnvelope(
 
   const data = value.data;
   const version =
-    value.version === 1 ? 1 : value.version === 2 ? 2 : (3 as const);
+    value.version === 1
+      ? 1
+      : value.version === 2
+        ? 2
+        : value.version === 3
+          ? 3
+          : (4 as const);
   if (
     !hasExactKeys(data, [
       "customPatterns",
@@ -616,7 +651,7 @@ export function validateBackupEnvelope(
       "customStrummingPatterns",
       "practicePresets",
       "practiceSessions",
-      ...(version === 3 ? ["preferences"] : []),
+      ...(version >= 3 ? ["preferences"] : []),
       "settings",
     ])
   ) {
@@ -696,7 +731,10 @@ export function validateBackupEnvelope(
     )
       errors.push("Backup history settings are invalid.");
   }
-  if (version === 3 && !validateBackupPreferences(data.preferences).success) {
+  if (
+    version >= 3 &&
+    !validateBackupPreferences(data.preferences, version === 3 ? 3 : 4).success
+  ) {
     errors.push("Backup preferences are invalid.");
   }
 
@@ -721,7 +759,7 @@ export function validateBackupEnvelope(
     }
   }
   if (
-    version === 3 &&
+    version >= 3 &&
     isRecord(data.preferences) &&
     Array.isArray(data.preferences.recentPatternIds)
   ) {

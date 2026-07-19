@@ -23,7 +23,7 @@ import { isStrummingPatternMeterCompatible } from "@/lib/guided-practice";
 import type {
   CountInMeasures,
   FillFrequency,
-  ScheduledVisualStep,
+  PatternVisualFrame,
 } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 import type { FillArrangement } from "@/types/fill";
@@ -74,7 +74,7 @@ interface PlannedPatternTick {
   patternChange: PendingPattern | null;
   semanticCallbackId: number | null;
   terminalStop: boolean;
-  visual: ScheduledVisualStep | null;
+  visual: PatternVisualFrame | null;
 }
 
 type TargetStopState = "delivered" | "idle" | "pending";
@@ -236,6 +236,7 @@ export class PatternScheduler {
     this.targetStopState = "idle";
     this.guidedController.reset();
     this.guidedTimeline.reset();
+    this.timeline.reset();
   }
 
   cancelPendingVisuals(): void {
@@ -269,10 +270,10 @@ export class PatternScheduler {
         this.runtime.scheduleDraw(() => {
           if (!this.isDrawCurrent(generation, drawGeneration)) return;
           this.timeline.emit({
+            beat: currentBeat,
             isAccent: currentBeat === 0,
             measure: currentMeasure,
             phase: "count-in",
-            step: currentBeat,
           });
         }, time);
       },
@@ -377,7 +378,7 @@ export class PatternScheduler {
 
     const guidance = this.guidedController.tick();
     const hits: PlannedHit[] = [];
-    let visual: ScheduledVisualStep | null = null;
+    let visual: PatternVisualFrame | null = null;
     if (!guidance.shouldStop && !terminalStop) {
       const playableStep = getPlayablePatternStep(
         pattern,
@@ -416,14 +417,18 @@ export class PatternScheduler {
             });
           }
         }
-        visual = {
-          isAccent: playableStep.hits.some((hit) => hit.velocity >= 0.8),
-          measure:
-            Math.floor(currentAbsoluteSixteenthStep / sixteenthsPerBar) + 1,
-          phase: "pattern",
-          step: playableStep.stepInBar,
-        };
       }
+      visual = {
+        isAccent:
+          playableStep?.hits.some((hit) => hit.velocity >= 0.8) ?? false,
+        measure,
+        patternStep: Math.floor(
+          (currentAbsoluteSixteenthStep % sixteenthsPerBar) /
+            (16 / pattern.subdivision),
+        ),
+        phase: "pattern",
+        sixteenth: currentAbsoluteSixteenthStep % sixteenthsPerBar,
+      };
     }
 
     const plan: PlannedPatternTick = {

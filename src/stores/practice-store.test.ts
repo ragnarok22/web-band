@@ -34,7 +34,7 @@ describe("practice store preset configuration", () => {
     expect(usePracticeStore.getState().mixer.kick.volume).not.toBe(0);
     expect(
       JSON.parse(
-        window.localStorage.getItem("web-band-practice-settings-v3") ?? "null",
+        window.localStorage.getItem("web-band-practice-settings-v4") ?? "null",
       ),
     ).toMatchObject({ bpm: 121, selectedPatternId: "one-drop" });
   });
@@ -67,7 +67,7 @@ describe("practice store preset configuration", () => {
     });
     expect(
       JSON.parse(
-        window.localStorage.getItem("web-band-practice-settings-v3") ?? "null",
+        window.localStorage.getItem("web-band-practice-settings-v4") ?? "null",
       ),
     ).toMatchObject({
       bpm: 128,

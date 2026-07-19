@@ -3,18 +3,78 @@
 import { useEffect, useRef } from "react";
 
 import { visualTimeline } from "@/audio/visual-timeline";
-import { getBeatLabels, isMainBeat } from "@/lib/musical-time";
+import { getBeatLabels } from "@/lib/musical-time";
 import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
+import type {
+  BeatFlashIntensity,
+  VisualSubdivisionDetail,
+} from "@/types/persistence";
 
-interface BeatVisualizerProps {
+export type BeatVisualizerDetail = VisualSubdivisionDetail;
+export type BeatVisualizerIntensity = BeatFlashIntensity;
+
+export interface BeatVisualizerProps {
   countInMeasures: CountInMeasures;
+  detail?: BeatVisualizerDetail;
+  intensity?: BeatVisualizerIntensity;
   pattern: DrumPattern;
   status: AudioEngineStatus;
 }
 
+interface VisualBeatGroup {
+  beat: number;
+  steps: Array<{ label: string; sixteenth: number }>;
+}
+
+function getVisualBeatGroups(
+  pattern: DrumPattern,
+  detail: BeatVisualizerDetail,
+): VisualBeatGroup[] {
+  const sixteenthsPerBeat = 16 / pattern.timeSignature.denominator;
+  const displayInterval =
+    detail === "beats"
+      ? sixteenthsPerBeat
+      : detail === "pattern"
+        ? 16 / pattern.subdivision
+        : 1;
+  const labels = getBeatLabels({
+    subdivision: 16,
+    timeSignature: pattern.timeSignature,
+  });
+
+  return Array.from({ length: pattern.timeSignature.numerator }, (_, beat) => {
+    const beatStart = beat * sixteenthsPerBeat;
+    const steps: VisualBeatGroup["steps"] = [];
+    for (let offset = 0; offset < sixteenthsPerBeat; offset += 1) {
+      const sixteenth = beatStart + offset;
+      if (sixteenth % displayInterval === 0) {
+        steps.push({ label: labels[sixteenth] ?? "", sixteenth });
+      }
+    }
+    return { beat, steps };
+  });
+}
+
+function mapFrameToDisplayedSixteenth(
+  sixteenth: number,
+  patternStep: number,
+  pattern: DrumPattern,
+  detail: BeatVisualizerDetail,
+): number {
+  if (detail === "sixteenths") return sixteenth;
+  if (detail === "pattern") {
+    return patternStep * (16 / pattern.subdivision);
+  }
+
+  const sixteenthsPerBeat = 16 / pattern.timeSignature.denominator;
+  return Math.floor(sixteenth / sixteenthsPerBeat) * sixteenthsPerBeat;
+}
+
 export function BeatVisualizer({
   countInMeasures,
+  detail = "pattern",
+  intensity = "standard",
   pattern,
   status,
 }: BeatVisualizerProps) {
@@ -23,16 +83,32 @@ export function BeatVisualizer({
   const countInMeasureRef = useRef<HTMLSpanElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
   const previousStepRef = useRef<number | null>(null);
-  const labels = getBeatLabels(pattern);
+  const groups = getVisualBeatGroups(pattern, detail);
 
   useEffect(() => {
-    return visualTimeline.subscribe((visualStep) => {
-      if (visualStep.phase === "count-in") {
+    return visualTimeline.subscribe((frame) => {
+      if (!frame) {
+        const previousStep = previousStepRef.current;
+        if (previousStep !== null) {
+          beatRefs.current[previousStep]?.classList.remove(
+            "beat-step--active",
+            "beat-step--accent",
+          );
+        }
+        previousStepRef.current = null;
+        if (measureRef.current) measureRef.current.textContent = "1";
+        if (countInRef.current) countInRef.current.textContent = "1";
+        if (countInMeasureRef.current)
+          countInMeasureRef.current.textContent = "1";
+        return;
+      }
+
+      if (frame.phase === "count-in") {
         if (countInRef.current) {
-          countInRef.current.textContent = String(visualStep.step + 1);
+          countInRef.current.textContent = String(frame.beat + 1);
         }
         if (countInMeasureRef.current) {
-          countInMeasureRef.current.textContent = String(visualStep.measure);
+          countInMeasureRef.current.textContent = String(frame.measure);
         }
         return;
       }
@@ -45,16 +121,22 @@ export function BeatVisualizer({
         );
       }
 
-      const nextElement = beatRefs.current[visualStep.step];
+      const displayedSixteenth = mapFrameToDisplayedSixteenth(
+        frame.sixteenth,
+        frame.patternStep,
+        pattern,
+        detail,
+      );
+      const nextElement = beatRefs.current[displayedSixteenth];
       nextElement?.classList.add("beat-step--active");
-      nextElement?.classList.toggle("beat-step--accent", visualStep.isAccent);
-      previousStepRef.current = visualStep.step;
+      nextElement?.classList.toggle("beat-step--accent", frame.isAccent);
+      previousStepRef.current = displayedSixteenth;
 
       if (measureRef.current) {
-        measureRef.current.textContent = String(visualStep.measure);
+        measureRef.current.textContent = String(frame.measure);
       }
     });
-  }, []);
+  }, [detail, pattern]);
 
   useEffect(() => {
     if (
@@ -80,7 +162,9 @@ export function BeatVisualizer({
   return (
     <section
       aria-label="Beat visualization"
-      className="border-border bg-surface relative overflow-hidden rounded-2xl border px-4 py-5 shadow-[0_20px_50px_var(--shadow)] sm:px-6 sm:py-6"
+      className={`beat-visualizer beat-visualizer--${intensity} border-border bg-surface relative overflow-hidden rounded-2xl border px-4 py-5 shadow-[0_20px_50px_var(--shadow)] sm:px-6 sm:py-6`}
+      data-detail={detail}
+      data-intensity={intensity}
     >
       <div
         aria-hidden="true"
@@ -93,28 +177,28 @@ export function BeatVisualizer({
         </span>
       </div>
 
-      <div
-        aria-hidden="true"
-        className="grid gap-2"
-        style={{
-          gridTemplateColumns: `repeat(${labels.length}, minmax(0, 1fr))`,
-        }}
-      >
-        {labels.map((label, step) => {
-          const mainBeat = isMainBeat(step, pattern);
-          return (
-            <div
-              className={`beat-step ${mainBeat ? "beat-step--main" : ""} ${step === 0 ? "beat-step--downbeat" : ""}`}
-              key={`${label}-${step}`}
-              ref={(element) => {
-                beatRefs.current[step] = element;
-              }}
-            >
-              <span className="beat-step__light" />
-              <span className="beat-step__label">{label}</span>
-            </div>
-          );
-        })}
+      <div aria-hidden="true" className="beat-visualizer__grid">
+        {groups.map((group) => (
+          <div
+            className="beat-visualizer__group"
+            data-beat={group.beat + 1}
+            key={group.beat}
+          >
+            {group.steps.map(({ label, sixteenth }) => (
+              <div
+                className={`beat-step ${sixteenth % (16 / pattern.timeSignature.denominator) === 0 ? "beat-step--main" : ""} ${sixteenth === 0 ? "beat-step--downbeat" : ""}`}
+                data-sixteenth={sixteenth}
+                key={sixteenth}
+                ref={(element) => {
+                  beatRefs.current[sixteenth] = element;
+                }}
+              >
+                <span className="beat-step__light" />
+                <span className="beat-step__label">{label}</span>
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
 
       <div

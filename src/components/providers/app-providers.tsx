@@ -63,7 +63,7 @@ export function AppProviders({ children }: AppProvidersProps) {
       }
 
       setStorageStatus(status.mode, status.warning);
-      hydrateGuidedPractice();
+      hydrateGuidedPractice(usePracticeStore.getState().restoreLastPractice);
       const hydrationResults = await Promise.allSettled([
         hydratePatterns(),
         hydrateChordProgressions(),
@@ -109,9 +109,19 @@ export function AppProviders({ children }: AppProvidersProps) {
   useEffect(() => {
     const colorScheme = window.matchMedia?.("(prefers-color-scheme: light)");
     const handleColorSchemeChange = () => {
-      const { reducedMotion, theme } = useAppearanceStore.getState();
+      const {
+        beatFlashIntensity,
+        reducedMotion,
+        theme,
+        visualSubdivisionDetail,
+      } = useAppearanceStore.getState();
       if (theme === "system") {
-        applyAppearancePreferences({ reducedMotion, theme });
+        applyAppearancePreferences({
+          beatFlashIntensity,
+          reducedMotion,
+          theme,
+          visualSubdivisionDetail,
+        });
       }
     };
     colorScheme?.addEventListener("change", handleColorSchemeChange);

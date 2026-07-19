@@ -1,7 +1,12 @@
 import { create } from "zustand";
 
 import { reportPreferenceWrite } from "@/stores/storage-store";
-import type { AppearancePreferences, ColorTheme } from "@/types/persistence";
+import type {
+  AppearancePreferences,
+  BeatFlashIntensity,
+  ColorTheme,
+  VisualSubdivisionDetail,
+} from "@/types/persistence";
 
 export type { ColorTheme } from "@/types/persistence";
 
@@ -9,19 +14,36 @@ interface AppearanceStore extends AppearancePreferences {
   hasHydrated: boolean;
   hydrate: () => void;
   replacePreferences: (preferences: AppearancePreferences) => boolean;
+  setBeatFlashIntensity: (intensity: BeatFlashIntensity) => void;
   setReducedMotion: (reducedMotion: boolean) => void;
   setTheme: (theme: ColorTheme) => void;
+  setVisualSubdivisionDetail: (detail: VisualSubdivisionDetail) => void;
 }
 
-export const appearanceStorageKey = "web-band-appearance-v1";
+export const appearanceStorageKey = "web-band-appearance-v2";
+export const legacyAppearanceStorageKeys = ["web-band-appearance-v1"] as const;
 
 export const defaultAppearancePreferences: AppearancePreferences = {
+  beatFlashIntensity: "standard",
   reducedMotion: false,
   theme: "dark",
+  visualSubdivisionDetail: "pattern",
 };
 
 export function isColorTheme(value: unknown): value is ColorTheme {
   return value === "dark" || value === "light" || value === "system";
+}
+
+export function isBeatFlashIntensity(
+  value: unknown,
+): value is BeatFlashIntensity {
+  return value === "minimal" || value === "standard" || value === "strong";
+}
+
+export function isVisualSubdivisionDetail(
+  value: unknown,
+): value is VisualSubdivisionDetail {
+  return value === "beats" || value === "pattern" || value === "sixteenths";
 }
 
 function readPreferences(): AppearancePreferences {
@@ -29,12 +51,19 @@ function readPreferences(): AppearancePreferences {
 
   try {
     const value: unknown = JSON.parse(
-      window.localStorage.getItem(appearanceStorageKey) ?? "null",
+      window.localStorage.getItem(appearanceStorageKey) ??
+        legacyAppearanceStorageKeys
+          .map((key) => window.localStorage.getItem(key))
+          .find((stored) => stored !== null) ??
+        "null",
     );
     if (!value || typeof value !== "object")
       return defaultAppearancePreferences;
     const record = value as Record<string, unknown>;
     return {
+      beatFlashIntensity: isBeatFlashIntensity(record.beatFlashIntensity)
+        ? record.beatFlashIntensity
+        : defaultAppearancePreferences.beatFlashIntensity,
       reducedMotion:
         typeof record.reducedMotion === "boolean"
           ? record.reducedMotion
@@ -42,6 +71,11 @@ function readPreferences(): AppearancePreferences {
       theme: isColorTheme(record.theme)
         ? record.theme
         : defaultAppearancePreferences.theme,
+      visualSubdivisionDetail: isVisualSubdivisionDetail(
+        record.visualSubdivisionDetail,
+      )
+        ? record.visualSubdivisionDetail
+        : defaultAppearancePreferences.visualSubdivisionDetail,
     };
   } catch {
     return defaultAppearancePreferences;
@@ -93,8 +127,10 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => ({
   },
   replacePreferences: (preferences) => {
     if (
+      !isBeatFlashIntensity(preferences.beatFlashIntensity) ||
       !isColorTheme(preferences.theme) ||
-      typeof preferences.reducedMotion !== "boolean"
+      typeof preferences.reducedMotion !== "boolean" ||
+      !isVisualSubdivisionDetail(preferences.visualSubdivisionDetail)
     ) {
       throw new Error("Appearance preferences are invalid.");
     }
@@ -105,16 +141,48 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => ({
     reportPreferenceWrite("appearance", persisted);
     return persisted;
   },
+  setBeatFlashIntensity: (beatFlashIntensity) => {
+    const preferences = {
+      beatFlashIntensity,
+      reducedMotion: get().reducedMotion,
+      theme: get().theme,
+      visualSubdivisionDetail: get().visualSubdivisionDetail,
+    };
+    const persisted = persistPreferences(preferences);
+    reportPreferenceWrite("appearance", persisted);
+    set({ beatFlashIntensity });
+  },
   setReducedMotion: (reducedMotion) => {
-    const preferences = { reducedMotion, theme: get().theme };
+    const preferences = {
+      beatFlashIntensity: get().beatFlashIntensity,
+      reducedMotion,
+      theme: get().theme,
+      visualSubdivisionDetail: get().visualSubdivisionDetail,
+    };
     applyAppearancePreferences(preferences);
     reportPreferenceWrite("appearance", persistPreferences(preferences));
     set({ reducedMotion });
   },
   setTheme: (theme) => {
-    const preferences = { reducedMotion: get().reducedMotion, theme };
+    const preferences = {
+      beatFlashIntensity: get().beatFlashIntensity,
+      reducedMotion: get().reducedMotion,
+      theme,
+      visualSubdivisionDetail: get().visualSubdivisionDetail,
+    };
     applyAppearancePreferences(preferences);
     reportPreferenceWrite("appearance", persistPreferences(preferences));
     set({ theme });
+  },
+  setVisualSubdivisionDetail: (visualSubdivisionDetail) => {
+    const preferences = {
+      beatFlashIntensity: get().beatFlashIntensity,
+      reducedMotion: get().reducedMotion,
+      theme: get().theme,
+      visualSubdivisionDetail,
+    };
+    const persisted = persistPreferences(preferences);
+    reportPreferenceWrite("appearance", persisted);
+    set({ visualSubdivisionDetail });
   },
 }));

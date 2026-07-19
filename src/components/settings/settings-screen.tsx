@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, Music2, Palette, Settings2, Trash2 } from "lucide-react";
+import { RotateCcw, Settings2, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -9,21 +9,21 @@ import {
 } from "@/components/data/data-backup-panel";
 import { DeleteLocalDataDialog } from "@/components/settings/delete-local-data-dialog";
 import {
-  MAX_HISTORY_MINIMUM_DURATION_SECONDS,
-  MIN_HISTORY_MINIMUM_DURATION_SECONDS,
-} from "@/lib/history-settings";
+  AppearanceSettingsSection,
+  HistorySettingsSection,
+  PracticeDefaultsSettingsSection,
+  SoundSettingsSection,
+  StorageStatusSection,
+} from "@/components/settings/settings-preference-sections";
 import {
   backupService,
   type ClearLocalDataCompletion,
+  type ResetSettingsCompletion,
 } from "@/services/backup-service";
-import { useHistorySettingsStore } from "@/stores/history-settings-store";
-import { usePracticeStore } from "@/stores/practice-store";
-import { type ColorTheme, useAppearanceStore } from "@/stores/appearance-store";
-import { useStorageStore } from "@/stores/storage-store";
-import type { SoundCharacter } from "@/types/audio";
 
 interface SettingsActions extends DataBackupActions {
   clearAllLocalData: () => Promise<ClearLocalDataCompletion>;
+  resetSettings: () => ResetSettingsCompletion;
 }
 
 interface SettingsScreenProps {
@@ -39,34 +39,6 @@ function messageFromError(error: unknown): string {
 export function SettingsScreen({
   actions = backupService,
 }: SettingsScreenProps) {
-  const historyEnabled = useHistorySettingsStore((state) => state.enabled);
-  const minimumDuration = useHistorySettingsStore(
-    (state) => state.minimumDurationSeconds,
-  );
-  const setHistoryEnabled = useHistorySettingsStore(
-    (state) => state.setEnabled,
-  );
-  const setMinimumDuration = useHistorySettingsStore(
-    (state) => state.setMinimumDurationSeconds,
-  );
-  const storageMode = useStorageStore((state) => state.mode);
-  const storageWarning = useStorageStore((state) => state.warning);
-  const practiceSettingsHydrated = usePracticeStore(
-    (state) => state.hasHydrated,
-  );
-  const soundCharacter = usePracticeStore((state) => state.soundCharacter);
-  const setSoundCharacter = usePracticeStore(
-    (state) => state.setSoundCharacter,
-  );
-  const reducedMotion = useAppearanceStore((state) => state.reducedMotion);
-  const theme = useAppearanceStore((state) => state.theme);
-  const setReducedMotion = useAppearanceStore(
-    (state) => state.setReducedMotion,
-  );
-  const setTheme = useAppearanceStore((state) => state.setTheme);
-  const [minimumDurationInput, setMinimumDurationInput] = useState<
-    string | null
-  >(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -90,6 +62,18 @@ export function SettingsScreen({
     }
   }
 
+  function resetSettings(): void {
+    try {
+      const result = actions.resetSettings();
+      setAnnouncement(
+        result.warning ??
+          "Settings were reset. Your patterns, presets, favorites, and practice history were preserved.",
+      );
+    } catch {
+      setAnnouncement("Settings could not be reset.");
+    }
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-7 sm:py-12 lg:px-10 lg:py-16">
       <header className="border-border border-b pb-8 sm:pb-10">
@@ -106,159 +90,38 @@ export function SettingsScreen({
       </header>
 
       <div className="mt-8 space-y-6 sm:mt-10">
-        <section
-          aria-labelledby="appearance-settings-heading"
-          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
-        >
-          <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-            <Palette aria-hidden="true" className="size-4" />
-            Appearance
-          </p>
-          <h2
-            className="mt-2 text-2xl font-black"
-            id="appearance-settings-heading"
-          >
-            Tune the interface
-          </h2>
-          <div className="border-border mt-5 grid gap-5 border-t pt-5 sm:grid-cols-2">
-            <label className="text-sm font-extrabold" htmlFor="color-theme">
-              Color theme
-              <select
-                autoComplete="off"
-                className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-                id="color-theme"
-                name="color-theme"
-                onChange={(event) =>
-                  setTheme(event.currentTarget.value as ColorTheme)
-                }
-                value={theme}
-              >
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="system">Use device setting</option>
-              </select>
-            </label>
-            <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold sm:self-end">
-              Reduce motion
-              <input
-                checked={reducedMotion}
-                className="size-6 accent-[var(--accent)]"
-                onChange={(event) => setReducedMotion(event.target.checked)}
-                type="checkbox"
-              />
-            </label>
-          </div>
-        </section>
+        <AppearanceSettingsSection />
 
-        <section
-          aria-labelledby="sound-settings-heading"
-          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
-        >
-          <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-            <Music2 aria-hidden="true" className="size-4" />
-            Sound
-          </p>
-          <h2 className="mt-2 text-2xl font-black" id="sound-settings-heading">
-            Shape the kit
-          </h2>
-          <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
-            Choose a synthesized drum character for practice, previews, and the
-            pattern editor. Balanced preserves the original Web Band kit.
-          </p>
-          <label
-            className="border-border mt-5 block max-w-sm border-t pt-5 text-sm font-extrabold"
-            htmlFor="sound-character"
-          >
-            Sound character
-            <select
-              className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-              disabled={!practiceSettingsHydrated}
-              id="sound-character"
-              onChange={(event) =>
-                setSoundCharacter(event.currentTarget.value as SoundCharacter)
-              }
-              value={soundCharacter}
-            >
-              <option value="soft">Soft</option>
-              <option value="balanced">Balanced</option>
-              <option value="punchy">Punchy</option>
-            </select>
-          </label>
-        </section>
+        <PracticeDefaultsSettingsSection />
 
-        <section
-          aria-labelledby="history-settings-heading"
-          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
-        >
-          <h2 className="text-2xl font-black" id="history-settings-heading">
-            Practice history
-          </h2>
-          <p className="text-muted mt-2 text-sm leading-6">
-            Choose whether completed practice sessions become journal entries.
-          </p>
-          <div className="border-border mt-5 grid gap-5 border-t pt-5 sm:grid-cols-2">
-            <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold">
-              Save practice history
-              <input
-                checked={historyEnabled}
-                className="size-6 accent-[var(--accent)]"
-                onChange={(event) => setHistoryEnabled(event.target.checked)}
-                type="checkbox"
-              />
-            </label>
-            <div className="text-sm font-extrabold">
-              <label htmlFor="history-minimum-duration">
-                Minimum session duration
-              </label>
-              <span className="border-border bg-background mt-2 flex min-h-11 items-center rounded-xl border px-3">
-                <input
-                  className="text-foreground min-w-0 flex-1 bg-transparent py-2 outline-none"
-                  id="history-minimum-duration"
-                  max={MAX_HISTORY_MINIMUM_DURATION_SECONDS}
-                  min={MIN_HISTORY_MINIMUM_DURATION_SECONDS}
-                  onChange={(event) => {
-                    setMinimumDurationInput(event.currentTarget.value);
-                    if (event.currentTarget.value !== "") {
-                      setMinimumDuration(event.currentTarget.valueAsNumber);
-                    }
-                  }}
-                  onBlur={() => setMinimumDurationInput(null)}
-                  step={1}
-                  type="number"
-                  value={minimumDurationInput ?? minimumDuration}
-                />
-                <span className="text-muted text-xs">seconds</span>
-              </span>
-              <span className="text-muted mt-1 block text-xs font-medium">
-                {MIN_HISTORY_MINIMUM_DURATION_SECONDS}–
-                {MAX_HISTORY_MINIMUM_DURATION_SECONDS} seconds; default 30.
-              </span>
-            </div>
-          </div>
-        </section>
+        <SoundSettingsSection />
 
-        <section
-          aria-labelledby="storage-status-heading"
-          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
-        >
-          <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-            <Database aria-hidden="true" className="size-4" />
-            Storage status
-          </p>
-          <h2 className="mt-2 text-2xl font-black" id="storage-status-heading">
-            {storageMode === "indexed-db"
-              ? "Saved on this device"
-              : "Visit-only storage"}
-          </h2>
-          <p className="text-muted mt-2 text-sm leading-6">
-            {storageMode === "indexed-db"
-              ? "Patterns, presets, favorites, and journal entries stay in this browser. Nothing is uploaded to a server."
-              : (storageWarning ??
-                "Browser database storage is unavailable, so new data lasts only for this visit.")}
-          </p>
-        </section>
+        <HistorySettingsSection />
+
+        <StorageStatusSection />
 
         <DataBackupPanel actions={actions} />
+
+        <section
+          aria-labelledby="reset-settings-heading"
+          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
+        >
+          <h2 className="text-2xl font-black" id="reset-settings-heading">
+            Reset settings
+          </h2>
+          <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
+            Return app preferences to their defaults without removing patterns,
+            presets, favorites, or practice history.
+          </p>
+          <button
+            className="border-border text-foreground hover:bg-surface-hover mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
+            onClick={resetSettings}
+            type="button"
+          >
+            <RotateCcw aria-hidden="true" className="size-4" />
+            Reset settings to defaults
+          </button>
+        </section>
 
         <section
           aria-labelledby="danger-heading"

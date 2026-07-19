@@ -4,25 +4,31 @@ import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 import { usePracticeModal } from "@/hooks/use-practice-modal";
+import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 
 interface ShortcutsDialogProps {
+  adjustmentStep?: BpmAdjustmentStep;
   onClose: () => void;
   open: boolean;
 }
 
-const shortcuts = [
-  ["Space", "Play or pause"],
-  ["Escape", "Stop playback"],
-  ["↑ / ↓", "Change tempo by 1 BPM"],
-  ["Shift + ↑ / ↓", "Change tempo by 5 BPM"],
-  ["← / →", "Change pattern"],
-  ["T", "Tap tempo"],
-  ["F", "Toggle focus mode"],
-  ["M", "Mute or unmute master"],
-] as const;
-
-export function ShortcutsDialog({ onClose, open }: ShortcutsDialogProps) {
+export function ShortcutsDialog({
+  adjustmentStep = 1,
+  onClose,
+  open,
+}: ShortcutsDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const alternateStep = adjustmentStep === 1 ? 5 : 1;
+  const shortcuts = [
+    ["Space", "Play or pause"],
+    ["Escape", "Stop playback"],
+    ["↑ / ↓", `Change tempo by ${adjustmentStep} BPM`],
+    ["Shift + ↑ / ↓", `Change tempo by ${alternateStep} BPM`],
+    ["← / →", "Change pattern"],
+    ["T", "Tap tempo"],
+    ["F", "Toggle focus mode"],
+    ["M", "Mute or unmute master"],
+  ] as const;
   usePracticeModal(open);
 
   useEffect(() => {

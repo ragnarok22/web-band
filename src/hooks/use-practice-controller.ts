@@ -83,6 +83,9 @@ export function usePracticeController() {
   const status = useAudioStore((state) => state.status);
   const errorMessage = useAudioStore((state) => state.errorMessage);
   const bpm = usePracticeStore((state) => state.bpm);
+  const bpmAdjustmentStep = usePracticeStore(
+    (state) => state.bpmAdjustmentStep,
+  );
   const practiceHydrated = usePracticeStore((state) => state.hasHydrated);
   const countInMeasures = usePracticeStore((state) => state.countInMeasures);
   const fillFrequency = usePracticeStore((state) => state.fillFrequency);
@@ -213,6 +216,7 @@ export function usePracticeController() {
   }, [setFocusMode]);
 
   usePracticeShortcuts({
+    adjustmentStep: bpmAdjustmentStep,
     disabled: !isReady || shortcutsOpen || openModalCount > 0,
     onBpmChange: (amount) => {
       if (mode === "tempoTrainer")
@@ -482,6 +486,7 @@ export function usePracticeController() {
   return {
     active,
     bpm,
+    bpmAdjustmentStep,
     changeBpm,
     changeFillFrequency,
     changeHumanization,

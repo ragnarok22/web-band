@@ -6,8 +6,12 @@ import { basicRockPattern } from "@/data/patterns";
 import { WebBandDatabase } from "@/db/database";
 import { storageService } from "@/db/storage-service";
 import { useChordProgressionStore } from "@/stores/chord-progression-store";
-import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
+import {
+  createDefaultGuidedPracticeValues,
+  useGuidedPracticeStore,
+} from "@/stores/guided-practice-store";
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
+import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { useHistorySettingsStore } from "@/stores/history-settings-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
@@ -57,6 +61,14 @@ beforeEach(async () => {
     mode: "memory",
     preferenceWriteFailures: [],
     warning: null,
+  });
+  usePracticeStore.setState({
+    ...structuredClone(defaultPracticeSettings),
+    hasHydrated: false,
+  });
+  useGuidedPracticeStore.setState({
+    ...createDefaultGuidedPracticeValues(),
+    isHydrated: false,
   });
   usePracticeStore.getState().setBpm(137);
   useGuidedPracticeStore.getState().setMode("tempoTrainer");
@@ -118,6 +130,27 @@ describe("app providers", () => {
     expect(useStorageStore.getState().warning).toContain(
       "Practice can continue",
     );
+  });
+
+  it("starts with session defaults when restoring the last setup is disabled", async () => {
+    usePracticeStore.getState().setCountInMeasures(4);
+    usePracticeStore.getState().setRestoreLastPractice(false);
+
+    render(
+      <AppProviders>
+        <div>Application</div>
+      </AppProviders>,
+    );
+
+    await waitFor(() => {
+      expect(useGuidedPracticeStore.getState().isHydrated).toBe(true);
+    });
+    expect(usePracticeStore.getState()).toMatchObject({
+      bpm: defaultPracticeSettings.bpm,
+      countInMeasures: 4,
+      restoreLastPractice: false,
+    });
+    expect(useGuidedPracticeStore.getState().mode).toBe("drums");
   });
 
   it("keeps IndexedDB active and warns when hydration filters corrupt rows", async () => {

@@ -7,7 +7,7 @@ import { SiteNavigation } from "@/components/navigation/site-navigation";
 
 import "./globals.css";
 
-const appearanceBootstrap = `(()=>{let theme="dark",reducedMotion=false;try{const value=JSON.parse(localStorage.getItem("web-band-appearance-v1")||"null");if(value&&(value.theme==="dark"||value.theme==="light"||value.theme==="system"))theme=value.theme;if(value&&typeof value.reducedMotion==="boolean")reducedMotion=value.reducedMotion;}catch{}const resolved=theme==="system"&&matchMedia("(prefers-color-scheme: light)").matches?"light":theme==="system"?"dark":theme;document.documentElement.dataset.theme=resolved;document.documentElement.dataset.reduceMotion=String(reducedMotion);document.querySelector('meta[name="theme-color"]')?.setAttribute("content",resolved==="light"?"#f3eee5":"#12110f");})();`;
+const appearanceBootstrap = `(()=>{let theme="dark",reducedMotion=false;try{const value=JSON.parse(localStorage.getItem("web-band-appearance-v2")||localStorage.getItem("web-band-appearance-v1")||"null");if(value&&(value.theme==="dark"||value.theme==="light"||value.theme==="system"))theme=value.theme;if(value&&typeof value.reducedMotion==="boolean")reducedMotion=value.reducedMotion;}catch{}const resolved=theme==="system"&&matchMedia("(prefers-color-scheme: light)").matches?"light":theme==="system"?"dark":theme;document.documentElement.dataset.theme=resolved;document.documentElement.dataset.reduceMotion=String(reducedMotion);document.querySelector('meta[name="theme-color"]')?.setAttribute("content",resolved==="light"?"#f3eee5":"#12110f");})();`;
 
 const manrope = Manrope({
   display: "swap",

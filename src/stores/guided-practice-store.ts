@@ -31,7 +31,7 @@ export interface GuidedPracticeValues {
 interface GuidedPracticeStore extends GuidedPracticeValues {
   isHydrated: boolean;
   applyConfiguration: (configuration: GuidedPracticeConfiguration) => void;
-  hydrate: () => void;
+  hydrate: (restoreLastPractice?: boolean) => void;
   replaceSettings: (settings: GuidedPracticeSettings) => boolean;
   setChordTrainerConfiguration: (
     configuration: ChordTrainerConfiguration,
@@ -180,7 +180,13 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
             break;
         }
       },
-      hydrate: () => set({ ...loadGuidedPracticeValues(), isHydrated: true }),
+      hydrate: (restoreLastPractice = true) =>
+        set({
+          ...(restoreLastPractice
+            ? loadGuidedPracticeValues()
+            : createDefaultGuidedPracticeValues()),
+          isHydrated: true,
+        }),
       isHydrated: false,
       replaceSettings: (settings) => {
         if (

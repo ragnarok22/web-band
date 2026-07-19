@@ -26,7 +26,7 @@ export function useEditorPlayback(pattern: CustomDrumPattern | null) {
 
   useEffect(() => {
     return visualTimeline.subscribe((frame) => {
-      if (frame.phase !== "pattern" || !pattern) {
+      if (!frame || frame.phase !== "pattern" || !pattern) {
         setActiveStep(null);
         return;
       }
@@ -35,7 +35,7 @@ export function useEditorPlayback(pattern: CustomDrumPattern | null) {
         pattern.subdivision,
       );
       const measureIndex = (frame.measure - 1) % pattern.bars;
-      setActiveStep(measureIndex * stepsPerBar + frame.step);
+      setActiveStep(measureIndex * stepsPerBar + frame.patternStep);
     });
   }, [pattern]);
 

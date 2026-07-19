@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +22,11 @@ function actions() {
     })),
     exportCurrentBackup: vi.fn(),
     importBackup: vi.fn(),
+    resetSettings: vi.fn(() => ({
+      reset: true as const,
+      settingsPersisted: true,
+      warning: null,
+    })),
   };
 }
 
@@ -91,9 +96,71 @@ describe("settings screen", () => {
     expect(usePracticeStore.getState().soundCharacter).toBe("punchy");
     expect(
       JSON.parse(
-        window.localStorage.getItem("web-band-practice-settings-v3") ?? "null",
+        window.localStorage.getItem("web-band-practice-settings-v4") ?? "null",
       ),
     ).toMatchObject({ soundCharacter: "punchy" });
+  });
+
+  it("updates the Phase 9 practice and visual defaults", async () => {
+    const user = userEvent.setup();
+    render(<SettingsScreen actions={actions()} />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Visual subdivision detail" }),
+      "sixteenths",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Beat flash intensity" }),
+      "strong",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Count-in" }),
+      "2",
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Default BPM adjustment" }),
+      "5",
+    );
+    const masterVolume = screen.getByRole("slider", { name: "Master volume" });
+    expect(masterVolume).toHaveAttribute("aria-valuetext", "80 percent");
+    fireEvent.change(masterVolume, { target: { value: "0.4" } });
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "Keep screen awake while playing",
+      }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: "Restore last practice setup" }),
+    );
+
+    expect(useAppearanceStore.getState()).toMatchObject({
+      beatFlashIntensity: "strong",
+      visualSubdivisionDetail: "sixteenths",
+    });
+    expect(usePracticeStore.getState()).toMatchObject({
+      bpmAdjustmentStep: 5,
+      countInMeasures: 2,
+      masterVolume: 0.4,
+      restoreLastPractice: false,
+      wakeLockEnabled: false,
+    });
+  });
+
+  it("resets settings without destructive confirmation", async () => {
+    const user = userEvent.setup();
+    const settingsActions = actions();
+    render(<SettingsScreen actions={settingsActions} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Reset settings to defaults" }),
+    );
+
+    expect(settingsActions.resetSettings).toHaveBeenCalledOnce();
+    expect(
+      screen.getByText(
+        /patterns, presets, favorites, and practice history were preserved/i,
+      ),
+    ).toBeVisible();
   });
 
   it("requires destructive confirmation and announces successful deletion", async () => {

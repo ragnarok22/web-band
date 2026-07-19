@@ -177,7 +177,7 @@ Kick:       x       x
 
 ## Local Settings
 
-The versioned key `web-band-practice-settings-v3` stores:
+The versioned key `web-band-practice-settings-v4` stores:
 
 - Last BPM.
 - Last selected pattern ID.
@@ -188,8 +188,10 @@ The versioned key `web-band-practice-settings-v3` stores:
 - Six mixer channel settings.
 - Soft, Balanced, or Punchy sound character.
 - Wake Lock preference.
+- Default 1 or 5 BPM adjustment step.
+- Whether to restore the last session-specific practice setup on startup.
 
-The repository reads the legacy `web-band-practice-settings-v2` and `web-band-practice-settings-v1` shapes and supplies safe defaults, including Balanced sound character. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its meaningful-duration threshold. The supported range is 1–3600 seconds with a 30-second default; historical zero values migrate to one second. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. `web-band-appearance-v1` stores the device-only dark, light, or system theme choice and explicit reduced-motion preference. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
+The repository reads the legacy `web-band-practice-settings-v1` through `v3` shapes and supplies safe defaults, including Balanced sound character. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its meaningful-duration threshold. The supported range is 1–3600 seconds with a 30-second default; historical zero values migrate to one second. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. `web-band-appearance-v2` stores the device-only theme, reduced-motion preference, visual subdivision detail, and beat-flash intensity while migrating the v1 shape. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
 
 Practice history checkpoints active sessions when the page becomes hidden or receives `pagehide`, and normal navigation/finalization upserts the same session ID with its longer final duration. These asynchronous IndexedDB writes are best effort: browser process termination, power loss, or immediate mobile suspension can still prevent the final checkpoint from becoming durable.
 
@@ -220,11 +222,11 @@ Pattern files are capped at 10 MB and cannot contain built-in IDs, malformed hit
 
 The repository includes ten directly importable song-groove examples under `presets/`. See [`docs/PRESETS.md`](docs/PRESETS.md) for the catalog, complete schema, grid notation, manual authoring workflow, and guidance for creating additional files with AI.
 
-Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 3 envelope contains:
+Settings and History can export an `application/json` file named `web-band-backup-YYYY-MM-DD.json`. The strict version 4 envelope contains:
 
 ```text
 app: "web-band"
-version: 3
+version: 4
 exportedAt: canonical UTC ISO timestamp
 data:
   customPatterns, favoritePatternIds
@@ -234,9 +236,9 @@ data:
   preferences: appearance, onboardingDismissed, recentPatternIds
 ```
 
-Imports are parsed as data, capped at 25 MB, and fully validated before mutation. Valid version 1 and 2 backups migrate to version 3 with historical defaults for fields they could not contain; unknown versions remain rejected. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, recent-pattern references, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Version 3 settings and preferences replace their current values in both modes; legacy merge imports preserve appearance, recents, and onboarding because those formats never contained them, while legacy replacement uses historical defaults. Replace starts a validated safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the versioned settings and preferences stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
+Imports are parsed as data, capped at 25 MB, and fully validated before mutation. Valid version 1 through 3 backups migrate to version 4 with historical defaults for fields they could not contain; unknown versions remain rejected. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, recent-pattern references, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Version 3 and 4 settings and preferences replace their current values in both modes; version 1 and 2 merge imports preserve appearance, recents, and onboarding because those formats never contained them, while legacy replacement uses historical defaults. Replace starts a validated safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the versioned settings and preferences stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
 
-Delete all starts a complete version 3 safety backup, empties the IndexedDB collections, resets live state, and removes every current and legacy Web Band `localStorage` key from an explicit allowlist. It preserves unrelated origin storage and the offline application shell.
+Delete all starts a complete version 4 safety backup, empties the IndexedDB collections, resets live state, and removes every current and legacy Web Band `localStorage` key from an explicit allowlist. It preserves unrelated origin storage and the offline application shell. Reset settings changes only preferences and leaves all IndexedDB collections intact.
 
 ## Browser Support
 

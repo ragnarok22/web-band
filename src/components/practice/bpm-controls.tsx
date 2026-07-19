@@ -2,23 +2,32 @@
 
 import { Hand, RotateCcw } from "lucide-react";
 
+import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 import { clampBpm, MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 
 interface BpmControlsProps {
+  adjustmentStep?: BpmAdjustmentStep;
   bpm: number;
   defaultBpm: number;
   onChange: (bpm: number) => void;
   onTap: () => void;
 }
 
-const adjustments = [-5, -1, 1, 5] as const;
-
 export function BpmControls({
+  adjustmentStep = 1,
   bpm,
   defaultBpm,
   onChange,
   onTap,
 }: BpmControlsProps) {
+  const alternateStep = adjustmentStep === 1 ? 5 : 1;
+  const adjustments = [
+    -adjustmentStep,
+    adjustmentStep,
+    -alternateStep,
+    alternateStep,
+  ];
+
   function commitDraft(input: HTMLInputElement): void {
     const parsed = Number(input.value);
     const nextBpm = clampBpm(parsed, bpm);
@@ -90,18 +99,32 @@ export function BpmControls({
         value={bpm}
       />
 
-      <div className="grid grid-cols-4 gap-2">
-        {adjustments.map((adjustment) => (
-          <button
-            aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
-            className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground min-h-11 rounded-lg border text-sm font-extrabold tabular-nums transition-colors active:translate-y-px"
-            key={adjustment}
-            onClick={() => onChange(bpm + adjustment)}
-            type="button"
-          >
-            {adjustment > 0 ? `+${adjustment}` : adjustment}
-          </button>
-        ))}
+      <div
+        aria-label="BPM adjustments"
+        className="grid grid-cols-4 gap-2"
+        role="group"
+      >
+        {adjustments.map((adjustment) => {
+          const isDefault = Math.abs(adjustment) === adjustmentStep;
+
+          return (
+            <button
+              aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
+              className={`hover:bg-surface-hover hover:text-foreground min-h-11 rounded-lg border text-sm font-extrabold tabular-nums transition-colors active:translate-y-px ${
+                isDefault
+                  ? "border-accent/45 bg-accent/10 text-accent hover:border-accent/65"
+                  : "border-border bg-surface-elevated text-muted-strong hover:border-border-strong"
+              }`}
+              data-default-adjustment={isDefault}
+              key={adjustment}
+              onClick={() => onChange(bpm + adjustment)}
+              title={isDefault ? "Default BPM adjustment" : undefined}
+              type="button"
+            >
+              {adjustment > 0 ? `+${adjustment}` : adjustment}
+            </button>
+          );
+        })}
       </div>
       <button
         className="border-accent/30 bg-accent/8 text-accent hover:bg-accent/15 mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border text-sm font-extrabold transition-colors"

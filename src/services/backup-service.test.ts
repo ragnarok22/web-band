@@ -155,6 +155,8 @@ describe("backup service", () => {
       current.data.settings.practice,
     ) as unknown as Record<string, unknown>;
     delete legacyPractice.soundCharacter;
+    delete legacyPractice.bpmAdjustmentStep;
+    delete legacyPractice.restoreLastPractice;
     const legacy = {
       ...current,
       data: structuredClone(current.data) as unknown as Record<string, unknown>,
@@ -200,7 +202,7 @@ describe("backup service", () => {
       "refresh",
     ]);
     expect(deps.downloadEnvelope).toHaveBeenCalledWith(
-      expect.objectContaining({ app: "web-band", version: 3 }),
+      expect.objectContaining({ app: "web-band", version: 4 }),
     );
   });
 
@@ -323,6 +325,29 @@ describe("backup service", () => {
       defaultBackupPreferences,
     );
     expect(result.cleared).toBe(true);
+  });
+
+  it("resets settings without reading or mutating the database", () => {
+    const deps = dependencies();
+    const service = new BackupService(deps);
+
+    const result = service.resetSettings();
+
+    expect(deps.applySettings).toHaveBeenCalledWith({
+      guidedPractice: createDefaultGuidedPracticeValues(),
+      history: defaultHistorySettings,
+      practice: defaultPracticeSettings,
+    });
+    expect(deps.applyPreferences).toHaveBeenCalledWith(
+      defaultBackupPreferences,
+    );
+    expect(deps.storage.exportSnapshot).not.toHaveBeenCalled();
+    expect(deps.storage.importSnapshot).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      reset: true,
+      settingsPersisted: true,
+      warning: null,
+    });
   });
 
   it("waits for queued history writes before exporting", async () => {

@@ -66,12 +66,14 @@ export interface BackupServiceDependencies {
   storage: BackupStorage;
 }
 
-function backupVersion(value: unknown): 1 | 2 | 3 | null {
+function backupVersion(value: unknown): 1 | 2 | 3 | 4 | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
   const version = (value as Record<string, unknown>).version;
-  return version === 1 || version === 2 || version === 3 ? version : null;
+  return version === 1 || version === 2 || version === 3 || version === 4
+    ? version
+    : null;
 }
 
 function getCurrentPreferences(
@@ -84,8 +86,10 @@ function getCurrentPreferences(
   ]);
   return structuredClone({
     appearance: {
+      beatFlashIntensity: appearance.beatFlashIntensity,
       reducedMotion: appearance.reducedMotion,
       theme: appearance.theme,
+      visualSubdivisionDetail: appearance.visualSubdivisionDetail,
     },
     onboardingDismissed: !shouldShowOnboarding(),
     recentPatternIds: usePatternStore
@@ -101,6 +105,12 @@ export interface BackupImportCompletion extends ImportSummary {
 
 export interface ClearLocalDataCompletion {
   cleared: true;
+  settingsPersisted: boolean;
+  warning: string | null;
+}
+
+export interface ResetSettingsCompletion {
+  reset: true;
   settingsPersisted: boolean;
   warning: string | null;
 }
@@ -122,11 +132,13 @@ function getCurrentSettings(): BackupSettings {
     },
     practice: {
       bpm: practice.bpm,
+      bpmAdjustmentStep: practice.bpmAdjustmentStep,
       countInMeasures: practice.countInMeasures,
       fillFrequency: practice.fillFrequency,
       humanization: practice.humanization,
       masterVolume: practice.masterVolume,
       mixer: practice.mixer,
+      restoreLastPractice: practice.restoreLastPractice,
       selectedPatternId: practice.selectedPatternId,
       soundCharacter: practice.soundCharacter,
       swing: practice.swing,
@@ -263,7 +275,8 @@ export class BackupService {
     if (!settingsPersisted) {
       issues.push("some app settings could not be saved for the next visit");
     }
-    const shouldApplyPreferences = sourceVersion === 3 || mode === "replace";
+    const shouldApplyPreferences =
+      sourceVersion === 3 || sourceVersion === 4 || mode === "replace";
     let preferencesPersisted = true;
     if (shouldApplyPreferences) {
       try {
@@ -348,6 +361,42 @@ export class BackupService {
         issues.length === 0
           ? null
           : `Local data was cleared, but ${issues.join("; ")}.`,
+    };
+  }
+
+  resetSettings(): ResetSettingsCompletion {
+    const issues: string[] = [];
+    let settingsPersisted = false;
+    try {
+      settingsPersisted = this.dependencies.applySettings({
+        guidedPractice: createDefaultGuidedPracticeValues(),
+        history: structuredClone(defaultHistorySettings),
+        practice: structuredClone(defaultPracticeSettings),
+      });
+    } catch {
+      settingsPersisted = false;
+    }
+    if (!settingsPersisted) issues.push("some app settings could not be reset");
+
+    let preferencesPersisted = false;
+    try {
+      preferencesPersisted = this.dependencies.applyPreferences(
+        defaultBackupPreferences,
+      );
+    } catch {
+      preferencesPersisted = false;
+    }
+    if (!preferencesPersisted) {
+      issues.push("some app preferences could not be reset");
+    }
+
+    return {
+      reset: true,
+      settingsPersisted: settingsPersisted && preferencesPersisted,
+      warning:
+        issues.length === 0
+          ? null
+          : `Settings were reset, but ${issues.join("; ")}.`,
     };
   }
 }

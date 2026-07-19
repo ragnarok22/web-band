@@ -14,14 +14,23 @@ import { ShortcutsDialog } from "@/components/practice/shortcuts-dialog";
 import { TransportPanel } from "@/components/practice/transport-panel";
 import { usePracticeController } from "@/hooks/use-practice-controller";
 import { audioStatusCopy } from "@/lib/audio-status";
+import { useAppearanceStore } from "@/stores/appearance-store";
 
 export function PracticeScreen() {
   const practice = usePracticeController();
+  const beatFlashIntensity = useAppearanceStore(
+    (state) => state.beatFlashIntensity,
+  );
+  const visualSubdivisionDetail = useAppearanceStore(
+    (state) => state.visualSubdivisionDetail,
+  );
 
   if (practice.isFocusMode) {
     return (
       <PracticeFocusSession
         bpm={practice.bpm}
+        beatFlashIntensity={beatFlashIntensity}
+        bpmAdjustmentStep={practice.bpmAdjustmentStep}
         configuration={practice.guidedPractice}
         countInMeasures={practice.countInMeasures}
         elapsedSeconds={practice.elapsedSeconds}
@@ -39,6 +48,7 @@ export function PracticeScreen() {
         showOnboarding={practice.showOnboarding}
         shortcutsOpen={practice.shortcutsOpen}
         status={practice.status}
+        visualSubdivisionDetail={visualSubdivisionDetail}
       />
     );
   }
@@ -101,6 +111,8 @@ export function PracticeScreen() {
           />
           <BeatVisualizer
             countInMeasures={practice.countInMeasures}
+            detail={visualSubdivisionDetail}
+            intensity={beatFlashIntensity}
             pattern={practice.pattern}
             status={practice.status}
           />
@@ -125,6 +137,7 @@ export function PracticeScreen() {
         </section>
 
         <PracticeSettings
+          adjustmentStep={practice.bpmAdjustmentStep}
           bpm={practice.bpm}
           countInMeasures={practice.countInMeasures}
           defaultBpm={practice.pattern.defaultBpm}
@@ -150,6 +163,7 @@ export function PracticeScreen() {
         {practice.patternAnnouncement}
       </p>
       <ShortcutsDialog
+        adjustmentStep={practice.bpmAdjustmentStep}
         onClose={() => practice.setShortcutsOpen(false)}
         open={practice.shortcutsOpen}
       />

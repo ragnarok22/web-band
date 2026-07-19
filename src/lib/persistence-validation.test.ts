@@ -112,7 +112,12 @@ function createBackup(): BackupEnvelope {
       favoriteChordProgressionIds: ["custom-chords"],
       favoritePatternIds: ["custom-rock"],
       preferences: {
-        appearance: { reducedMotion: true, theme: "system" },
+        appearance: {
+          beatFlashIntensity: "strong",
+          reducedMotion: true,
+          theme: "system",
+          visualSubdivisionDetail: "sixteenths",
+        },
         onboardingDismissed: true,
         recentPatternIds: ["custom-rock", "basic-rock"],
       },
@@ -141,7 +146,7 @@ function createBackup(): BackupEnvelope {
       },
     },
     exportedAt: updatedAt,
-    version: 3,
+    version: 4,
   };
 }
 
@@ -244,7 +249,7 @@ describe("persistence validation", () => {
     ).toBe(false);
   });
 
-  it("validates a complete version 3 backup without mutating it", () => {
+  it("validates a complete version 4 backup without mutating it", () => {
     const backup = createBackup();
     const before = structuredClone(backup);
 
@@ -261,7 +266,7 @@ describe("persistence validation", () => {
     expect(
       validateBackupEnvelope({ ...backup, app: "other-app" }).success,
     ).toBe(false);
-    expect(validateBackupEnvelope({ ...backup, version: 4 }).success).toBe(
+    expect(validateBackupEnvelope({ ...backup, version: 5 }).success).toBe(
       false,
     );
     expect(
@@ -299,7 +304,12 @@ describe("persistence validation", () => {
     );
 
     backup.data.preferences = {
-      appearance: { reducedMotion: false, theme: "dark" },
+      appearance: {
+        beatFlashIntensity: "minimal",
+        reducedMotion: false,
+        theme: "dark",
+        visualSubdivisionDetail: "beats",
+      },
       onboardingDismissed: false,
       recentPatternIds: Array.from({ length: 21 }, (_, index) =>
         index === 0 ? "basic-rock" : `pattern-${index}`,
@@ -308,6 +318,37 @@ describe("persistence validation", () => {
     expect(validateBackupEnvelope(backup).errors).toContain(
       "Backup preferences are invalid.",
     );
+  });
+
+  it("rejects missing or invalid version 4 preference fields", () => {
+    const invalidValues: Array<[string, unknown]> = [
+      ["bpmAdjustmentStep", 2],
+      ["restoreLastPractice", "yes"],
+      ["beatFlashIntensity", "extreme"],
+      ["visualSubdivisionDetail", "thirty-seconds"],
+    ];
+
+    for (const [field, value] of invalidValues) {
+      const backup = createBackup();
+      const target =
+        field === "bpmAdjustmentStep" || field === "restoreLastPractice"
+          ? (backup.data.settings.practice as unknown as Record<
+              string,
+              unknown
+            >)
+          : (backup.data.preferences.appearance as unknown as Record<
+              string,
+              unknown
+            >);
+      target[field] = value;
+      expect(validateBackupEnvelope(backup).success, field).toBe(false);
+    }
+
+    const missingField = createBackup();
+    delete (
+      missingField.data.settings.practice as unknown as Record<string, unknown>
+    ).bpmAdjustmentStep;
+    expect(validateBackupEnvelope(missingField).success).toBe(false);
   });
 
   it("rejects duplicate IDs in every backup collection", () => {

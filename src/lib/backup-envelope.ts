@@ -11,7 +11,12 @@ import type {
 export const MAX_BACKUP_FILE_BYTES = 25 * 1024 * 1024;
 
 export const defaultBackupPreferences: BackupPreferences = {
-  appearance: { reducedMotion: false, theme: "dark" },
+  appearance: {
+    beatFlashIntensity: "standard",
+    reducedMotion: false,
+    theme: "dark",
+    visualSubdivisionDetail: "pattern",
+  },
   onboardingDismissed: false,
   recentPatternIds: [],
 };
@@ -60,7 +65,7 @@ export function createBackupEnvelope(
       settings: structuredClone(settings),
     },
     exportedAt: exportedAt.toISOString(),
-    version: 3,
+    version: 4,
   };
 }
 
@@ -113,30 +118,46 @@ export function normalizeBackupEnvelope(value: unknown): BackupEnvelope {
   }
 
   const envelope = structuredClone(value as VersionedBackupEnvelope);
-  if (envelope.version === 3) return envelope;
+  if (envelope.version === 4) return envelope;
 
-  const settings: BackupSettings =
+  const legacyPractice =
     envelope.version === 1
       ? {
-          ...structuredClone(envelope.data.settings),
-          practice: {
-            ...structuredClone(envelope.data.settings.practice),
-            soundCharacter: "balanced",
-          },
+          ...structuredClone(envelope.data.settings.practice),
+          soundCharacter: "balanced" as const,
         }
-      : structuredClone(envelope.data.settings);
+      : structuredClone(envelope.data.settings.practice);
+  const settings: BackupSettings = {
+    guidedPractice: structuredClone(envelope.data.settings.guidedPractice),
+    history: structuredClone(envelope.data.settings.history),
+    practice: {
+      ...legacyPractice,
+      bpmAdjustmentStep: 1,
+      restoreLastPractice: true,
+    },
+  };
   if (settings.history.minimumDurationSeconds === 0) {
     settings.history.minimumDurationSeconds = 1;
   }
+  const preferences =
+    envelope.version === 3
+      ? {
+          ...structuredClone(envelope.data.preferences),
+          appearance: {
+            ...structuredClone(defaultBackupPreferences.appearance),
+            ...structuredClone(envelope.data.preferences.appearance),
+          },
+        }
+      : structuredClone(defaultBackupPreferences);
 
   return {
     ...envelope,
     data: {
       ...envelope.data,
-      preferences: structuredClone(defaultBackupPreferences),
+      preferences,
       settings,
     },
-    version: 3,
+    version: 4,
   };
 }
 
