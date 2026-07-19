@@ -19,7 +19,7 @@ export const defaultBackupPreferences: BackupPreferences = {
 export interface BackupPreview {
   byteSize: number;
   counts: ImportCollectionCounts;
-  envelope: BackupEnvelope;
+  envelope: VersionedBackupEnvelope;
   exportedAt: string;
   fileName: string | null;
   totalRecords: number;
@@ -88,8 +88,9 @@ export function parseBackupText(
     throw new BackupFileError("This file is not valid JSON.");
   }
 
-  const envelope = normalizeBackupEnvelope(value);
-  const counts = collectionCounts(envelope.data);
+  const normalized = normalizeBackupEnvelope(value);
+  const envelope = structuredClone(value as VersionedBackupEnvelope);
+  const counts = collectionCounts(normalized.data);
   return {
     byteSize,
     counts,

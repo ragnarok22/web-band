@@ -35,6 +35,38 @@ function isVersionedHistorySettings(
   );
 }
 
+function migrateLegacyZero(value: unknown): HistorySettings | null {
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value) ||
+    Object.keys(value).length !== 2 ||
+    !Object.hasOwn(value, "settings") ||
+    !Object.hasOwn(value, "version")
+  ) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const settings = record.settings;
+  if (
+    record.version !== HISTORY_SETTINGS_VERSION ||
+    typeof settings !== "object" ||
+    settings === null ||
+    Array.isArray(settings)
+  ) {
+    return null;
+  }
+  const legacy = settings as Record<string, unknown>;
+  if (
+    Object.keys(legacy).length !== 2 ||
+    typeof legacy.enabled !== "boolean" ||
+    legacy.minimumDurationSeconds !== 0
+  ) {
+    return null;
+  }
+  return { enabled: legacy.enabled, minimumDurationSeconds: 1 };
+}
+
 export function loadHistorySettings(): HistorySettings {
   if (typeof window === "undefined") return { ...defaultHistorySettings };
 
@@ -42,9 +74,10 @@ export function loadHistorySettings(): HistorySettings {
     const rawSettings = window.localStorage.getItem(HISTORY_SETTINGS_KEY);
     if (!rawSettings) return { ...defaultHistorySettings };
     const parsed: unknown = JSON.parse(rawSettings);
-    return isVersionedHistorySettings(parsed)
-      ? structuredClone(parsed.settings)
-      : { ...defaultHistorySettings };
+    if (isVersionedHistorySettings(parsed)) {
+      return structuredClone(parsed.settings);
+    }
+    return migrateLegacyZero(parsed) ?? { ...defaultHistorySettings };
   } catch {
     return { ...defaultHistorySettings };
   }

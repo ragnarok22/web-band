@@ -34,6 +34,19 @@ describe("history settings repository", () => {
         version: 1,
       }),
     );
+    expect(loadHistorySettings()).toEqual({
+      enabled: true,
+      minimumDurationSeconds: 1,
+    });
+
+    window.localStorage.setItem(
+      HISTORY_SETTINGS_KEY,
+      JSON.stringify({
+        extra: true,
+        settings: { enabled: true, minimumDurationSeconds: 0 },
+        version: 1,
+      }),
+    );
     expect(loadHistorySettings()).toEqual(defaultHistorySettings);
 
     window.localStorage.setItem(

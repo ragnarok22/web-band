@@ -108,12 +108,12 @@ Last audited against the source on 2026-07-19.
 - [x] **Record practice history.** Store playing time, mode, pattern, meter, starting/ending BPM, and timestamps with a configurable meaningful-session threshold.
 - [x] **Summarize history.** Show total/weekly time, session count, most-used pattern, BPM range, recent sessions, daily groups, deletion, and clearing.
 - [x] **Import and export core data.** Validate versioned JSON, preview it, merge or replace transactionally, handle collisions, and download a safety backup before replacement.
-- [ ] **Back up every local preference.** Include appearance, reduced motion, recent patterns, and onboarding state so export and safety backups match the all-data claim.
-- [ ] **Make delete-all complete.** Clear appearance and every other Web Band key in addition to IndexedDB, recents, onboarding, and practice settings.
-- [ ] **Report localStorage failures.** Surface nonblocking warnings when normal preference writes fail instead of silently ignoring repository results.
-- [ ] **Report corrupted stored rows.** Continue filtering invalid legacy data, but tell the user which collections were partially recovered.
-- [ ] **Strengthen session finalization.** Reduce navigation/page-lifecycle data loss and clearly preserve best-effort semantics where browsers cannot guarantee an async write.
-- [ ] **Enforce meaningful history settings.** Define a nonzero minimum threshold policy and cover normal-duration recording without lowering the E2E threshold to zero.
+- [x] **Back up every local preference.** Include appearance, reduced motion, recent patterns, and onboarding state so export and safety backups match the all-data claim.
+- [x] **Make delete-all complete.** Clear appearance and every other Web Band key in addition to IndexedDB, recents, onboarding, and practice settings.
+- [x] **Report localStorage failures.** Surface nonblocking warnings when normal preference writes fail instead of silently ignoring repository results.
+- [x] **Report corrupted stored rows.** Continue filtering invalid legacy data, but tell the user which collections were partially recovered.
+- [x] **Strengthen session finalization.** Reduce navigation/page-lifecycle data loss and clearly preserve best-effort semantics where browsers cannot guarantee an async write.
+- [x] **Enforce meaningful history settings.** Define a nonzero minimum threshold policy and cover normal-duration recording without lowering the E2E threshold to zero.
 
 ## Phase 9: Settings
 

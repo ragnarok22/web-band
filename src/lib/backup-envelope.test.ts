@@ -6,6 +6,7 @@ import {
   createBackupEnvelope,
   defaultBackupPreferences,
   MAX_BACKUP_FILE_BYTES,
+  normalizeBackupEnvelope,
   parseBackupText,
   serializeBackupEnvelope,
 } from "@/lib/backup-envelope";
@@ -98,13 +99,13 @@ describe("backup envelope", () => {
     legacySettings.practice = legacyPractice;
     const before = structuredClone(legacy);
 
-    const parsed = parseBackupText(JSON.stringify(legacy));
+    const preview = parseBackupText(JSON.stringify(legacy));
+    const parsed = normalizeBackupEnvelope(preview.envelope);
 
-    expect(parsed.envelope.version).toBe(3);
-    expect(parsed.envelope.data.settings.practice.soundCharacter).toBe(
-      "balanced",
-    );
-    expect(parsed.envelope.data.preferences).toEqual(defaultBackupPreferences);
+    expect(preview.envelope.version).toBe(1);
+    expect(parsed.version).toBe(3);
+    expect(parsed.data.settings.practice.soundCharacter).toBe("balanced");
+    expect(parsed.data.preferences).toEqual(defaultBackupPreferences);
     expect(legacy).toEqual(before);
   });
 
@@ -126,13 +127,11 @@ describe("backup envelope", () => {
     };
     legacySettings.history.minimumDurationSeconds = 0;
 
-    const parsed = parseBackupText(JSON.stringify(legacy));
+    const parsed = normalizeBackupEnvelope(legacy);
 
-    expect(parsed.envelope.version).toBe(3);
-    expect(parsed.envelope.data.settings.history.minimumDurationSeconds).toBe(
-      1,
-    );
-    expect(parsed.envelope.data.preferences).toEqual(defaultBackupPreferences);
+    expect(parsed.version).toBe(3);
+    expect(parsed.data.settings.history.minimumDurationSeconds).toBe(1);
+    expect(parsed.data.preferences).toEqual(defaultBackupPreferences);
   });
 
   it("enforces the byte limit before attempting JSON parsing", () => {

@@ -12,6 +12,7 @@ interface PracticeHistoryStore {
   sessions: PracticeSession[];
   clearAll: () => Promise<void>;
   deleteOne: (sessionId: string) => Promise<void>;
+  flushPendingWrites: () => Promise<void>;
   hydrate: () => Promise<void>;
   record: (session: PracticeSession) => Promise<void>;
   refreshAfterImport: () => Promise<void>;
@@ -108,6 +109,7 @@ export const usePracticeHistoryStore = create<PracticeHistoryStore>(
           }
         }),
       errorMessage: null,
+      flushPendingWrites: () => operationQueue,
       hydrate,
       isHydrated: false,
       isLoading: false,

@@ -59,10 +59,19 @@ export interface BackupServiceDependencies {
   clearAppPreferences: () => boolean;
   downloadEnvelope: (envelope: BackupEnvelope) => void;
   executeStorageOperation: <T>(operation: () => Promise<T>) => Promise<T>;
+  flushPendingHistory: () => Promise<void>;
   getPreferences: (snapshot: PersistenceSnapshot) => BackupPreferences;
   getSettings: () => BackupSettings;
   refreshStores: () => Promise<void>;
   storage: BackupStorage;
+}
+
+function backupVersion(value: unknown): 1 | 2 | 3 | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const version = (value as Record<string, unknown>).version;
+  return version === 1 || version === 2 || version === 3 ? version : null;
 }
 
 function getCurrentPreferences(
@@ -192,6 +201,8 @@ const defaultDependencies: BackupServiceDependencies = {
   clearAppPreferences: clearAllAppPreferenceKeys,
   downloadEnvelope: downloadBackupEnvelope,
   executeStorageOperation,
+  flushPendingHistory: () =>
+    usePracticeHistoryStore.getState().flushPendingWrites(),
   getPreferences: getCurrentPreferences,
   getSettings: getCurrentSettings,
   refreshStores: refreshCurrentStores,
@@ -202,13 +213,16 @@ export class BackupService {
   constructor(private readonly dependencies = defaultDependencies) {}
 
   async createCurrentBackup(): Promise<BackupEnvelope> {
+    await this.dependencies.flushPendingHistory();
     const snapshot = await this.dependencies.executeStorageOperation(() =>
       this.dependencies.storage.exportSnapshot(),
     );
-    return createBackupEnvelope(
-      snapshot,
-      this.dependencies.getSettings(),
-      this.dependencies.getPreferences(snapshot),
+    return normalizeBackupEnvelope(
+      createBackupEnvelope(
+        snapshot,
+        this.dependencies.getSettings(),
+        this.dependencies.getPreferences(snapshot),
+      ),
     );
   }
 
@@ -225,9 +239,11 @@ export class BackupService {
     if (mode !== "merge" && mode !== "replace") {
       throw new Error("Import mode is invalid.");
     }
+    const sourceVersion = backupVersion(value);
     const envelope = normalizeBackupEnvelope(value);
 
     if (mode === "replace") await this.exportCurrentBackup();
+    else await this.dependencies.flushPendingHistory();
     const summary = await this.dependencies.executeStorageOperation(() =>
       this.dependencies.storage.importSnapshot(
         snapshotFromBackup(envelope),
@@ -247,16 +263,21 @@ export class BackupService {
     if (!settingsPersisted) {
       issues.push("some app settings could not be saved for the next visit");
     }
-    let preferencesPersisted = false;
-    try {
-      preferencesPersisted = this.dependencies.applyPreferences(
-        envelope.data.preferences,
-      );
-    } catch {
-      preferencesPersisted = false;
-    }
-    if (!preferencesPersisted) {
-      issues.push("some app preferences could not be saved for the next visit");
+    const shouldApplyPreferences = sourceVersion === 3 || mode === "replace";
+    let preferencesPersisted = true;
+    if (shouldApplyPreferences) {
+      try {
+        preferencesPersisted = this.dependencies.applyPreferences(
+          envelope.data.preferences,
+        );
+      } catch {
+        preferencesPersisted = false;
+      }
+      if (!preferencesPersisted) {
+        issues.push(
+          "some app preferences could not be saved for the next visit",
+        );
+      }
     }
     try {
       await this.dependencies.refreshStores();

@@ -75,6 +75,9 @@ function dependencies(order: string[] = []): BackupServiceDependencies {
     }),
     downloadEnvelope: vi.fn(() => order.push("download")),
     executeStorageOperation: vi.fn(async (operation) => operation()),
+    flushPendingHistory: vi.fn(async () => {
+      order.push("flush");
+    }),
     getPreferences: vi.fn(() => {
       order.push("get-preferences");
       return structuredClone(defaultBackupPreferences);
@@ -129,6 +132,7 @@ describe("backup service", () => {
     const result = await service.importBackup(envelope(), "merge");
 
     expect(order).toEqual([
+      "flush",
       "import:merge",
       "settings",
       "apply-preferences",
@@ -145,7 +149,7 @@ describe("backup service", () => {
     expect(result).toMatchObject({ mode: "merge", settingsPersisted: true });
   });
 
-  it("normalizes direct version 1 imports to Balanced", async () => {
+  it("normalizes version 1 settings while preserving merge preferences", async () => {
     const current = envelope();
     const legacyPractice = structuredClone(
       current.data.settings.practice,
@@ -169,6 +173,9 @@ describe("backup service", () => {
         practice: expect.objectContaining({ soundCharacter: "balanced" }),
       }),
     );
+    expect(deps.applyPreferences).not.toHaveBeenCalled();
+
+    await service.importBackup(legacy, "replace");
     expect(deps.applyPreferences).toHaveBeenCalledWith(
       defaultBackupPreferences,
     );
@@ -182,6 +189,7 @@ describe("backup service", () => {
     await service.importBackup(envelope(), "replace");
 
     expect(order).toEqual([
+      "flush",
       "export",
       "get-settings",
       "get-preferences",
@@ -270,6 +278,7 @@ describe("backup service", () => {
     const result = await service.importBackup(envelope(), "replace");
 
     expect(order).toEqual([
+      "flush",
       "export",
       "get-settings",
       "get-preferences",
@@ -290,6 +299,7 @@ describe("backup service", () => {
     const result = await service.clearAllLocalData();
 
     expect(order).toEqual([
+      "flush",
       "export",
       "get-settings",
       "get-preferences",
@@ -313,6 +323,41 @@ describe("backup service", () => {
       defaultBackupPreferences,
     );
     expect(result.cleared).toBe(true);
+  });
+
+  it("waits for queued history writes before exporting", async () => {
+    const deps = dependencies();
+    let releaseHistory: () => void = () => undefined;
+    vi.mocked(deps.flushPendingHistory).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          releaseHistory = resolve;
+        }),
+    );
+    const service = new BackupService(deps);
+
+    const backupPromise = service.createCurrentBackup();
+    await Promise.resolve();
+    expect(deps.storage.exportSnapshot).not.toHaveBeenCalled();
+
+    releaseHistory();
+    await backupPromise;
+    expect(deps.storage.exportSnapshot).toHaveBeenCalledOnce();
+  });
+
+  it("aborts deletion when its generated safety backup is invalid", async () => {
+    const deps = dependencies();
+    vi.mocked(deps.storage.exportSnapshot).mockResolvedValueOnce({
+      ...structuredClone(emptySnapshot),
+      favoritePatternIds: ["missing-pattern"],
+    });
+    const service = new BackupService(deps);
+
+    await expect(service.clearAllLocalData()).rejects.toThrow(
+      /valid Web Band backup/i,
+    );
+    expect(deps.downloadEnvelope).not.toHaveBeenCalled();
+    expect(deps.storage.importSnapshot).not.toHaveBeenCalled();
   });
 
   it("does not reject a committed clear when settings, preferences, or refresh fail", async () => {

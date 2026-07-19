@@ -36,6 +36,7 @@ export class DexiePracticeSessionRepository implements PracticeSessionRepository
 
   async clear(): Promise<void> {
     await this.table.clear();
+    this.reportCorruptRows?.(0);
   }
 
   async delete(sessionId: string): Promise<void> {

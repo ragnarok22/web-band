@@ -74,7 +74,7 @@ describe("practice session repositories", () => {
 
     await repository.clear();
     expect(await repository.list()).toEqual([]);
-    expect(reportCorruptRows.mock.calls).toEqual([[1], [1], [0]]);
+    expect(reportCorruptRows.mock.calls).toEqual([[1], [1], [0], [0]]);
   });
 
   it("validates writes and deep-clones memory sessions", async () => {
