@@ -1,10 +1,4 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -27,6 +21,7 @@ import { usePracticeStore } from "@/stores/practice-store";
 import { usePracticeUiStore } from "@/stores/practice-ui-store";
 import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 import { useStorageStore } from "@/stores/storage-store";
+import { renderWithMotion as render } from "@/test/render-with-motion";
 import type {
   CustomChordProgression,
   CustomStrummingPattern,

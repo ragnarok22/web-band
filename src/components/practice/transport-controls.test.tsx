@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { TransportControls } from "@/components/practice/transport-controls";
+import { renderWithMotion as render } from "@/test/render-with-motion";
 
 describe("transport controls", () => {
   it("starts with Play available and Pause and Stop disabled", () => {
@@ -63,5 +64,26 @@ describe("transport controls", () => {
     );
 
     expect(screen.getByRole("button", { name: "Resume" })).toBeEnabled();
+  });
+
+  it("keeps the primary control mounted and focused across play states", () => {
+    const callbacks = {
+      onFinish: vi.fn(),
+      onPause: vi.fn(),
+      onPlay: vi.fn(),
+      onStop: vi.fn(),
+    };
+    const { rerender } = render(
+      <TransportControls {...callbacks} status="not-initialized" />,
+    );
+    const playButton = screen.getByRole("button", { name: "Play" });
+    playButton.focus();
+
+    rerender(<TransportControls {...callbacks} status="playing" />);
+
+    expect(screen.getByRole("button", { name: "Finish with fill" })).toBe(
+      playButton,
+    );
+    expect(playButton).toHaveFocus();
   });
 });

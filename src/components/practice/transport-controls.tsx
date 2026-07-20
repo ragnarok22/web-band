@@ -1,7 +1,14 @@
 "use client";
 
 import { Flag, Pause, Play, Square } from "lucide-react";
+import { m } from "framer-motion";
 
+import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
+import {
+  motionTransition,
+  settled,
+  stateEntry,
+} from "@/components/motion/motion-presets";
 import type { AudioEngineStatus } from "@/types/audio";
 
 interface TransportControlsProps {
@@ -23,6 +30,7 @@ export function TransportControls({
   playDisabled = false,
   status,
 }: TransportControlsProps) {
+  const reducedMotion = useAppReducedMotion();
   const isBusy = status === "initializing";
   const isRunning = status === "playing" || status === "counting-in";
   const canStop =
@@ -59,20 +67,30 @@ export function TransportControls({
         onClick={isRunning ? onFinish : onPlay}
         type="button"
       >
-        {isRunning ? (
-          <span className="flex flex-col items-center gap-1 text-xs font-black tracking-wide uppercase">
-            <Flag
+        <m.span
+          animate={settled}
+          className="flex flex-col items-center gap-1 text-xs font-black tracking-wide uppercase"
+          data-motion="play-state"
+          data-motion-reduced={reducedMotion}
+          initial={reducedMotion ? false : stateEntry}
+          key={playLabel}
+          transition={motionTransition(reducedMotion, 0.1)}
+        >
+          {isRunning ? (
+            <>
+              <Flag
+                aria-hidden="true"
+                className="size-8 fill-current sm:size-9"
+              />
+              Finish
+            </>
+          ) : (
+            <Play
               aria-hidden="true"
-              className="size-8 fill-current sm:size-9"
+              className="ml-1 size-10 fill-current sm:size-12"
             />
-            Finish
-          </span>
-        ) : (
-          <Play
-            aria-hidden="true"
-            className="ml-1 size-10 fill-current sm:size-12"
-          />
-        )}
+          )}
+        </m.span>
       </button>
 
       <button

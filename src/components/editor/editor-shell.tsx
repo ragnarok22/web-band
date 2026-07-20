@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+
 const DrumPatternEditor = dynamic(
   () =>
     import("./drum-pattern-editor").then((module) => module.DrumPatternEditor),
@@ -16,5 +18,9 @@ const DrumPatternEditor = dynamic(
 );
 
 export function EditorShell() {
-  return <DrumPatternEditor />;
+  return (
+    <SectionErrorBoundary section="Pattern workshop">
+      <DrumPatternEditor />
+    </SectionErrorBoundary>
+  );
 }

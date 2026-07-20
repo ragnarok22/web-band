@@ -27,7 +27,7 @@ test("loads saved custom data and preferences while offline", async ({
   await expect(patternCard.getByText("Your pattern")).toBeVisible();
   await expect(
     patternCard.getByRole("button", {
-      name: `Remove ${offlinePattern.name} from favorites`,
+      name: `${offlinePattern.name} favorite`,
     }),
   ).toHaveAttribute("aria-pressed", "true");
 

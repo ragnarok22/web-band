@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppProviders } from "@/components/providers/app-providers";
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
 import { basicRockPattern } from "@/data/patterns";
 import { WebBandDatabase } from "@/db/database";
 import { storageService } from "@/db/storage-service";
@@ -82,6 +83,33 @@ afterEach(() => {
 });
 
 describe("app providers", () => {
+  it("surfaces terminal bootstrap failures through application isolation", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.spyOn(
+      storageService.practicePresetRepository,
+      "list",
+    ).mockRejectedValueOnce(new Error("repository read failed"));
+    vi.spyOn(
+      storageService,
+      "recoverFromIndexedDbFailure",
+    ).mockRejectedValueOnce(new Error("recovery failed"));
+
+    render(
+      <SectionErrorBoundary section="application" variant="application">
+        <AppProviders>
+          <div>Application</div>
+        </AppProviders>
+      </SectionErrorBoundary>,
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        name: "Web Band needs another count-in",
+      }),
+    ).toBeVisible();
+    expect(screen.queryByText("recovery failed")).toBeNull();
+  });
+
   it("recovers failed post-open hydration without losing active configuration", async () => {
     vi.spyOn(
       storageService.practicePresetRepository,

@@ -1,8 +1,16 @@
 "use client";
 
 import { Flag, Minimize2, Play, Square } from "lucide-react";
+import { m } from "framer-motion";
 import { useEffect, useRef } from "react";
 
+import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
+import {
+  motionTransition,
+  pageEntry,
+  settled,
+  stateEntry,
+} from "@/components/motion/motion-presets";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
 import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
 import { PracticeNotices } from "@/components/practice/practice-notices";
@@ -61,6 +69,7 @@ export function FocusMode({
   visualSubdivisionDetail,
   wakeLockStatus,
 }: FocusModeProps) {
+  const reducedMotion = useAppReducedMotion();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const snapshot = useGuidanceSnapshot();
   const canResume = status === "paused" || status === "suspended";
@@ -87,7 +96,14 @@ export function FocusMode({
   }, []);
 
   return (
-    <main className="bg-background fixed inset-0 z-50 flex min-h-dvh flex-col overflow-y-auto px-4 py-5 sm:px-8 sm:py-8">
+    <m.main
+      animate={settled}
+      className="bg-background fixed inset-0 z-50 flex min-h-dvh flex-col overflow-y-auto px-4 py-5 sm:px-8 sm:py-8"
+      data-motion="focus"
+      data-motion-reduced={reducedMotion}
+      initial={reducedMotion ? false : pageEntry}
+      transition={motionTransition(reducedMotion, 0.14)}
+    >
       <header className="mx-auto flex w-full max-w-5xl items-start justify-between gap-4">
         <div>
           <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
@@ -165,12 +181,21 @@ export function FocusMode({
           onClick={isRunning ? onFinish : onPlay}
           type="button"
         >
-          {isRunning ? (
-            <Flag aria-hidden="true" className="size-6 fill-current" />
-          ) : (
-            <Play aria-hidden="true" className="size-7 fill-current" />
-          )}
-          {transportLabel}
+          <m.span
+            animate={settled}
+            className="flex items-center gap-3"
+            data-motion="focus-play-state"
+            initial={reducedMotion ? false : stateEntry}
+            key={transportLabel}
+            transition={motionTransition(reducedMotion, 0.1)}
+          >
+            {isRunning ? (
+              <Flag aria-hidden="true" className="size-6 fill-current" />
+            ) : (
+              <Play aria-hidden="true" className="size-7 fill-current" />
+            )}
+            {transportLabel}
+          </m.span>
         </button>
         <button
           className="border-border bg-surface text-muted-strong hover:text-foreground mx-auto flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold disabled:opacity-35"
@@ -182,6 +207,6 @@ export function FocusMode({
           Stop now
         </button>
       </div>
-    </main>
+    </m.main>
   );
 }

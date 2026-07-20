@@ -152,10 +152,10 @@ Last audited against the source on 2026-07-19.
 - [x] **Announce tempo completion.** Put the target-reached state in an assertive or polite live region as appropriate.
 - [x] **Audit toggle semantics.** Ensure every stateful toggle or preview control has accurate `aria-pressed`, label, and disabled behavior.
 - [x] **Expose Wake Lock failure visibly.** Replace title-only error details with a readable, nonblocking status message.
-- [ ] **Add section-level error isolation.** Protect major browser-only screens and provider failures beyond the current route error boundary.
-- [ ] **Add automated accessibility checks.** Cover contrast, names, roles, keyboard paths, and 44px targets with an appropriate audit tool and focused tests.
-- [ ] **Add Framer Motion sparingly.** Introduce the required dependency only for useful transitions and keep musical timing completely independent.
-- [ ] **Implement restrained transitions.** Add reduced-motion-safe page, panel, Play-state, pattern-selection, focus-mode, beat, and count-in feedback using transform/opacity where possible.
+- [x] **Add section-level error isolation.** Protect major browser-only screens and provider failures beyond the current route error boundary.
+- [x] **Add automated accessibility checks.** Cover contrast, names, roles, keyboard paths, and 44px targets with an appropriate audit tool and focused tests.
+- [x] **Add Framer Motion sparingly.** Introduce the required dependency only for useful transitions and keep musical timing completely independent.
+- [x] **Implement restrained transitions.** Add reduced-motion-safe page, panel, Play-state, pattern-selection, focus-mode, beat, and count-in feedback using transform/opacity where possible.
 
 ## Phase 12: Performance And Stability
 

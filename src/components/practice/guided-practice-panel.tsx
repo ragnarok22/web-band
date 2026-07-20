@@ -1,12 +1,19 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import { m } from "framer-motion";
 import { useState } from "react";
 
 import { PracticeModeSelector } from "@/components/practice/practice-mode-selector";
 import { ChordTrainerPanel } from "@/components/practice/chord-trainer-panel";
 import { StrummingTrainerPanel } from "@/components/practice/strumming-trainer-panel";
 import { TempoTrainerPanel } from "@/components/practice/tempo-trainer-panel";
+import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
+import {
+  motionTransition,
+  panelEntry,
+  settled,
+} from "@/components/motion/motion-presets";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
 import type { TimeSignature } from "@/types/pattern";
 
@@ -19,6 +26,7 @@ export function GuidedPracticePanel({
   activeTimeSignature,
   sessionDisabled,
 }: GuidedPracticePanelProps) {
+  const reducedMotion = useAppReducedMotion();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const mode = useGuidedPracticeStore((state) => state.mode);
   const tempoTrainer = useGuidedPracticeStore((state) => state.tempoTrainer);
@@ -82,37 +90,46 @@ export function GuidedPracticePanel({
           onChange={setMode}
         />
 
-        {mode === "drums" ? (
-          <div className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
-            <p className="text-foreground font-extrabold">Groove only</p>
-            <p className="text-muted mt-1 text-sm leading-6">
-              Practice the selected drum pattern without tempo, chord, or strum
-              cues.
-            </p>
-          </div>
-        ) : null}
-        {mode === "tempoTrainer" ? (
-          <TempoTrainerPanel
-            configuration={tempoTrainer}
-            disabled={sessionDisabled}
-            onChange={setTempoTrainerConfiguration}
-          />
-        ) : null}
-        {mode === "chords" ? (
-          <ChordTrainerPanel
-            configuration={chordTrainer}
-            disabled={sessionDisabled}
-            onChange={setChordTrainerConfiguration}
-          />
-        ) : null}
-        {mode === "strumming" ? (
-          <StrummingTrainerPanel
-            disabled={sessionDisabled}
-            onChange={setStrummingPattern}
-            pattern={strummingPattern}
-            timeSignature={activeTimeSignature}
-          />
-        ) : null}
+        <m.div
+          animate={settled}
+          data-motion="guided-panel"
+          data-motion-reduced={reducedMotion}
+          initial={reducedMotion ? false : panelEntry}
+          key={mode}
+          transition={motionTransition(reducedMotion, 0.12)}
+        >
+          {mode === "drums" ? (
+            <div className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
+              <p className="text-foreground font-extrabold">Groove only</p>
+              <p className="text-muted mt-1 text-sm leading-6">
+                Practice the selected drum pattern without tempo, chord, or
+                strum cues.
+              </p>
+            </div>
+          ) : null}
+          {mode === "tempoTrainer" ? (
+            <TempoTrainerPanel
+              configuration={tempoTrainer}
+              disabled={sessionDisabled}
+              onChange={setTempoTrainerConfiguration}
+            />
+          ) : null}
+          {mode === "chords" ? (
+            <ChordTrainerPanel
+              configuration={chordTrainer}
+              disabled={sessionDisabled}
+              onChange={setChordTrainerConfiguration}
+            />
+          ) : null}
+          {mode === "strumming" ? (
+            <StrummingTrainerPanel
+              disabled={sessionDisabled}
+              onChange={setStrummingPattern}
+              pattern={strummingPattern}
+              timeSignature={activeTimeSignature}
+            />
+          ) : null}
+        </m.div>
       </div>
     </section>
   );

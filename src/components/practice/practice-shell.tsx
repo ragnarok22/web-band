@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+
 const PracticeScreen = dynamic(
   () => import("./practice-screen").then((module) => module.PracticeScreen),
   {
@@ -15,5 +17,9 @@ const PracticeScreen = dynamic(
 );
 
 export function PracticeShell() {
-  return <PracticeScreen />;
+  return (
+    <SectionErrorBoundary section="Practice room">
+      <PracticeScreen />
+    </SectionErrorBoundary>
+  );
 }

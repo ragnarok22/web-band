@@ -21,15 +21,15 @@ test("filters patterns and persists a favorite", async ({ page }) => {
   if (await showFilters.isVisible()) await showFilters.click();
   await page.getByRole("combobox", { name: "Genre" }).selectOption("reggae");
   await expect(page.getByText("4 of 44 patterns")).toBeVisible();
-  await page.getByRole("button", { name: "Add One Drop to favorites" }).click();
+  await page.getByRole("button", { name: "One Drop favorite" }).click();
   await expect(
-    page.getByRole("button", { name: "Remove One Drop from favorites" }),
+    page.getByRole("button", { name: "One Drop favorite" }),
   ).toHaveAttribute("aria-pressed", "true");
 
   await page.reload();
   await page.getByRole("searchbox").fill("One Drop");
   await expect(
-    page.getByRole("button", { name: "Remove One Drop from favorites" }),
+    page.getByRole("button", { name: "One Drop favorite" }),
   ).toHaveAttribute("aria-pressed", "true");
   expect(browserErrors).toEqual([]);
 });
@@ -105,7 +105,7 @@ test("queues an active pattern change without committing it early", async ({
     .getByRole("combobox", { name: "Current pattern" })
     .selectOption("modern-pop-groove");
   await expect(
-    page.getByText("Queued for the next measure", { exact: true }),
+    page.getByText("Queued after a transition fill", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
   await page.getByRole("button", { name: "Stop playback" }).click();

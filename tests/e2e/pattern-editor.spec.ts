@@ -58,12 +58,14 @@ test("keeps Stop available when the playing draft becomes invalid", async ({
   page,
 }) => {
   await page.goto("/editor");
-  await page.getByRole("button", { name: "Play draft" }).click();
-  const stop = page.getByRole("button", { name: "Stop" });
+  const stop = page.getByRole("button", { name: "Draft preview" });
+  await stop.click();
   await expect(stop).toBeEnabled();
 
   await page.getByRole("textbox", { name: "Pattern name" }).fill("");
   await expect(stop).toBeEnabled();
   await stop.click();
-  await expect(page.getByRole("button", { name: "Play draft" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Draft preview" }),
+  ).toBeDisabled();
 });

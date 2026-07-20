@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+
 const PatternBrowser = dynamic(
   () => import("./pattern-browser").then((module) => module.PatternBrowser),
   {
@@ -15,5 +17,9 @@ const PatternBrowser = dynamic(
 );
 
 export function PatternBrowserShell() {
-  return <PatternBrowser />;
+  return (
+    <SectionErrorBoundary section="Groove library">
+      <PatternBrowser />
+    </SectionErrorBoundary>
+  );
 }

@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { AppProviders } from "@/components/providers/app-providers";
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
 import { SiteNavigation } from "@/components/navigation/site-navigation";
+import { AppProviders } from "@/components/providers/app-providers";
 
 import "./globals.css";
 
@@ -60,16 +61,20 @@ export default function RootLayout({
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>
-        <AppProviders>
-          <SiteNavigation />
-          <div
-            className="pt-[env(safe-area-inset-top)] pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pt-[env(safe-area-inset-top)] lg:pr-[env(safe-area-inset-right)] lg:pb-0 lg:pl-[calc(5rem+env(safe-area-inset-left))]"
-            id="main-content"
-            tabIndex={-1}
-          >
-            {children}
-          </div>
-        </AppProviders>
+        <SectionErrorBoundary section="application" variant="application">
+          <AppProviders>
+            <SectionErrorBoundary section="Navigation" variant="compact">
+              <SiteNavigation />
+            </SectionErrorBoundary>
+            <div
+              className="pt-[env(safe-area-inset-top)] pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pt-[env(safe-area-inset-top)] lg:pr-[env(safe-area-inset-right)] lg:pb-0 lg:pl-[calc(5rem+env(safe-area-inset-left))]"
+              id="main-content"
+              tabIndex={-1}
+            >
+              {children}
+            </div>
+          </AppProviders>
+        </SectionErrorBoundary>
       </body>
     </html>
   );

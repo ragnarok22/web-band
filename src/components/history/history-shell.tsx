@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+
 const HistoryScreen = dynamic(
   () => import("./history-screen").then((module) => module.HistoryScreen),
   {
@@ -15,5 +17,9 @@ const HistoryScreen = dynamic(
 );
 
 export function HistoryShell() {
-  return <HistoryScreen />;
+  return (
+    <SectionErrorBoundary section="Practice journal">
+      <HistoryScreen />
+    </SectionErrorBoundary>
+  );
 }

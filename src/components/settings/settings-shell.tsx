@@ -2,6 +2,8 @@
 
 import dynamic from "next/dynamic";
 
+import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+
 const SettingsScreen = dynamic(
   () => import("./settings-screen").then((module) => module.SettingsScreen),
   {
@@ -15,5 +17,9 @@ const SettingsScreen = dynamic(
 );
 
 export function SettingsShell() {
-  return <SettingsScreen />;
+  return (
+    <SectionErrorBoundary section="Settings">
+      <SettingsScreen />
+    </SectionErrorBoundary>
+  );
 }

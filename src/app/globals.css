@@ -28,14 +28,14 @@ html[data-theme="light"] {
   --surface-elevated: #fffdf8;
   --surface-hover: #e9e0d3;
   --foreground: #211d18;
-  --muted: #6f675d;
+  --muted: #625a50;
   --muted-strong: #514a42;
-  --accent: #925100;
-  --accent-strong: #743f00;
+  --accent: #7f4500;
+  --accent-strong: #653500;
   --accent-ink: #fff8e8;
   --secondary-accent: #a8412c;
   --success: #2f7a49;
-  --danger: #a63f2e;
+  --danger: #923626;
   --border: rgba(33, 29, 24, 0.12);
   --border-strong: rgba(33, 29, 24, 0.22);
   --shadow: rgba(58, 42, 24, 0.18);
@@ -327,9 +327,6 @@ h6 {
   opacity: 0;
   pointer-events: none;
   transform: scale(0.97);
-  transition:
-    opacity 140ms ease,
-    transform 140ms ease;
 }
 
 .count-in-display--visible {

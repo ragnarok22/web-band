@@ -1,5 +1,12 @@
 import { AudioLines } from "lucide-react";
+import { m } from "framer-motion";
 
+import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
+import {
+  motionTransition,
+  panelEntry,
+  settled,
+} from "@/components/motion/motion-presets";
 import { formatPatternCategory } from "@/lib/pattern-filters";
 import type { DrumPattern } from "@/types/pattern";
 
@@ -22,6 +29,8 @@ export function PatternSummary({
   pendingPatternId,
   swing,
 }: PatternSummaryProps) {
+  const reducedMotion = useAppReducedMotion();
+
   return (
     <section className="border-border bg-surface relative overflow-hidden rounded-2xl border p-5">
       <div
@@ -29,18 +38,27 @@ export function PatternSummary({
         className="bg-accent/8 absolute -top-20 -right-20 size-48 rounded-full blur-3xl"
       />
       <div className="relative">
-        <div className="mb-6 flex items-center justify-between">
-          <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
-            {formatPatternCategory(pattern.category)}
-          </span>
-          <AudioLines aria-hidden="true" className="text-muted size-5" />
-        </div>
-        <p className="text-muted text-xs font-bold tracking-[0.16em] uppercase">
-          Current pattern
-        </p>
-        <h1 className="text-foreground mt-2 text-3xl font-black tracking-[-0.045em]">
-          {pattern.name}
-        </h1>
+        <m.div
+          animate={settled}
+          data-motion="pattern-selection"
+          data-motion-reduced={reducedMotion}
+          initial={reducedMotion ? false : panelEntry}
+          key={pattern.id}
+          transition={motionTransition(reducedMotion, 0.12)}
+        >
+          <div className="mb-6 flex items-center justify-between">
+            <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
+              {formatPatternCategory(pattern.category)}
+            </span>
+            <AudioLines aria-hidden="true" className="text-muted size-5" />
+          </div>
+          <p className="text-muted text-xs font-bold tracking-[0.16em] uppercase">
+            Current pattern
+          </p>
+          <h1 className="text-foreground mt-2 text-3xl font-black tracking-[-0.045em]">
+            {pattern.name}
+          </h1>
+        </m.div>
         <label className="mt-4 block">
           <span className="text-muted mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
             Quick select
@@ -64,7 +82,7 @@ export function PatternSummary({
             Queued after a transition fill
           </p>
         ) : null}
-        <label className="text-muted-strong mt-3 flex cursor-pointer items-start gap-2 text-xs leading-5 font-bold">
+        <label className="text-muted-strong mt-3 flex min-h-11 cursor-pointer items-center gap-2 text-xs leading-5 font-bold">
           <input
             checked={immediatePatternSwitch}
             className="accent-accent mt-1 size-4 shrink-0"

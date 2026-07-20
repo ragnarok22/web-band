@@ -35,11 +35,8 @@ export function SessionToolbar({
     >
       <div className="bg-surface-elevated text-foreground flex min-h-11 items-center gap-2 rounded-lg px-3 font-black tabular-nums">
         <Clock3 aria-hidden="true" className="text-accent size-4" />
-        <span
-          aria-label={`Practice duration ${formatPracticeDuration(elapsedSeconds)}`}
-        >
-          {formatPracticeDuration(elapsedSeconds)}
-        </span>
+        <span className="sr-only">Practice duration </span>
+        <span>{formatPracticeDuration(elapsedSeconds)}</span>
       </div>
       <button
         className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors"

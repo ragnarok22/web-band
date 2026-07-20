@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useReducer, type ReactNode } from "react";
 
+import { AppMotionProvider } from "@/components/motion/app-motion-provider";
 import { AppNotifications } from "@/components/providers/app-notifications";
 import { storageService } from "@/db/storage-service";
 import {
@@ -23,6 +24,10 @@ interface AppProvidersProps {
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
+  const [providerError, reportProviderError] = useReducer(
+    (_current: Error | null, next: Error) => next,
+    null,
+  );
   const hydrate = usePracticeStore((state) => state.hydrate);
   const hydrateHistorySettings = useHistorySettingsStore(
     (state) => state.hydrate,
@@ -57,36 +62,44 @@ export function AppProviders({ children }: AppProvidersProps) {
     hydrateHistorySettings();
 
     let isActive = true;
-    void storageService.initialize().then(async (status) => {
-      if (!isActive) {
-        return;
-      }
+    void storageService
+      .initialize()
+      .then(async (status) => {
+        if (!isActive) return;
 
-      setStorageStatus(status.mode, status.warning);
-      hydrateGuidedPractice(usePracticeStore.getState().restoreLastPractice);
-      const hydrationResults = await Promise.allSettled([
-        hydratePatterns(),
-        hydrateChordProgressions(),
-        hydratePracticePresets(),
-        hydratePracticeHistory(),
-        hydrateStrummingPatterns(),
-      ]);
-      if (
-        isActive &&
-        hydrationResults.some((result) => result.status === "rejected")
-      ) {
-        const recoveryStatus =
-          await storageService.recoverFromIndexedDbFailure();
-        setStorageStatus(recoveryStatus.mode, recoveryStatus.warning);
-        await Promise.all([
+        setStorageStatus(status.mode, status.warning);
+        hydrateGuidedPractice(usePracticeStore.getState().restoreLastPractice);
+        const hydrationResults = await Promise.allSettled([
           hydratePatterns(),
           hydrateChordProgressions(),
           hydratePracticePresets(),
           hydratePracticeHistory(),
           hydrateStrummingPatterns(),
         ]);
-      }
-    });
+        if (
+          isActive &&
+          hydrationResults.some((result) => result.status === "rejected")
+        ) {
+          const recoveryStatus =
+            await storageService.recoverFromIndexedDbFailure();
+          setStorageStatus(recoveryStatus.mode, recoveryStatus.warning);
+          await Promise.all([
+            hydratePatterns(),
+            hydrateChordProgressions(),
+            hydratePracticePresets(),
+            hydratePracticeHistory(),
+            hydrateStrummingPatterns(),
+          ]);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+        reportProviderError(
+          error instanceof Error
+            ? error
+            : new Error("Application storage could not start."),
+        );
+      });
 
     return () => {
       isActive = false;
@@ -129,10 +142,12 @@ export function AppProviders({ children }: AppProvidersProps) {
       colorScheme?.removeEventListener("change", handleColorSchemeChange);
   }, []);
 
+  if (providerError) throw providerError;
+
   return (
-    <>
+    <AppMotionProvider>
       {children}
       <AppNotifications />
-    </>
+    </AppMotionProvider>
   );
 }

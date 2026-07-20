@@ -1,10 +1,25 @@
-import { act, render } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { act } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { visualTimeline } from "@/audio/visual-timeline";
+import { AppMotionProvider } from "@/components/motion/app-motion-provider";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
 import { basicRockPattern } from "@/data/patterns/rock";
+import {
+  defaultAppearancePreferences,
+  useAppearanceStore,
+} from "@/stores/appearance-store";
+import { renderWithMotion as render } from "@/test/render-with-motion";
 import type { DrumPattern } from "@/types/pattern";
+
+const motion = vi.hoisted(() => ({
+  animate: vi.fn(() => ({ cancel: vi.fn() })),
+}));
+
+vi.mock("framer-motion/dom/mini", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("framer-motion/dom/mini")>()),
+  animate: motion.animate,
+}));
 
 const twelveEightPattern: DrumPattern = {
   ...basicRockPattern,
@@ -17,6 +32,23 @@ const twelveEightPattern: DrumPattern = {
 
 afterEach(() => {
   visualTimeline.reset();
+  Reflect.deleteProperty(window, "matchMedia");
+});
+
+beforeEach(() => {
+  motion.animate.mockClear();
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn().mockReturnValue({
+      addEventListener: vi.fn(),
+      matches: false,
+      removeEventListener: vi.fn(),
+    }),
+  });
+  useAppearanceStore.setState({
+    ...defaultAppearancePreferences,
+    hasHydrated: true,
+  });
 });
 
 describe("BeatVisualizer", () => {
@@ -219,5 +251,61 @@ describe("BeatVisualizer", () => {
     });
     expect(countIn).toHaveTextContent("1");
     expect(countIn).toHaveTextContent("Bar 1 of 2");
+  });
+
+  it("pulses only new audible frames and skips retained or reduced frames", () => {
+    act(() => {
+      visualTimeline.emit({
+        isAccent: false,
+        measure: 1,
+        patternStep: 0,
+        phase: "pattern",
+        sixteenth: 0,
+      });
+    });
+    const retained = render(
+      <AppMotionProvider>
+        <BeatVisualizer
+          countInMeasures={0}
+          pattern={basicRockPattern}
+          status="playing"
+        />
+      </AppMotionProvider>,
+    );
+    expect(motion.animate).not.toHaveBeenCalled();
+
+    act(() => {
+      visualTimeline.emit({
+        isAccent: true,
+        measure: 1,
+        patternStep: 1,
+        phase: "pattern",
+        sixteenth: 2,
+      });
+    });
+    expect(motion.animate).toHaveBeenCalledOnce();
+    retained.unmount();
+
+    motion.animate.mockClear();
+    useAppearanceStore.setState({ reducedMotion: true });
+    render(
+      <AppMotionProvider>
+        <BeatVisualizer
+          countInMeasures={0}
+          pattern={basicRockPattern}
+          status="playing"
+        />
+      </AppMotionProvider>,
+    );
+    act(() => {
+      visualTimeline.emit({
+        isAccent: false,
+        measure: 2,
+        patternStep: 2,
+        phase: "pattern",
+        sixteenth: 4,
+      });
+    });
+    expect(motion.animate).not.toHaveBeenCalled();
   });
 });
