@@ -78,7 +78,7 @@ export function DataBackupPanel({
     setIsPending(true);
     setErrorMessage(null);
     try {
-      const result = await actions.importBackup(preview.envelope, mode);
+      const result = await actions.importBackup(preview, mode);
       const recordLabel = result.totalImported === 1 ? "record" : "records";
       setAnnouncement(
         `${result.totalImported} ${recordLabel} imported by ${mode}. ${result.warning ?? "Backup settings and preferences applied."}`,

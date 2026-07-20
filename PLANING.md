@@ -163,9 +163,9 @@ Last audited against the source on 2026-07-19.
 - [x] **Reuse and dispose shared audio resources.** Retain the engine, manager, buses, and schedules for a session while cleaning up one-shot nodes.
 - [x] **Lazy-load heavy screens.** Load browser-only Editor and History screens through dynamic client shells.
 - [x] **Batch database replacement.** Use Dexie transactions and bulk writes for merge/replace operations.
-- [ ] **Move large backup parsing off long tasks.** Chunk, yield, or use a worker for JSON parsing/validation near the 25 MB limit.
-- [ ] **Profile active playback.** Record React and browser performance while changing panels, mixer levels, focus mode, timers, and storage writes.
-- [ ] **Run physical audio checks.** Listen for timbre, timing, hi-hat choke, pause/resume, and installed-PWA behavior on representative desktop and mobile devices.
+- [x] **Move large backup parsing off long tasks.** Chunk, yield, or use a worker for JSON parsing/validation near the 25 MB limit.
+- [x] **Profile active playback.** Record React and browser performance while changing panels, mixer levels, focus mode, timers, and storage writes.
+- [ ] **Run physical audio checks.** Listen for timbre, timing, hi-hat choke, pause/resume, and installed-PWA behavior on representative desktop and mobile devices using the [release check matrix](docs/RELEASE_CHECKS.md).
 
 ## Phase 13: Automated Verification
 

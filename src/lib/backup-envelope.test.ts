@@ -101,15 +101,18 @@ describe("backup envelope", () => {
     legacySettings.practice = legacyPractice;
     const before = structuredClone(legacy);
 
-    const preview = parseBackupText(JSON.stringify(legacy));
-    const parsed = normalizeBackupEnvelope(preview.envelope);
+    const parsed = parseBackupText(JSON.stringify(legacy));
 
-    expect(preview.envelope.version).toBe(1);
-    expect(parsed.version).toBe(4);
-    expect(parsed.data.settings.practice.soundCharacter).toBe("balanced");
-    expect(parsed.data.settings.practice.bpmAdjustmentStep).toBe(1);
-    expect(parsed.data.settings.practice.restoreLastPractice).toBe(true);
-    expect(parsed.data.preferences).toEqual(defaultBackupPreferences);
+    expect(parsed.sourceVersion).toBe(1);
+    expect(parsed.envelope.version).toBe(4);
+    expect(parsed.envelope.data.settings.practice.soundCharacter).toBe(
+      "balanced",
+    );
+    expect(parsed.envelope.data.settings.practice.bpmAdjustmentStep).toBe(1);
+    expect(parsed.envelope.data.settings.practice.restoreLastPractice).toBe(
+      true,
+    );
+    expect(parsed.envelope.data.preferences).toEqual(defaultBackupPreferences);
     expect(legacy).toEqual(before);
   });
 
@@ -181,6 +184,7 @@ describe("backup envelope", () => {
 
   it("reports malformed JSON and complete-envelope validation errors", () => {
     expect(() => parseBackupText("not-json")).toThrow(/valid JSON/i);
+    expect(() => parseBackupText("null")).toThrow(/valid Web Band backup/i);
     expect(() => parseBackupText(JSON.stringify({ app: "web-band" }))).toThrow(
       /valid Web Band backup/i,
     );

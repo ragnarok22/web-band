@@ -83,7 +83,7 @@ export function BackupPreviewDialog({
           ))}
         </dl>
         <p className="border-border bg-background/45 text-muted mt-3 rounded-xl border px-3 py-2 text-xs leading-5">
-          {preview.envelope.version === 3
+          {preview.sourceVersion >= 3
             ? "This backup also includes practice settings, appearance, recent patterns, and onboarding state. Imported settings and preferences replace the current values in both modes."
             : "This legacy backup includes practice settings but not appearance, recents, or onboarding state. Merge keeps your current app preferences; replace uses historical defaults."}
         </p>

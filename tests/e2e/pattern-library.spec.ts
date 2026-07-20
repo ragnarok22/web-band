@@ -21,10 +21,12 @@ test("filters patterns and persists a favorite", async ({ page }) => {
   if (await showFilters.isVisible()) await showFilters.click();
   await page.getByRole("combobox", { name: "Genre" }).selectOption("reggae");
   await expect(page.getByText("4 of 44 patterns")).toBeVisible();
-  await page.getByRole("button", { name: "One Drop favorite" }).click();
-  await expect(
-    page.getByRole("button", { name: "One Drop favorite" }),
-  ).toHaveAttribute("aria-pressed", "true");
+  const favoriteButton = page.getByRole("button", {
+    name: "One Drop favorite",
+  });
+  await favoriteButton.click();
+  await expect(favoriteButton).toHaveAttribute("aria-pressed", "true");
+  await expect(favoriteButton).toBeEnabled();
 
   await page.reload();
   await page.getByRole("searchbox").fill("One Drop");

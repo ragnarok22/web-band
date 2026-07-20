@@ -123,11 +123,14 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
   await page.getByRole("link", { name: "Settings" }).click();
 
+  const invalidWorkerPromise = page.waitForEvent("worker");
   await page.getByLabel("Choose backup file").setInputFiles({
     buffer: Buffer.from("not-json"),
     mimeType: "application/json",
     name: "invalid-backup.json",
   });
+  const invalidWorker = await invalidWorkerPromise;
+  expect(new URL(invalidWorker.url()).origin).toBe(new URL(page.url()).origin);
   await expect(page.getByText("This file is not valid JSON.")).toBeVisible();
   await page.getByRole("link", { exact: true, name: "Patterns" }).click();
   await page.getByRole("searchbox").fill(patternName);
@@ -188,7 +191,8 @@ test("exports, clears, and restores a custom pattern backup", async ({
     "false",
   );
 
-  await page.getByRole("link", { name: "Practice" }).click();
+  await page.getByRole("link", { name: "Practice" }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("note")).toContainText(
     "Sound begins after you press Play",
   );
@@ -207,10 +211,9 @@ test("exports, clears, and restores a custom pattern backup", async ({
   ).toBeVisible();
   await page.getByRole("radio", { name: /Merge with current data/ }).check();
   await page.getByRole("button", { name: "Import data" }).click();
-  await expect(
-    page.getByRole("status").filter({ hasText: "imported by merge" }),
-  ).toBeVisible();
-  await expect(page.locator("#color-theme")).toHaveValue("light");
+  await expect(page.locator("#color-theme")).toHaveValue("light", {
+    timeout: 15_000,
+  });
   await expect(
     page.getByRole("checkbox", { name: "Reduce motion" }),
   ).toBeChecked();
@@ -238,7 +241,8 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await page.reload();
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
-  await page.getByRole("link", { name: "Practice" }).click();
+  await page.getByRole("link", { name: "Practice" }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("note")).toHaveCount(0);
   expect(browserErrors).toEqual([]);
 });

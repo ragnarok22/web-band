@@ -8,7 +8,10 @@ import { builtInPatterns } from "@/data/patterns";
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { storageService, type StorageService } from "@/db/storage-service";
-import { downloadBackupEnvelope } from "@/lib/backup-browser";
+import {
+  downloadBackupEnvelope,
+  getPreparedBackup,
+} from "@/lib/backup-browser";
 import {
   createBackupEnvelope,
   defaultBackupPreferences,
@@ -251,8 +254,9 @@ export class BackupService {
     if (mode !== "merge" && mode !== "replace") {
       throw new Error("Import mode is invalid.");
     }
-    const sourceVersion = backupVersion(value);
-    const envelope = normalizeBackupEnvelope(value);
+    const prepared = getPreparedBackup(value);
+    const sourceVersion = prepared?.sourceVersion ?? backupVersion(value);
+    const envelope = prepared?.envelope ?? normalizeBackupEnvelope(value);
 
     if (mode === "replace") await this.exportCurrentBackup();
     else await this.dependencies.flushPendingHistory();

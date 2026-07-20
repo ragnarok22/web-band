@@ -10,10 +10,18 @@ import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import {
   createBackupEnvelope,
   defaultBackupPreferences,
+  parseBackupText,
   serializeBackupEnvelope,
 } from "@/lib/backup-envelope";
 import { createDefaultGuidedPracticeValues } from "@/stores/guided-practice-store";
 import type { BackupEnvelope, ImportMode } from "@/types/persistence";
+
+const backupBrowser = vi.hoisted(() => ({ parseBackupFile: vi.fn() }));
+
+vi.mock("@/lib/backup-browser", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/backup-browser")>()),
+  parseBackupFile: backupBrowser.parseBackupFile,
+}));
 
 function envelope(): BackupEnvelope {
   return createBackupEnvelope(
@@ -68,6 +76,17 @@ function actions(): DataBackupActions {
 describe("data backup panel", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    backupBrowser.parseBackupFile.mockImplementation(async (file: File) => {
+      const parsed = parseBackupText(await file.text(), file.name);
+      return {
+        byteSize: parsed.byteSize,
+        counts: parsed.counts,
+        exportedAt: parsed.exportedAt,
+        fileName: parsed.fileName,
+        sourceVersion: parsed.sourceVersion,
+        totalRecords: parsed.totalRecords,
+      };
+    });
   });
 
   it("previews a valid file and imports it with merge by default", async () => {
@@ -93,7 +112,10 @@ describe("data backup panel", () => {
 
     await waitFor(() =>
       expect(backupActions.importBackup).toHaveBeenCalledWith(
-        envelope(),
+        expect.objectContaining({
+          fileName: "web-band-backup.json",
+          sourceVersion: 4,
+        }),
         "merge",
       ),
     );
@@ -145,7 +167,7 @@ describe("data backup panel", () => {
 
     await waitFor(() =>
       expect(backupActions.importBackup).toHaveBeenCalledWith(
-        envelope(),
+        expect.objectContaining({ sourceVersion: 4 }),
         "replace",
       ),
     );

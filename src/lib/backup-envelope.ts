@@ -24,10 +24,14 @@ export const defaultBackupPreferences: BackupPreferences = {
 export interface BackupPreview {
   byteSize: number;
   counts: ImportCollectionCounts;
-  envelope: VersionedBackupEnvelope;
   exportedAt: string;
   fileName: string | null;
+  sourceVersion: VersionedBackupEnvelope["version"];
   totalRecords: number;
+}
+
+export interface ParsedBackup extends BackupPreview {
+  envelope: BackupEnvelope;
 }
 
 export class BackupFileError extends Error {
@@ -80,7 +84,7 @@ export function backupFileName(exportedAt: string): string {
 export function parseBackupText(
   text: string,
   fileName: string | null = null,
-): BackupPreview {
+): ParsedBackup {
   const byteSize = new TextEncoder().encode(text).byteLength;
   if (byteSize > MAX_BACKUP_FILE_BYTES) {
     throw new BackupFileError("Backup file is larger than the 25 MB limit.");
@@ -93,15 +97,16 @@ export function parseBackupText(
     throw new BackupFileError("This file is not valid JSON.");
   }
 
-  const normalized = normalizeBackupEnvelope(value);
-  const envelope = structuredClone(value as VersionedBackupEnvelope);
-  const counts = collectionCounts(normalized.data);
+  const envelope = normalizeBackupEnvelope(value);
+  const sourceVersion = (value as VersionedBackupEnvelope).version;
+  const counts = collectionCounts(envelope.data);
   return {
     byteSize,
     counts,
     envelope,
     exportedAt: envelope.exportedAt,
     fileName,
+    sourceVersion,
     totalRecords: Object.values(counts).reduce(
       (total, count) => total + count,
       0,

@@ -1,11 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import {
   createBackupEnvelope,
   defaultBackupPreferences,
+  parseBackupText,
+  serializeBackupEnvelope,
 } from "@/lib/backup-envelope";
+import { parseBackupFile } from "@/lib/backup-browser";
+import type { BackupImportWorkerResponse } from "@/lib/backup-import-worker-protocol";
 import {
   BackupService,
   type BackupServiceDependencies,
@@ -106,7 +110,34 @@ function dependencies(order: string[] = []): BackupServiceDependencies {
   };
 }
 
+async function prepareBackupToken(source: BackupEnvelope): Promise<unknown> {
+  const parsed = parseBackupText(
+    serializeBackupEnvelope(source),
+    "backup.json",
+  );
+  class SuccessfulWorker {
+    onerror: ((event: ErrorEvent) => void) | null = null;
+    onmessage:
+      ((event: MessageEvent<BackupImportWorkerResponse>) => void) | null = null;
+    onmessageerror: ((event: MessageEvent) => void) | null = null;
+
+    postMessage(): void {
+      this.onmessage?.(
+        new MessageEvent("message", { data: { ok: true, parsed } }),
+      );
+    }
+
+    terminate(): void {}
+  }
+  vi.stubGlobal("Worker", SuccessfulWorker);
+  return parseBackupFile(new File(["worker input"], "backup.json"));
+}
+
 describe("backup service", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(() => {
     vi.useRealTimers();
   });
@@ -147,6 +178,24 @@ describe("backup service", () => {
       envelope().data.preferences,
     );
     expect(result).toMatchObject({ mode: "merge", settingsPersisted: true });
+  });
+
+  it("imports an opaque worker-prepared backup without trusting forged tokens", async () => {
+    const deps = dependencies();
+    const service = new BackupService(deps);
+    const prepared = await prepareBackupToken(envelope());
+
+    await expect(
+      service.importBackup(prepared, "merge"),
+    ).resolves.toMatchObject({ mode: "merge", settingsPersisted: true });
+    expect(deps.storage.importSnapshot).toHaveBeenCalledWith(
+      emptySnapshot,
+      "merge",
+    );
+
+    await expect(
+      service.importBackup({ ...(prepared as object) }, "merge"),
+    ).rejects.toThrow(/valid Web Band backup/i);
   });
 
   it("normalizes version 1 settings while preserving merge preferences", async () => {

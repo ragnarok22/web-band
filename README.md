@@ -236,7 +236,7 @@ data:
   preferences: appearance, onboardingDismissed, recentPatternIds
 ```
 
-Imports are parsed as data, capped at 25 MB, and fully validated before mutation. Valid version 1 through 3 backups migrate to version 4 with historical defaults for fields they could not contain; unknown versions remain rejected. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, recent-pattern references, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Version 3 and 4 settings and preferences replace their current values in both modes; version 1 and 2 merge imports preserve appearance, recents, and onboarding because those formats never contained them, while legacy replacement uses historical defaults. Replace starts a validated safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the versioned settings and preferences stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
+Imports are capped at 25 MB, then parsed, migrated, validated, and counted in a dedicated worker before mutation. Valid version 1 through 3 backups migrate to version 4 with historical defaults for fields they could not contain; unknown versions remain rejected. IDs, timestamps, record limits, built-in collisions, duplicate drum cells, recent-pattern references, and applicable cross-record references are checked. Merge upserts imported records by ID and keeps other local records. Version 3 and 4 settings and preferences replace their current values in both modes; version 1 and 2 merge imports preserve appearance, recents, and onboarding because those formats never contained them, while legacy replacement uses historical defaults. Replace starts a validated safety-backup download, atomically replaces the IndexedDB-managed collections, then applies the versioned settings and preferences stored in `localStorage`. IndexedDB and `localStorage` are separate browser systems and therefore are not one transaction; post-commit settings or refresh failures are reported as partial-completion warnings rather than claiming the database replacement failed.
 
 Delete all starts a complete version 4 safety backup, empties the IndexedDB collections, resets live state, and removes every current and legacy Web Band `localStorage` key from an explicit allowlist. It preserves unrelated origin storage and the offline application shell. Reset settings changes only preferences and leaves all IndexedDB collections intact.
 
@@ -288,6 +288,9 @@ Playwright runs the real browser audio engine and verifies:
 - Production service-worker control and offline loading for every local-first route.
 
 The Web Audio implementation remains real in production. Unit component tests mock only the engine boundary where browser audio is unavailable in jsdom.
+
+See [`docs/RELEASE_CHECKS.md`](docs/RELEASE_CHECKS.md) for the latest
+performance evidence and the physical desktop/mobile listening matrix.
 
 ## Known Limitations
 
