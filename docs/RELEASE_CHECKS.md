@@ -52,16 +52,16 @@ worker.
 Run every applicable check with system sound enhancements disabled. Record the
 browser/OS version, output device, result, and notes in the final four columns.
 
-| Target                | Output                        | Browser/OS | Result | Notes |
-| --------------------- | ----------------------------- | ---------- | ------ | ----- |
-| Desktop Chromium      | Built-in speakers             |            | [ ]    |       |
-| Desktop Chromium      | Wired or Bluetooth headphones |            | [ ]    |       |
-| Desktop Safari        | Built-in speakers             |            | [ ]    |       |
-| Desktop Safari        | Wired or Bluetooth headphones |            | [ ]    |       |
-| Android installed PWA | Phone speaker                 |            | [ ]    |       |
-| Android installed PWA | Wired or Bluetooth headphones |            | [ ]    |       |
-| iOS installed PWA     | Phone speaker                 |            | [ ]    |       |
-| iOS installed PWA     | Wired or Bluetooth headphones |            | [ ]    |       |
+| Target                | Output                        | Browser/OS     | Result | Notes                                                                                                                                                             |
+| --------------------- | ----------------------------- | -------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Desktop Chromium      | Built-in speakers             | Chrome / macOS | [x]    | Passed July 20, 2026: 40/90/220 BPM, sound characters, hi-hat choke, count-ins, live controls, pause/resume, focus, stop/restart, swing, humanization, and fills. |
+| Desktop Chromium      | Wired or Bluetooth headphones |                | [ ]    |                                                                                                                                                                   |
+| Desktop Safari        | Built-in speakers             |                | [ ]    |                                                                                                                                                                   |
+| Desktop Safari        | Wired or Bluetooth headphones |                | [ ]    |                                                                                                                                                                   |
+| Android installed PWA | Phone speaker                 |                | [ ]    |                                                                                                                                                                   |
+| Android installed PWA | Wired or Bluetooth headphones |                | [ ]    |                                                                                                                                                                   |
+| iOS installed PWA     | Phone speaker                 |                | [ ]    |                                                                                                                                                                   |
+| iOS installed PWA     | Wired or Bluetooth headphones |                | [ ]    |                                                                                                                                                                   |
 
 For each row:
 
