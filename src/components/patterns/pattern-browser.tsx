@@ -182,145 +182,23 @@ export function PatternBrowser() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[92rem] overflow-x-clip px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="text-accent mb-3 flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-            <LibraryBig aria-hidden="true" className="size-4" />
-            Groove library
-          </div>
-          <h1 className="text-foreground text-4xl font-black tracking-[-0.05em] sm:text-5xl">
-            Find your pocket
-          </h1>
-          <p className="text-muted mt-3 max-w-2xl leading-7">
-            Forty-four original practice grooves, from steady foundations to
-            syncopated challenges.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <PatternSharingControl />
-          <Link
-            className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition-colors"
-            href="/editor"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Create pattern
-          </Link>
-          <p className="border-border bg-surface text-muted-strong rounded-xl border px-4 py-3 text-sm font-bold tabular-nums">
-            {visiblePatterns.length} of {patterns.length} patterns
-          </p>
-        </div>
-      </header>
+      <PatternBrowserHeader
+        totalCount={patterns.length}
+        visibleCount={visiblePatterns.length}
+      />
 
-      <section
-        aria-label="Pattern filters"
-        className="border-border bg-surface mb-6 rounded-2xl border p-4 sm:p-5"
-      >
-        <div className="grid gap-3 sm:grid-cols-[1.7fr_auto]">
-          <label className="border-border bg-surface-elevated focus-within:border-accent flex min-h-12 items-center gap-2 rounded-xl border px-3">
-            <Search aria-hidden="true" className="text-muted size-4" />
-            <span className="sr-only">Search patterns</span>
-            <input
-              className="text-foreground placeholder:text-muted min-w-0 flex-1 bg-transparent text-sm outline-none"
-              onChange={(event) => updateFilter("search", event.target.value)}
-              placeholder="Search patterns"
-              type="search"
-              value={filters.search}
-            />
-          </label>
-          <button
-            aria-expanded={filtersOpen}
-            className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
-            onClick={() => setFiltersOpen((open) => !open)}
-            type="button"
-          >
-            <SlidersHorizontal aria-hidden="true" className="size-4" />
-            {filtersOpen ? "Hide filters" : "Show filters"}
-          </button>
-        </div>
-
-        <div
-          className={`${filtersOpen ? "mt-3 grid" : "hidden"} gap-3 sm:mt-3 sm:grid sm:grid-cols-2 xl:grid-cols-5`}
-        >
-          <FilterSelect
-            label="Genre"
-            onChange={(value) =>
-              updateFilter("category", value as PatternCategory | "all")
-            }
-            options={categories.map((value) => ({
-              label: value === "custom" ? "Utility" : formatOption(value),
-              value,
-            }))}
-            value={filters.category}
-          />
-          <FilterSelect
-            label="Difficulty"
-            onChange={(value) =>
-              updateFilter("difficulty", value as PatternDifficulty | "all")
-            }
-            options={["all", "beginner", "intermediate", "advanced"].map(
-              (value) => ({ label: formatOption(value), value }),
-            )}
-            value={filters.difficulty}
-          />
-          <FilterSelect
-            label="Meter"
-            onChange={(value) => updateFilter("timeSignature", value)}
-            options={[
-              "all",
-              "2/4",
-              "3/4",
-              "4/4",
-              "5/4",
-              "6/8",
-              "7/8",
-              "12/8",
-            ].map((value) => ({
-              label: value === "all" ? "All meters" : value,
-              value,
-            }))}
-            value={filters.timeSignature}
-          />
-          <FilterSelect
-            label="Grid"
-            onChange={(value) =>
-              updateFilter(
-                "subdivision",
-                value === "all" ? "all" : value === "8" ? 8 : 16,
-              )
-            }
-            options={[
-              { label: "All grids", value: "all" },
-              { label: "Eighth notes", value: "8" },
-              { label: "Sixteenth notes", value: "16" },
-            ]}
-            value={String(filters.subdivision)}
-          />
-          <FilterSelect
-            label="Sort"
-            onChange={(value) => setSort(value as PatternSort)}
-            options={[
-              { label: "Name", value: "name" },
-              { label: "Default BPM", value: "bpm" },
-              { label: "Recently used", value: "recent" },
-              { label: "Favorites first", value: "favorites" },
-            ]}
-            value={sort}
-          />
-        </div>
-        <div className={filtersOpen ? "block" : "hidden sm:block"}>
-          <button
-            className="text-muted-strong hover:text-foreground mt-3 flex min-h-11 items-center gap-2 text-xs font-extrabold transition-colors"
-            onClick={() => {
-              setFilters(defaultPatternFilters);
-              setSort("name");
-            }}
-            type="button"
-          >
-            <FilterX aria-hidden="true" className="size-4" />
-            Clear filters
-          </button>
-        </div>
-      </section>
+      <PatternFiltersPanel
+        filters={filters}
+        isOpen={filtersOpen}
+        onClear={() => {
+          setFilters(defaultPatternFilters);
+          setSort("name");
+        }}
+        onFilterChange={updateFilter}
+        onToggle={() => setFiltersOpen((open) => !open)}
+        onSortChange={setSort}
+        sort={sort}
+      />
 
       {errorMessage ? (
         <p
@@ -352,6 +230,180 @@ export function PatternBrowser() {
         </section>
       )}
     </main>
+  );
+}
+
+interface PatternBrowserHeaderProps {
+  totalCount: number;
+  visibleCount: number;
+}
+
+function PatternBrowserHeader({
+  totalCount,
+  visibleCount,
+}: PatternBrowserHeaderProps) {
+  return (
+    <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <div className="text-accent mb-3 flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+          <LibraryBig aria-hidden="true" className="size-4" />
+          Groove library
+        </div>
+        <h1 className="text-foreground text-4xl font-black tracking-[-0.05em] sm:text-5xl">
+          Find your pocket
+        </h1>
+        <p className="text-muted mt-3 max-w-2xl leading-7">
+          Forty-four original practice grooves, from steady foundations to
+          syncopated challenges.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <PatternSharingControl />
+        <Link
+          className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition-colors"
+          href="/editor"
+        >
+          <Plus aria-hidden="true" className="size-4" />
+          Create pattern
+        </Link>
+        <p className="border-border bg-surface text-muted-strong rounded-xl border px-4 py-3 text-sm font-bold tabular-nums">
+          {visibleCount} of {totalCount} patterns
+        </p>
+      </div>
+    </header>
+  );
+}
+
+interface PatternFiltersPanelProps {
+  filters: PatternFilters;
+  isOpen: boolean;
+  onClear: () => void;
+  onFilterChange: <Key extends keyof PatternFilters>(
+    key: Key,
+    value: PatternFilters[Key],
+  ) => void;
+  onSortChange: (sort: PatternSort) => void;
+  onToggle: () => void;
+  sort: PatternSort;
+}
+
+function PatternFiltersPanel({
+  filters,
+  isOpen,
+  onClear,
+  onFilterChange,
+  onSortChange,
+  onToggle,
+  sort,
+}: PatternFiltersPanelProps) {
+  return (
+    <section
+      aria-label="Pattern filters"
+      className="border-border bg-surface mb-6 rounded-2xl border p-4 sm:p-5"
+    >
+      <div className="grid gap-3 sm:grid-cols-[1.7fr_auto]">
+        <label className="border-border bg-surface-elevated focus-within:border-accent flex min-h-12 items-center gap-2 rounded-xl border px-3">
+          <Search aria-hidden="true" className="text-muted size-4" />
+          <span className="sr-only">Search patterns</span>
+          <input
+            className="text-foreground placeholder:text-muted min-w-0 flex-1 bg-transparent text-sm outline-none"
+            onChange={(event) => onFilterChange("search", event.target.value)}
+            placeholder="Search patterns"
+            type="search"
+            value={filters.search}
+          />
+        </label>
+        <button
+          aria-expanded={isOpen}
+          className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
+          onClick={onToggle}
+          type="button"
+        >
+          <SlidersHorizontal aria-hidden="true" className="size-4" />
+          {isOpen ? "Hide filters" : "Show filters"}
+        </button>
+      </div>
+
+      <div
+        className={`${isOpen ? "mt-3 grid" : "hidden"} gap-3 sm:mt-3 sm:grid sm:grid-cols-2 xl:grid-cols-5`}
+      >
+        <FilterSelect
+          label="Genre"
+          onChange={(value) =>
+            onFilterChange("category", value as PatternCategory | "all")
+          }
+          options={categories.map((value) => ({
+            label: value === "custom" ? "Utility" : formatOption(value),
+            value,
+          }))}
+          value={filters.category}
+        />
+        <FilterSelect
+          label="Difficulty"
+          onChange={(value) =>
+            onFilterChange("difficulty", value as PatternDifficulty | "all")
+          }
+          options={["all", "beginner", "intermediate", "advanced"].map(
+            (value) => ({ label: formatOption(value), value }),
+          )}
+          value={filters.difficulty}
+        />
+        <FilterSelect
+          label="Meter"
+          onChange={(value) => onFilterChange("timeSignature", value)}
+          options={[
+            "all",
+            "2/4",
+            "3/4",
+            "4/4",
+            "5/4",
+            "6/8",
+            "7/8",
+            "12/8",
+          ].map((value) => ({
+            label: value === "all" ? "All meters" : value,
+            value,
+          }))}
+          value={filters.timeSignature}
+        />
+        <FilterSelect
+          label="Grid"
+          onChange={(value) =>
+            onFilterChange(
+              "subdivision",
+              value === "all" ? "all" : value === "8" ? 8 : 16,
+            )
+          }
+          options={[
+            { label: "All grids", value: "all" },
+            { label: "Eighth notes", value: "8" },
+            { label: "Sixteenth notes", value: "16" },
+          ]}
+          value={String(filters.subdivision)}
+        />
+        <FilterSelect
+          label="Sort"
+          onChange={(value) => onSortChange(value as PatternSort)}
+          options={[
+            { label: "Name", value: "name" },
+            { label: "Default BPM", value: "bpm" },
+            { label: "Recently used", value: "recent" },
+            { label: "Favorites first", value: "favorites" },
+          ]}
+          value={sort}
+        />
+      </div>
+      <div className={isOpen ? "block" : "hidden sm:block"}>
+        <button
+          className="text-muted-strong hover:text-foreground mt-3 flex min-h-11 items-center gap-2 text-xs font-extrabold transition-colors"
+          onClick={onClear}
+          type="button"
+        >
+          <FilterX aria-hidden="true" className="size-4" />
+          Clear filters
+        </button>
+      </div>
+    </section>
   );
 }
 

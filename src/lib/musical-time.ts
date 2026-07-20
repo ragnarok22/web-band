@@ -53,8 +53,3 @@ export function getBeatLabels(
 
   return labels;
 }
-
-export function isMainBeat(step: number, pattern: DrumPattern): boolean {
-  const stepsPerBeat = pattern.subdivision / pattern.timeSignature.denominator;
-  return step % stepsPerBeat === 0;
-}
