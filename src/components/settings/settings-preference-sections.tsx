@@ -22,6 +22,7 @@ const sectionClass =
   "border-border bg-surface/70 rounded-3xl border p-5 sm:p-7";
 
 export function AppearanceSettingsSection() {
+  const hydrated = useAppearanceStore((state) => state.hasHydrated);
   const beatFlashIntensity = useAppearanceStore(
     (state) => state.beatFlashIntensity,
   );
@@ -76,6 +77,7 @@ export function AppearanceSettingsSection() {
           <input
             checked={reducedMotion}
             className="size-6 accent-[var(--accent)]"
+            disabled={!hydrated}
             onChange={(event) => setReducedMotion(event.target.checked)}
             type="checkbox"
           />
@@ -288,6 +290,7 @@ export function SoundSettingsSection() {
 
 export function HistorySettingsSection() {
   const enabled = useHistorySettingsStore((state) => state.enabled);
+  const hydrated = useHistorySettingsStore((state) => state.hasHydrated);
   const minimumDuration = useHistorySettingsStore(
     (state) => state.minimumDurationSeconds,
   );
@@ -316,6 +319,7 @@ export function HistorySettingsSection() {
           <input
             checked={enabled}
             className="size-6 accent-[var(--accent)]"
+            disabled={!hydrated}
             onChange={(event) => setEnabled(event.target.checked)}
             type="checkbox"
           />
@@ -330,6 +334,7 @@ export function HistorySettingsSection() {
               id="history-minimum-duration"
               max={MAX_HISTORY_MINIMUM_DURATION_SECONDS}
               min={MIN_HISTORY_MINIMUM_DURATION_SECONDS}
+              disabled={!hydrated}
               onBlur={() => setMinimumDurationInput(null)}
               onChange={(event) => {
                 setMinimumDurationInput(event.currentTarget.value);

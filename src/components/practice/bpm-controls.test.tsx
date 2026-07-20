@@ -10,10 +10,12 @@ function ControlledBpmControls({
   adjustmentStep = 1,
   defaultBpm = 90,
   onChange = vi.fn(),
+  onCommit = vi.fn(),
 }: {
   adjustmentStep?: BpmAdjustmentStep;
   defaultBpm?: number;
   onChange?: (bpm: number) => void;
+  onCommit?: (bpm: number) => void;
 }) {
   const [bpm, setBpm] = useState(90);
 
@@ -26,6 +28,7 @@ function ControlledBpmControls({
         setBpm(nextBpm);
         onChange(nextBpm);
       }}
+      onCommit={onCommit}
       onTap={vi.fn()}
     />
   );
@@ -35,13 +38,16 @@ describe("BPM controls", () => {
   it("applies sequential one- and five-BPM adjustments to the current value", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<ControlledBpmControls onChange={onChange} />);
+    const onCommit = vi.fn();
+    render(<ControlledBpmControls onChange={onChange} onCommit={onCommit} />);
 
     await user.click(screen.getByRole("button", { name: "Increase BPM by 5" }));
     await user.click(screen.getByRole("button", { name: "Decrease BPM by 1" }));
 
     expect(onChange).toHaveBeenNthCalledWith(1, 95);
     expect(onChange).toHaveBeenNthCalledWith(2, 94);
+    expect(onCommit).toHaveBeenNthCalledWith(1, 95);
+    expect(onCommit).toHaveBeenNthCalledWith(2, 94);
     expect(screen.getByRole("spinbutton", { name: "Current BPM" })).toHaveValue(
       94,
     );
@@ -86,14 +92,8 @@ describe("BPM controls", () => {
   it("commits numeric input and slider changes", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(
-      <BpmControls
-        bpm={90}
-        defaultBpm={90}
-        onChange={onChange}
-        onTap={vi.fn()}
-      />,
-    );
+    const onCommit = vi.fn();
+    render(<ControlledBpmControls onChange={onChange} onCommit={onCommit} />);
     const numericInput = screen.getByRole("spinbutton", {
       name: "Current BPM",
     });
@@ -101,12 +101,21 @@ describe("BPM controls", () => {
     await user.clear(numericInput);
     await user.type(numericInput, "132");
     fireEvent.blur(numericInput);
-    fireEvent.change(screen.getByRole("slider", { name: "Tempo" }), {
+    expect(onCommit).toHaveBeenCalledWith(132);
+    onCommit.mockClear();
+
+    const slider = screen.getByRole("slider", { name: "Tempo" });
+    fireEvent.change(slider, {
       target: { value: "145" },
     });
 
     expect(onChange).toHaveBeenCalledWith(132);
     expect(onChange).toHaveBeenCalledWith(145);
+    expect(onCommit).not.toHaveBeenCalled();
+    expect(slider).toHaveAttribute("aria-valuetext", "145 BPM");
+
+    fireEvent.pointerUp(slider);
+    expect(onCommit).toHaveBeenCalledWith(145);
   });
 
   it("supports tap tempo", async () => {

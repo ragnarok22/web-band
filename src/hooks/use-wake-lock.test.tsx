@@ -60,4 +60,20 @@ describe("useWakeLock", () => {
     rerender({ status: "stopped" });
     await waitFor(() => expect(release).toHaveBeenCalled());
   });
+
+  it("reports request failures without treating an inactive session as failed", async () => {
+    const request = vi.fn().mockRejectedValue(new Error("Permission denied"));
+    Object.defineProperty(navigator, "wakeLock", {
+      configurable: true,
+      value: { request },
+    });
+    const { rerender, result } = renderHook(
+      ({ status }: { status: AudioEngineStatus }) => useWakeLock(true, status),
+      { initialProps: { status: "playing" as AudioEngineStatus } },
+    );
+
+    await waitFor(() => expect(result.current).toBe("error"));
+    rerender({ status: "stopped" });
+    expect(result.current).toBe("idle");
+  });
 });

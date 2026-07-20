@@ -73,6 +73,9 @@ export function PatternBrowser() {
   const [sort, setSort] = useState<PatternSort>("name");
   const [previewPatternId, setPreviewPatternId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingFavoriteIds, setPendingFavoriteIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const patterns = [...builtInPatterns, ...customPatterns];
   const favoritePatternIdSet = new Set(favoritePatternIds);
   const visiblePatterns = filterAndSortPatterns(
@@ -157,14 +160,23 @@ export function PatternBrowser() {
   }
 
   async function favoritePattern(patternId: string): Promise<void> {
-    if (!usePatternStore.getState().isHydrated) return;
+    if (!usePatternStore.getState().isHydrated || pendingFavoriteIds.size > 0) {
+      return;
+    }
     setErrorMessage(null);
+    setPendingFavoriteIds((current) => new Set(current).add(patternId));
     try {
       await toggleFavorite(patternId);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Favorite could not be saved.",
       );
+    } finally {
+      setPendingFavoriteIds((current) => {
+        const next = new Set(current);
+        next.delete(patternId);
+        return next;
+      });
     }
   }
 
@@ -322,6 +334,7 @@ export function PatternBrowser() {
       {visiblePatterns.length > 0 ? (
         <PatternRail
           favoritePatternIdSet={favoritePatternIdSet}
+          pendingFavoriteIds={pendingFavoriteIds}
           onFavorite={(patternId) => void favoritePattern(patternId)}
           onOpen={openPattern}
           onPreview={(patternId) => void previewPattern(patternId)}
@@ -344,6 +357,7 @@ export function PatternBrowser() {
 
 interface PatternRailProps {
   favoritePatternIdSet: ReadonlySet<string>;
+  pendingFavoriteIds: ReadonlySet<string>;
   onFavorite: (patternId: string) => void;
   onOpen: (patternId: string) => void;
   onPreview: (patternId: string) => void;
@@ -353,6 +367,7 @@ interface PatternRailProps {
 
 function PatternRail({
   favoritePatternIdSet,
+  pendingFavoriteIds,
   onFavorite,
   onOpen,
   onPreview,
@@ -375,6 +390,7 @@ function PatternRail({
             key={`${pattern.isBuiltIn ? "built-in" : "custom"}:${pattern.id}`}
           >
             <PatternCard
+              favoriteDisabled={pendingFavoriteIds.size > 0}
               isFavorite={favoritePatternIdSet.has(pattern.id)}
               isPreviewing={previewPatternId === pattern.id}
               onFavorite={() => onFavorite(pattern.id)}

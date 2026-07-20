@@ -15,6 +15,7 @@ import { TransportPanel } from "@/components/practice/transport-panel";
 import { usePracticeController } from "@/hooks/use-practice-controller";
 import { audioStatusCopy } from "@/lib/audio-status";
 import { useAppearanceStore } from "@/stores/appearance-store";
+import type { AudioEngineStatus } from "@/types/audio";
 
 export function PracticeScreen() {
   const practice = usePracticeController();
@@ -25,35 +26,32 @@ export function PracticeScreen() {
     (state) => state.visualSubdivisionDetail,
   );
 
-  if (practice.isFocusMode) {
-    return (
-      <PracticeFocusSession
-        bpm={practice.bpm}
-        beatFlashIntensity={beatFlashIntensity}
-        bpmAdjustmentStep={practice.bpmAdjustmentStep}
-        configuration={practice.guidedPractice}
-        countInMeasures={practice.countInMeasures}
-        elapsedSeconds={practice.elapsedSeconds}
-        errorMessage={practice.errorMessage}
-        historyNotice={practice.historyNotice}
-        isReady={practice.isReady}
-        isFinishing={practice.isFinishing}
-        onDismissNotice={practice.dismissOnboarding}
-        onExit={practice.exitFocusMode}
-        onFinish={practice.finishWithFill}
-        onPlay={() => void practice.play()}
-        onShortcutsClose={() => practice.setShortcutsOpen(false)}
-        onStop={practice.stop}
-        pattern={practice.pattern}
-        showOnboarding={practice.showOnboarding}
-        shortcutsOpen={practice.shortcutsOpen}
-        status={practice.status}
-        visualSubdivisionDetail={visualSubdivisionDetail}
-      />
-    );
-  }
-
-  return (
+  const content = practice.isFocusMode ? (
+    <PracticeFocusSession
+      bpm={practice.bpm}
+      beatFlashIntensity={beatFlashIntensity}
+      bpmAdjustmentStep={practice.bpmAdjustmentStep}
+      configuration={practice.guidedPractice}
+      countInMeasures={practice.countInMeasures}
+      elapsedSeconds={practice.elapsedSeconds}
+      errorMessage={practice.errorMessage}
+      historyNotice={practice.historyNotice}
+      isReady={practice.isReady}
+      isFinishing={practice.isFinishing}
+      onDismissNotice={practice.dismissOnboarding}
+      onExit={practice.exitFocusMode}
+      onFinish={practice.finishWithFill}
+      onPlay={() => void practice.play()}
+      onShortcutsClose={() => practice.setShortcutsOpen(false)}
+      onStop={practice.stop}
+      pattern={practice.pattern}
+      showOnboarding={practice.showOnboarding}
+      shortcutsOpen={practice.shortcutsOpen}
+      status={practice.status}
+      visualSubdivisionDetail={visualSubdivisionDetail}
+      wakeLockStatus={practice.wakeLockStatus}
+    />
+  ) : (
     <main className="mx-auto flex min-h-screen w-full max-w-[92rem] flex-col px-3 pb-8 sm:px-6 lg:px-8">
       <PracticeHeader status={practice.status} />
       <div className="pt-4 lg:pt-6">
@@ -80,6 +78,7 @@ export function PracticeScreen() {
           />
 
           <CompactMixer
+            disabled={!practice.isReady}
             masterMuted={practice.masterMuted}
             masterVolume={practice.masterVolume}
             mixer={practice.mixer}
@@ -103,6 +102,7 @@ export function PracticeScreen() {
             onShortcuts={() => practice.setShortcutsOpen(true)}
             onWakeLockChange={practice.setWakeLockEnabled}
             wakeLockEnabled={practice.wakeLockEnabled}
+            wakeLockDisabled={!practice.isReady}
             wakeLockStatus={practice.wakeLockStatus}
           />
           <GuidedPracticeDisplay
@@ -141,9 +141,11 @@ export function PracticeScreen() {
           bpm={practice.bpm}
           countInMeasures={practice.countInMeasures}
           defaultBpm={practice.pattern.defaultBpm}
+          disabled={!practice.isReady}
           fillFrequency={practice.fillFrequency}
           humanization={practice.humanization}
           onBpmChange={practice.changeBpm}
+          onBpmCommit={practice.announceBpm}
           onCountInChange={practice.setCountInMeasures}
           onFillFrequencyChange={practice.changeFillFrequency}
           onHumanizationChange={practice.changeHumanization}
@@ -156,17 +158,50 @@ export function PracticeScreen() {
         />
       </div>
 
-      <p aria-live="polite" className="sr-only" role="status">
-        {audioStatusCopy[practice.status]}
-      </p>
-      <p aria-live="polite" className="sr-only" role="status">
-        {practice.patternAnnouncement}
-      </p>
       <ShortcutsDialog
         adjustmentStep={practice.bpmAdjustmentStep}
         onClose={() => practice.setShortcutsOpen(false)}
         open={practice.shortcutsOpen}
       />
     </main>
+  );
+
+  return (
+    <>
+      {content}
+      <PracticeLiveRegions
+        announcement={practice.practiceAnnouncement}
+        status={practice.status}
+      />
+    </>
+  );
+}
+
+function PracticeLiveRegions({
+  announcement,
+  status,
+}: {
+  announcement: string;
+  status: AudioEngineStatus;
+}) {
+  return (
+    <div className="sr-only">
+      <p
+        aria-atomic="true"
+        aria-live="polite"
+        data-testid="playback-live-region"
+        role="status"
+      >
+        {audioStatusCopy[status]}
+      </p>
+      <p
+        aria-atomic="true"
+        aria-live="polite"
+        data-testid="practice-live-region"
+        role="status"
+      >
+        {announcement}
+      </p>
+    </div>
   );
 }

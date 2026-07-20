@@ -6,7 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { guidanceTimeline } from "@/audio/guidance-timeline";
 import { PracticeScreen } from "@/components/practice/practice-screen";
@@ -96,6 +96,10 @@ function createPreset(
 }
 
 describe("practice screen", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "wakeLock");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     guidanceTimeline.reset();
@@ -156,6 +160,21 @@ describe("practice screen", () => {
     expect(
       screen.getByRole("button", { name: "Hide groove settings" }),
     ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("disables persisted toggles until practice stores hydrate", () => {
+    usePracticeStore.setState({ hasHydrated: false });
+    useGuidedPracticeStore.setState({ isHydrated: false });
+    render(<PracticeScreen />);
+
+    expect(
+      screen.getByRole("button", {
+        name: "Keep screen awake while playing",
+      }),
+    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Mute Kick" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /Tempo/ })).toBeDisabled();
+    expect(screen.getByRole("slider", { name: "Tempo" })).toBeDisabled();
   });
 
   it("changes a stopped pattern immediately", async () => {
@@ -422,6 +441,9 @@ describe("practice screen", () => {
     });
     expect(useGuidedPracticeStore.getState().mode).toBe("chords");
     expect(usePatternStore.getState().recentPatternIds[0]).toBe("one-drop");
+    expect(screen.getByTestId("practice-live-region")).toHaveTextContent(
+      "Loaded Chord Builder: One Drop, 112 BPM.",
+    );
     unsubscribePractice();
     unsubscribeGuided();
   });
@@ -670,6 +692,49 @@ describe("practice screen", () => {
     now.mockRestore();
   });
 
+  it("announces committed, tapped, and debounced keyboard tempo changes", async () => {
+    const user = userEvent.setup();
+    render(<PracticeScreen />);
+    const liveRegion = screen.getByTestId("practice-live-region");
+    const slider = screen.getByRole("slider", { name: "Tempo" });
+
+    fireEvent.change(slider, { target: { value: "96" } });
+    expect(liveRegion).toBeEmptyDOMElement();
+    fireEvent.pointerUp(slider);
+    expect(liveRegion).toHaveTextContent("Tempo set to 96 BPM.");
+
+    await user.click(screen.getByRole("button", { name: "Increase BPM by 1" }));
+    expect(liveRegion).toHaveTextContent("Tempo set to 97 BPM.");
+
+    const now = vi.spyOn(performance, "now");
+    now.mockReturnValue(1_000);
+    await user.click(screen.getByRole("button", { name: /Tap tempo/ }));
+    now.mockReturnValue(1_500);
+    await user.click(screen.getByRole("button", { name: /Tap tempo/ }));
+    expect(liveRegion).toHaveTextContent("Tempo set to 120 BPM.");
+    now.mockRestore();
+
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    expect(liveRegion).toHaveTextContent("Tempo set to 120 BPM.");
+    await waitFor(() =>
+      expect(liveRegion).toHaveTextContent("Tempo set to 123 BPM."),
+    );
+  });
+
+  it("does not let a pending keyboard message overwrite a newer tempo action", async () => {
+    render(<PracticeScreen />);
+    const liveRegion = screen.getByTestId("practice-live-region");
+
+    fireEvent.keyDown(window, { key: "ArrowUp" });
+    fireEvent.click(screen.getByRole("button", { name: "Increase BPM by 1" }));
+    expect(liveRegion).toHaveTextContent("Tempo set to 92 BPM.");
+
+    await act(() => new Promise((resolve) => window.setTimeout(resolve, 300)));
+    expect(liveRegion).toHaveTextContent("Tempo set to 92 BPM.");
+  });
+
   it("does not run global shortcuts from editable controls", () => {
     render(<PracticeScreen />);
     const bpmInput = screen.getByRole("spinbutton", { name: "Current BPM" });
@@ -699,6 +764,31 @@ describe("practice screen", () => {
     expect(
       screen.queryByRole("combobox", { name: "Current pattern" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("keeps the same playback and practice live regions mounted in focus mode", async () => {
+    const user = userEvent.setup();
+    render(<PracticeScreen />);
+    const playbackLiveRegion = screen.getByTestId("playback-live-region");
+    const practiceLiveRegion = screen.getByTestId("practice-live-region");
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+      "one-drop",
+    );
+    expect(practiceLiveRegion).toHaveTextContent(
+      "Pattern changed to One Drop.",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Focus" }));
+    expect(screen.getByTestId("playback-live-region")).toBe(playbackLiveRegion);
+    expect(screen.getByTestId("practice-live-region")).toBe(practiceLiveRegion);
+
+    act(() => useAudioStore.setState({ status: "playing" }));
+    expect(playbackLiveRegion).toHaveTextContent("Groove playing");
+    expect(practiceLiveRegion).toHaveTextContent(
+      "Pattern changed to One Drop.",
+    );
   });
 
   it("keeps current notices visible in focus mode", async () => {
@@ -761,6 +851,62 @@ describe("practice screen", () => {
     expect(
       screen.getByText("Tempo", { selector: "p" }).nextElementSibling,
     ).toHaveTextContent("105");
+  });
+
+  it("announces when the tempo trainer reaches its target", () => {
+    useGuidedPracticeStore.setState({ mode: "tempoTrainer" });
+    render(<PracticeScreen />);
+
+    act(() => {
+      guidanceTimeline.begin();
+      guidanceTimeline.publish({
+        absoluteSixteenth: 80,
+        elapsedSeconds: 40,
+        measure: 21,
+        mode: "tempoTrainer",
+        position: {
+          completedIntervals: 20,
+          currentBpm: 110,
+          isAtTarget: true,
+          measuresUntilChange: null,
+          nextBpm: null,
+          progress: 1,
+          secondsUntilChange: null,
+          shouldStop: true,
+        },
+      });
+    });
+
+    expect(screen.getByTestId("practice-live-region")).toHaveTextContent(
+      "Target tempo reached at 110 BPM.",
+    );
+  });
+
+  it("shows Wake Lock request failures in regular and focus modes", async () => {
+    const user = userEvent.setup();
+    const request = vi.fn().mockRejectedValue(new Error("Permission denied"));
+    Object.defineProperty(navigator, "wakeLock", {
+      configurable: true,
+      value: { request },
+    });
+    usePracticeStore.setState({ wakeLockEnabled: true });
+    useAudioStore.setState({ status: "playing" });
+    render(<PracticeScreen />);
+
+    expect(
+      await screen.findByText(/The screen could not be kept awake/),
+    ).toBeVisible();
+    expect(request).toHaveBeenCalledWith("screen");
+    expect(
+      screen.getByRole("button", {
+        name: "Keep screen awake while playing",
+      }),
+    ).toHaveAttribute("aria-describedby", "wake-lock-status");
+
+    await user.click(screen.getByRole("button", { name: "Focus" }));
+    expect(
+      screen.getByText(/The screen could not be kept awake/),
+    ).toBeVisible();
   });
 
   it("retains current and next guided cues when focus opens mid-session", async () => {

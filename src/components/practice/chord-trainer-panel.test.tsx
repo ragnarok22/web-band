@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -137,6 +137,72 @@ describe("chord trainer panel", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       /selected custom progression is no longer available/i,
     );
+  });
+
+  it("reports favorite state and disables the toggle while persistence is pending", async () => {
+    const user = userEvent.setup();
+    let finishFavorite!: () => void;
+    const toggleFavorite = vi.fn(async (progressionId: string) => {
+      await new Promise<void>((resolve) => {
+        finishFavorite = resolve;
+      });
+      useChordProgressionStore.setState({
+        favoriteProgressionIds: [progressionId],
+      });
+    });
+    useChordProgressionStore.setState({ toggleFavorite });
+    render(
+      <ChordTrainerPanel
+        configuration={{
+          progression: customProgression,
+          repeat: true,
+          showCountdown: true,
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+    const favoriteButton = screen.getByRole("button", {
+      name: "Custom turnaround favorite",
+    });
+    expect(favoriteButton).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(favoriteButton);
+    expect(favoriteButton).toBeDisabled();
+
+    await act(async () => finishFavorite());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", {
+          name: "Custom turnaround favorite",
+        }),
+      ).toBeEnabled(),
+    );
+    expect(toggleFavorite).toHaveBeenCalledWith(customProgression.id);
+    expect(
+      screen.getByRole("button", {
+        name: "Custom turnaround favorite",
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("disables favorite changes until progressions hydrate", () => {
+    useChordProgressionStore.setState({ isHydrated: false });
+    render(
+      <ChordTrainerPanel
+        configuration={{
+          progression: customProgression,
+          repeat: true,
+          showCountdown: true,
+        }}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Custom turnaround favorite",
+      }),
+    ).toBeDisabled();
   });
 
   it("returns focus to the New trigger after native dialog close", async () => {

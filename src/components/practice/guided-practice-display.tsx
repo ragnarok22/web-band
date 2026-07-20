@@ -133,11 +133,7 @@ export function GuidedPracticeDisplay({
         aria-labelledby="guided-display-heading"
         className="border-border bg-surface rounded-2xl border p-4 sm:p-6"
       >
-        <div
-          aria-atomic="true"
-          aria-live="polite"
-          className="grid grid-cols-2 gap-3"
-        >
+        <div className="grid grid-cols-2 gap-3">
           <div className="border-accent/40 bg-accent/8 rounded-xl border p-3 text-center">
             <p className="text-muted text-xs font-extrabold uppercase">
               Current tempo

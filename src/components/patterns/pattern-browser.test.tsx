@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -94,11 +94,9 @@ describe("pattern browser", () => {
       "reggae",
     );
     expect(screen.getByText("4 of 44 patterns")).toBeInTheDocument();
-    await user.click(
-      screen.getByRole("button", { name: "Add One Drop to favorites" }),
-    );
+    await user.click(screen.getByRole("button", { name: "One Drop favorite" }));
     expect(
-      screen.getByRole("button", { name: "Remove One Drop from favorites" }),
+      screen.getByRole("button", { name: "One Drop favorite" }),
     ).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -106,12 +104,50 @@ describe("pattern browser", () => {
     const user = userEvent.setup();
     render(<PatternBrowser />);
 
-    await user.click(
-      screen.getByRole("button", { name: "Preview Basic Rock" }),
-    );
+    const previewButton = screen.getByRole("button", {
+      name: "Basic Rock preview",
+    });
+    expect(previewButton).toHaveAttribute("aria-pressed", "false");
+    await user.click(previewButton);
     expect(engine.play).toHaveBeenCalledWith(
       expect.objectContaining({ bpm: 90, masterVolume: 0.8 }),
     );
+    const stopPreviewButton = screen.getByRole("button", {
+      name: "Basic Rock preview",
+    });
+    expect(stopPreviewButton).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(stopPreviewButton);
+    expect(engine.stop).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("disables a favorite toggle while its write is pending", async () => {
+    const user = userEvent.setup();
+    let finishFavorite!: () => void;
+    usePatternStore.setState({
+      toggleFavorite: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finishFavorite = resolve;
+          }),
+      ),
+    });
+    render(<PatternBrowser />);
+    const favoriteButton = screen.getByRole("button", {
+      name: "Basic Rock favorite",
+    });
+
+    await user.click(favoriteButton);
+    expect(favoriteButton).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "One Drop favorite" }),
+    ).toBeDisabled();
+
+    await act(async () => finishFavorite());
+    await waitFor(() => expect(favoriteButton).toBeEnabled());
   });
 
   it("shows the recommended BPM range on pattern cards", () => {
@@ -130,7 +166,7 @@ describe("pattern browser", () => {
     render(<PatternBrowser />);
 
     await user.click(
-      screen.getByRole("button", { name: "Preview Shuffle Blues" }),
+      screen.getByRole("button", { name: "Shuffle Blues preview" }),
     );
 
     expect(engine.play).toHaveBeenCalledWith(
@@ -146,7 +182,7 @@ describe("pattern browser", () => {
       "Loading your groove library",
     );
     expect(screen.queryByRole("link", { name: "Create pattern" })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Preview/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /preview/i })).toBeNull();
   });
 
   it("surfaces pattern preview failures", async () => {
@@ -155,7 +191,7 @@ describe("pattern browser", () => {
     render(<PatternBrowser />);
 
     await user.click(
-      screen.getByRole("button", { name: "Preview Basic Rock" }),
+      screen.getByRole("button", { name: "Basic Rock preview" }),
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(

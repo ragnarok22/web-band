@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { FillFrequency } from "@/types/audio";
 
 interface GrooveControlsProps {
+  disabled?: boolean;
   fillFrequency: FillFrequency;
   humanization: number;
   onFillFrequencyChange: (frequency: FillFrequency) => void;
@@ -31,6 +32,7 @@ function parseFillFrequency(value: string): FillFrequency {
 }
 
 export function GrooveControls({
+  disabled = false,
   fillFrequency,
   humanization,
   onFillFrequencyChange,
@@ -88,6 +90,7 @@ export function GrooveControls({
           <input
             aria-valuetext={`${swingPercent} percent swing`}
             className="tempo-range w-full"
+            disabled={disabled}
             id="swing"
             max={0.65}
             min={0}
@@ -106,6 +109,7 @@ export function GrooveControls({
           <input
             aria-valuetext={`${humanizationPercent} percent humanization`}
             className="tempo-range w-full"
+            disabled={disabled}
             id="humanization"
             max={1}
             min={0}
@@ -124,6 +128,7 @@ export function GrooveControls({
           </span>
           <select
             className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-lg border px-3 text-sm font-bold"
+            disabled={disabled}
             id="fill-frequency"
             onChange={(event) =>
               onFillFrequencyChange(parseFillFrequency(event.target.value))

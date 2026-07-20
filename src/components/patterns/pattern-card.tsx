@@ -13,6 +13,7 @@ import {
 import type { DrumPattern } from "@/types/pattern";
 
 interface PatternCardProps {
+  favoriteDisabled?: boolean;
   isFavorite: boolean;
   isPreviewing: boolean;
   onFavorite: () => void;
@@ -22,6 +23,7 @@ interface PatternCardProps {
 }
 
 export function PatternCard({
+  favoriteDisabled = false,
   isFavorite,
   isPreviewing,
   onFavorite,
@@ -53,9 +55,10 @@ export function PatternCard({
             <PatternExportButton pattern={pattern} />
           ) : null}
           <button
-            aria-label={`${isFavorite ? "Remove" : "Add"} ${pattern.name} ${isFavorite ? "from" : "to"} favorites`}
+            aria-label={`${pattern.name} favorite`}
             aria-pressed={isFavorite}
-            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
+            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait disabled:opacity-50 ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
+            disabled={favoriteDisabled}
             onClick={onFavorite}
             type="button"
           >
@@ -125,7 +128,8 @@ export function PatternCard({
           {pattern.isBuiltIn ? "Duplicate" : "Edit"}
         </Link>
         <button
-          aria-label={`${isPreviewing ? "Stop preview of" : "Preview"} ${pattern.name}`}
+          aria-label={`${pattern.name} preview`}
+          aria-pressed={isPreviewing}
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-extrabold transition-colors"
           onClick={onPreview}
           type="button"

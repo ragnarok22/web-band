@@ -131,7 +131,7 @@ export function PracticePresetCard({
           )}
         </div>
         <button
-          aria-label={`${preset.isFavorite ? "Remove" : "Add"} ${preset.name} ${preset.isFavorite ? "from" : "to"} favorites`}
+          aria-label={`${preset.name} favorite`}
           aria-pressed={preset.isFavorite}
           className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${preset.isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
           disabled={isPending}

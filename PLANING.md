@@ -147,11 +147,11 @@ Last audited against the source on 2026-07-19.
 - [x] **Avoid noisy beat announcements.** Keep per-subdivision visuals hidden from screen readers while exposing meaningful transport status.
 - [x] **Handle primary runtime errors.** Show audio initialization alerts, IndexedDB fallback warnings, and validated import errors without destroying active configuration.
 - [x] **Provide an application error boundary.** Render a recoverable App Router error screen for page failures.
-- [ ] **Preserve live regions in focus mode.** Announce playback and pattern changes even when the normal Practice screen is replaced by focus mode.
-- [ ] **Announce major BPM changes.** Add a concise live message for buttons, slider commits, tap tempo, presets, and keyboard changes without announcing every tick.
-- [ ] **Announce tempo completion.** Put the target-reached state in an assertive or polite live region as appropriate.
-- [ ] **Audit toggle semantics.** Ensure every stateful toggle or preview control has accurate `aria-pressed`, label, and disabled behavior.
-- [ ] **Expose Wake Lock failure visibly.** Replace title-only error details with a readable, nonblocking status message.
+- [x] **Preserve live regions in focus mode.** Announce playback and pattern changes even when the normal Practice screen is replaced by focus mode.
+- [x] **Announce major BPM changes.** Add a concise live message for buttons, slider commits, tap tempo, presets, and keyboard changes without announcing every tick.
+- [x] **Announce tempo completion.** Put the target-reached state in an assertive or polite live region as appropriate.
+- [x] **Audit toggle semantics.** Ensure every stateful toggle or preview control has accurate `aria-pressed`, label, and disabled behavior.
+- [x] **Expose Wake Lock failure visibly.** Replace title-only error details with a readable, nonblocking status message.
 - [ ] **Add section-level error isolation.** Protect major browser-only screens and provider failures beyond the current route error boundary.
 - [ ] **Add automated accessibility checks.** Cover contrast, names, roles, keyboard paths, and 44px targets with an appropriate audit tool and focused tests.
 - [ ] **Add Framer Motion sparingly.** Introduce the required dependency only for useful transitions and keep musical timing completely independent.

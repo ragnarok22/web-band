@@ -9,7 +9,9 @@ interface BpmControlsProps {
   adjustmentStep?: BpmAdjustmentStep;
   bpm: number;
   defaultBpm: number;
+  disabled?: boolean;
   onChange: (bpm: number) => void;
+  onCommit?: (bpm: number) => void;
   onTap: () => void;
 }
 
@@ -17,7 +19,9 @@ export function BpmControls({
   adjustmentStep = 1,
   bpm,
   defaultBpm,
+  disabled = false,
   onChange,
+  onCommit,
   onTap,
 }: BpmControlsProps) {
   const alternateStep = adjustmentStep === 1 ? 5 : 1;
@@ -33,6 +37,13 @@ export function BpmControls({
     const nextBpm = clampBpm(parsed, bpm);
     input.value = String(nextBpm);
     onChange(nextBpm);
+    onCommit?.(nextBpm);
+  }
+
+  function changeAndCommit(nextBpm: number): void {
+    const clampedBpm = clampBpm(nextBpm, bpm);
+    onChange(clampedBpm);
+    onCommit?.(clampedBpm);
   }
 
   return (
@@ -55,7 +66,8 @@ export function BpmControls({
         <button
           aria-label={`Reset tempo to ${defaultBpm} BPM`}
           className="border-border text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-lg border transition-colors"
-          onClick={() => onChange(defaultBpm)}
+          disabled={disabled}
+          onClick={() => changeAndCommit(defaultBpm)}
           title="Reset to pattern default"
           type="button"
         >
@@ -68,6 +80,7 @@ export function BpmControls({
           aria-label="Current BPM"
           className="border-border text-foreground focus:border-accent w-28 border-b bg-transparent text-center text-6xl leading-none font-black tracking-[-0.06em] tabular-nums focus:outline-none"
           defaultValue={bpm}
+          disabled={disabled}
           inputMode="numeric"
           key={bpm}
           max={MAX_BPM}
@@ -90,10 +103,15 @@ export function BpmControls({
         aria-valuemax={MAX_BPM}
         aria-valuemin={MIN_BPM}
         aria-valuenow={bpm}
+        aria-valuetext={`${bpm} BPM`}
         className="tempo-range mb-5 w-full"
+        disabled={disabled}
         max={MAX_BPM}
         min={MIN_BPM}
         onChange={(event) => onChange(Number(event.target.value))}
+        onBlur={(event) => onCommit?.(Number(event.currentTarget.value))}
+        onKeyUp={(event) => onCommit?.(Number(event.currentTarget.value))}
+        onPointerUp={(event) => onCommit?.(Number(event.currentTarget.value))}
         step={1}
         type="range"
         value={bpm}
@@ -116,8 +134,9 @@ export function BpmControls({
                   : "border-border bg-surface-elevated text-muted-strong hover:border-border-strong"
               }`}
               data-default-adjustment={isDefault}
+              disabled={disabled}
               key={adjustment}
-              onClick={() => onChange(bpm + adjustment)}
+              onClick={() => changeAndCommit(bpm + adjustment)}
               title={isDefault ? "Default BPM adjustment" : undefined}
               type="button"
             >
@@ -128,6 +147,7 @@ export function BpmControls({
       </div>
       <button
         className="border-accent/30 bg-accent/8 text-accent hover:bg-accent/15 mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border text-sm font-extrabold transition-colors"
+        disabled={disabled}
         onClick={onTap}
         type="button"
       >

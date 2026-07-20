@@ -37,6 +37,9 @@ export function ChordTrainerPanel({
   const favoriteProgressionIds = useChordProgressionStore(
     (state) => state.favoriteProgressionIds,
   );
+  const progressionsHydrated = useChordProgressionStore(
+    (state) => state.isHydrated,
+  );
   const copyBuiltIn = useChordProgressionStore((state) => state.copyBuiltIn);
   const create = useChordProgressionStore((state) => state.create);
   const deleteProgression = useChordProgressionStore((state) => state.delete);
@@ -47,6 +50,7 @@ export function ChordTrainerPanel({
   const [editorTarget, setEditorTarget] = useState<EditorTarget>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [favoritePending, setFavoritePending] = useState(false);
   const deleteTriggerRef = useRef<HTMLButtonElement>(null);
   const editorTriggerRef = useRef<HTMLButtonElement>(null);
   const progressionSelectRef = useRef<HTMLSelectElement>(null);
@@ -93,6 +97,16 @@ export function ChordTrainerPanel({
     if (copied) selectProgression(copied);
   }
 
+  async function toggleSelectedFavorite(): Promise<void> {
+    if (favoritePending || !availableSelected || !progressionsHydrated) return;
+    setFavoritePending(true);
+    try {
+      await run(() => toggleFavorite(selected.id));
+    } finally {
+      setFavoritePending(false);
+    }
+  }
+
   async function removeSelectedProgression(): Promise<void> {
     if (!availableSelected || availableSelected.isBuiltIn) return;
     const deleted = await run(async () => {
@@ -131,14 +145,16 @@ export function ChordTrainerPanel({
           </h3>
         </div>
         <button
-          aria-label={
-            selectedIsFavorite
-              ? `Remove ${selected.name} from favorites`
-              : `Add ${selected.name} to favorites`
-          }
+          aria-label={`${selected.name} favorite`}
+          aria-pressed={selectedIsFavorite}
           className={`${buttonClass} min-w-11 px-0`}
-          disabled={disabled || !availableSelected}
-          onClick={() => void run(() => toggleFavorite(selected.id))}
+          disabled={
+            disabled ||
+            favoritePending ||
+            !progressionsHydrated ||
+            !availableSelected
+          }
+          onClick={() => void toggleSelectedFavorite()}
           type="button"
         >
           <Heart

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
+import { guidanceTimeline } from "@/audio/guidance-timeline";
 import { builtInPatterns, getPatternById } from "@/data/patterns";
 import { getBuiltInStrummingPattern } from "@/data/strumming-patterns";
 import {
@@ -133,11 +134,14 @@ export function usePracticeController() {
   const [historyNotice, setHistoryNotice] = useState<string | null>(null);
   const [immediatePatternSwitch, setImmediatePatternSwitch] = useState(false);
   const [finishRequested, setFinishRequested] = useState(false);
-  const [patternAnnouncement, setPatternAnnouncement] = useState("");
+  const [practiceAnnouncement, setPracticeAnnouncement] = useState("");
   const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
   const focusButtonRef = useRef<HTMLButtonElement>(null);
+  const bpmAnnouncementTimerRef = useRef<number | null>(null);
+  const previousTrainerBpmRef = useRef<number | null>(null);
+  const trainerTargetAnnouncedRef = useRef(false);
   const patterns = [...builtInPatterns, ...customPatterns];
   const pattern = getPatternById(selectedPatternId, customPatterns);
   const active = isSessionActive(status);
@@ -185,43 +189,115 @@ export function usePracticeController() {
     status,
   });
 
-  function changeBpm(value: number): void {
+  function changeBpm(value: number): number {
     const nextBpm = clampBpm(value, bpm);
     usePracticeStore.getState().setBpm(nextBpm);
     if (status !== "not-initialized" && status !== "error") {
       getAudioEngine().setBpm(nextBpm);
     }
+    return nextBpm;
   }
 
-  function changeTrainerBpm(value: number): void {
-    if (active) return;
+  function changeTrainerBpm(value: number): number | null {
+    if (active) return null;
+    const nextBpm = clampBpm(value, tempoTrainer.startBpm);
     useGuidedPracticeStore.getState().setTempoTrainerConfiguration({
       ...tempoTrainer,
-      startBpm: clampBpm(value, tempoTrainer.startBpm),
+      startBpm: nextBpm,
     });
+    return nextBpm;
+  }
+
+  function clearScheduledBpmAnnouncement(): void {
+    if (bpmAnnouncementTimerRef.current === null) return;
+    window.clearTimeout(bpmAnnouncementTimerRef.current);
+    bpmAnnouncementTimerRef.current = null;
+  }
+
+  function announcePractice(message: string): void {
+    clearScheduledBpmAnnouncement();
+    setPracticeAnnouncement(message);
+  }
+
+  function announceBpm(value: number, trainer = false): void {
+    announcePractice(
+      trainer
+        ? `Starting tempo set to ${value} BPM.`
+        : `Tempo set to ${value} BPM.`,
+    );
+  }
+
+  function scheduleBpmAnnouncement(value: number, trainer = false): void {
+    clearScheduledBpmAnnouncement();
+    bpmAnnouncementTimerRef.current = window.setTimeout(() => {
+      bpmAnnouncementTimerRef.current = null;
+      announceBpm(value, trainer);
+    }, 220);
   }
 
   function applyTappedBpm(value: number): void {
-    if (mode === "tempoTrainer") changeTrainerBpm(value);
-    else changeBpm(value);
+    if (mode === "tempoTrainer") {
+      const nextBpm = changeTrainerBpm(value);
+      if (nextBpm !== null) announceBpm(nextBpm, true);
+    } else {
+      announceBpm(changeBpm(value));
+    }
   }
 
   const tapTempo = useTapTempo(applyTappedBpm);
 
   useEffect(() => {
     return () => {
+      clearScheduledBpmAnnouncement();
       setFocusMode(false);
       disposeAudioEngine();
     };
   }, [setFocusMode]);
 
+  useEffect(() => {
+    function announceGuidance(message: string): void {
+      if (bpmAnnouncementTimerRef.current !== null) {
+        window.clearTimeout(bpmAnnouncementTimerRef.current);
+        bpmAnnouncementTimerRef.current = null;
+      }
+      setPracticeAnnouncement(message);
+    }
+
+    return guidanceTimeline.subscribe((frame) => {
+      if (!frame || frame.mode !== "tempoTrainer") {
+        previousTrainerBpmRef.current = null;
+        trainerTargetAnnouncedRef.current = false;
+        return;
+      }
+      const currentBpm = frame.position.currentBpm;
+      if (frame.position.isAtTarget) {
+        if (!trainerTargetAnnouncedRef.current) {
+          announceGuidance(`Target tempo reached at ${currentBpm} BPM.`);
+        }
+        trainerTargetAnnouncedRef.current = true;
+      } else if (
+        previousTrainerBpmRef.current !== null &&
+        previousTrainerBpmRef.current !== currentBpm
+      ) {
+        announceGuidance(`Tempo trainer changed to ${currentBpm} BPM.`);
+        trainerTargetAnnouncedRef.current = false;
+      } else {
+        trainerTargetAnnouncedRef.current = false;
+      }
+      previousTrainerBpmRef.current = currentBpm;
+    });
+  }, []);
+
   usePracticeShortcuts({
     adjustmentStep: bpmAdjustmentStep,
     disabled: !isReady || shortcutsOpen || openModalCount > 0,
     onBpmChange: (amount) => {
-      if (mode === "tempoTrainer")
-        changeTrainerBpm(tempoTrainer.startBpm + amount);
-      else changeBpm(bpm + amount);
+      if (mode === "tempoTrainer") {
+        const nextBpm = changeTrainerBpm(tempoTrainer.startBpm + amount);
+        if (nextBpm !== null) scheduleBpmAnnouncement(nextBpm, true);
+      } else {
+        scheduleBpmAnnouncement(changeBpm(bpm + amount));
+      }
     },
     onFocusToggle: () => {
       if (isFocusMode) exitFocusMode();
@@ -258,6 +334,7 @@ export function usePracticeController() {
 
   async function play(): Promise<void> {
     if (!isReady) return;
+    announcePractice("");
     setFinishRequested(false);
     const guidedValidation =
       validateGuidedPracticeConfiguration(guidedPractice);
@@ -337,7 +414,7 @@ export function usePracticeController() {
       usePracticeStore.getState().setSwing(nextPattern.swing ?? 0);
       markRecent(nextPattern.id);
       setPendingPatternId(null);
-      setPatternAnnouncement(`Pattern changed to ${nextPattern.name}.`);
+      announcePractice(`Pattern changed to ${nextPattern.name}.`);
     };
 
     if (!active) {
@@ -357,13 +434,11 @@ export function usePracticeController() {
     ) {
       if (changeImmediately) return;
       setPendingPatternId(nextPattern.id);
-      setPatternAnnouncement(
-        `${nextPattern.name} queued after a transition fill.`,
-      );
+      announcePractice(`${nextPattern.name} queued after a transition fill.`);
       return;
     }
 
-    setPatternAnnouncement(
+    announcePractice(
       meterChanged && (mode === "chords" || mode === "strumming")
         ? `Pattern change rejected. Stop the active guided session before changing meter to ${nextPattern.timeSignature.numerator}/${nextPattern.timeSignature.denominator}. ${pattern.name} remains selected.`
         : `Pattern change rejected while the session is active. Stop playback and try ${nextPattern.name} again.`,
@@ -463,6 +538,13 @@ export function usePracticeController() {
       configuration: structuredClone(preset.configuration),
       name: preset.name,
     });
+    const presetBpm =
+      nextGuidedPractice.mode === "tempoTrainer"
+        ? nextGuidedPractice.tempoTrainer.startBpm
+        : preset.configuration.bpm;
+    announcePractice(
+      `Loaded ${preset.name}: ${nextPattern.name}, ${presetBpm} BPM.`,
+    );
   }
 
   function stop(): void {
@@ -475,7 +557,7 @@ export function usePracticeController() {
     if (!getAudioEngine().queueStopWithFill()) return;
     setFinishRequested(true);
     setPendingPatternId(null);
-    setPatternAnnouncement("Finishing after a transition fill.");
+    announcePractice("Finishing after a transition fill.");
   }
 
   function exitFocusMode(): void {
@@ -485,6 +567,7 @@ export function usePracticeController() {
 
   return {
     active,
+    announceBpm,
     bpm,
     bpmAdjustmentStep,
     changeBpm,
@@ -517,7 +600,7 @@ export function usePracticeController() {
     masterVolume,
     mixer,
     pattern,
-    patternAnnouncement,
+    practiceAnnouncement,
     patterns,
     pause: () => getAudioEngine().pause(),
     pendingPatternId,

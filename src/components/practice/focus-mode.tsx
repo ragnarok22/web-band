@@ -8,6 +8,8 @@ import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-dis
 import { PracticeNotices } from "@/components/practice/practice-notices";
 import { formatPracticeDuration } from "@/hooks/use-practice-timer";
 import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
+import type { WakeLockStatus } from "@/hooks/use-wake-lock";
+import { WakeLockStatusMessage } from "@/components/practice/wake-lock-status";
 import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
@@ -35,6 +37,7 @@ interface FocusModeProps {
   showOnboarding: boolean;
   status: AudioEngineStatus;
   visualSubdivisionDetail: VisualSubdivisionDetail;
+  wakeLockStatus: WakeLockStatus;
 }
 
 export function FocusMode({
@@ -56,6 +59,7 @@ export function FocusMode({
   showOnboarding,
   status,
   visualSubdivisionDetail,
+  wakeLockStatus,
 }: FocusModeProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const snapshot = useGuidanceSnapshot();
@@ -145,6 +149,10 @@ export function FocusMode({
           noticeMessage={historyNotice}
           onDismiss={onDismissNotice}
           showOnboarding={showOnboarding}
+        />
+        <WakeLockStatusMessage
+          id="focus-wake-lock-status"
+          status={wakeLockStatus}
         />
 
         <button

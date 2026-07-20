@@ -20,9 +20,11 @@ interface PracticeSettingsProps {
   bpm: number;
   countInMeasures: CountInMeasures;
   defaultBpm: number;
+  disabled: boolean;
   fillFrequency: FillFrequency;
   humanization: number;
   onBpmChange: (bpm: number) => void;
+  onBpmCommit: (bpm: number) => void;
   onCountInChange: (measures: CountInMeasures) => void;
   onFillFrequencyChange: (frequency: FillFrequency) => void;
   onHumanizationChange: (amount: number) => void;
@@ -39,9 +41,11 @@ export function PracticeSettings({
   bpm,
   countInMeasures,
   defaultBpm,
+  disabled,
   fillFrequency,
   humanization,
   onBpmChange,
+  onBpmCommit,
   onCountInChange,
   onFillFrequencyChange,
   onHumanizationChange,
@@ -59,7 +63,7 @@ export function PracticeSettings({
     >
       <GuidedPracticePanel
         activeTimeSignature={timeSignature}
-        sessionDisabled={isSessionActive(status)}
+        sessionDisabled={disabled || isSessionActive(status)}
       />
 
       {practiceMode === "tempoTrainer" ? null : (
@@ -67,19 +71,22 @@ export function PracticeSettings({
           adjustmentStep={adjustmentStep}
           bpm={bpm}
           defaultBpm={defaultBpm}
+          disabled={disabled}
           onChange={onBpmChange}
+          onCommit={onBpmCommit}
           onTap={onTapTempo}
         />
       )}
 
       <CountInControl
-        disabled={isSessionActive(status)}
+        disabled={disabled || isSessionActive(status)}
         measures={countInMeasures}
         onChange={onCountInChange}
         timeSignature={timeSignature}
       />
 
       <GrooveControls
+        disabled={disabled}
         fillFrequency={fillFrequency}
         humanization={humanization}
         onFillFrequencyChange={onFillFrequencyChange}

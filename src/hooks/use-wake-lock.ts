@@ -72,5 +72,6 @@ export function useWakeLock(
     };
   }, [shouldHold, supported]);
 
+  if (!shouldHold) return "idle";
   return supported ? status : "unsupported";
 }

@@ -8,6 +8,7 @@ import type {
   BpmAdjustmentStep,
   VisualSubdivisionDetail,
 } from "@/types/persistence";
+import type { WakeLockStatus } from "@/hooks/use-wake-lock";
 
 interface PracticeFocusSessionProps {
   bpm: number;
@@ -31,6 +32,7 @@ interface PracticeFocusSessionProps {
   shortcutsOpen: boolean;
   status: AudioEngineStatus;
   visualSubdivisionDetail: VisualSubdivisionDetail;
+  wakeLockStatus: WakeLockStatus;
 }
 
 export function PracticeFocusSession({
@@ -55,6 +57,7 @@ export function PracticeFocusSession({
   shortcutsOpen,
   status,
   visualSubdivisionDetail,
+  wakeLockStatus,
 }: PracticeFocusSessionProps) {
   return (
     <>
@@ -77,6 +80,7 @@ export function PracticeFocusSession({
         showOnboarding={showOnboarding}
         status={status}
         visualSubdivisionDetail={visualSubdivisionDetail}
+        wakeLockStatus={wakeLockStatus}
       />
       <ShortcutsDialog
         adjustmentStep={bpmAdjustmentStep}

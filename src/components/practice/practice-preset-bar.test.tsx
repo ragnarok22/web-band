@@ -141,14 +141,14 @@ describe("practice preset bar", () => {
     await user.click(screen.getByRole("button", { name: "Open presets" }));
     await user.click(
       screen.getByRole("button", {
-        name: "Add Morning Pocket to favorites",
+        name: "Morning Pocket favorite",
       }),
     );
 
     expect(toggleFavorite).toHaveBeenCalledWith("morning");
     expect(
       screen.getByRole("button", {
-        name: "Remove Morning Pocket from favorites",
+        name: "Morning Pocket favorite",
       }),
     ).toHaveAttribute("aria-pressed", "true");
   });

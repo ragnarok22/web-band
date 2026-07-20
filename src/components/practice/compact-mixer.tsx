@@ -6,6 +6,7 @@ import { mixerGroups } from "@/lib/mixer";
 import type { MixerGroup, MixerSettings } from "@/types/audio";
 
 interface CompactMixerProps {
+  disabled?: boolean;
   masterMuted: boolean;
   masterVolume: number;
   mixer: MixerSettings;
@@ -27,6 +28,7 @@ const groupLabels: Record<MixerGroup, string> = {
 };
 
 export function CompactMixer({
+  disabled = false,
   masterMuted,
   masterVolume,
   mixer,
@@ -58,7 +60,8 @@ export function CompactMixer({
         </div>
         <button
           aria-label="Reset mixer"
-          className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg border"
+          className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg border disabled:cursor-not-allowed disabled:opacity-45"
+          disabled={disabled}
           onClick={onReset}
           title="Reset mixer"
           type="button"
@@ -69,9 +72,10 @@ export function CompactMixer({
 
       <div className="border-border mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 border-b pb-4">
         <button
-          aria-label={masterMuted ? "Unmute master" : "Mute master"}
+          aria-label="Master mute"
           aria-pressed={masterMuted}
-          className={`flex size-11 items-center justify-center rounded-lg ${masterMuted ? "bg-danger/15 text-danger" : "bg-surface-elevated text-accent"}`}
+          className={`flex size-11 items-center justify-center rounded-lg disabled:cursor-not-allowed disabled:opacity-45 ${masterMuted ? "bg-danger/15 text-danger" : "bg-surface-elevated text-accent"}`}
+          disabled={disabled}
           onClick={onMasterMuteToggle}
           type="button"
         >
@@ -92,6 +96,7 @@ export function CompactMixer({
             id="mixer-master"
             max={1}
             min={0}
+            disabled={disabled}
             onChange={(event) =>
               onMasterVolumeChange(Number(event.target.value))
             }
@@ -130,6 +135,7 @@ export function CompactMixer({
                 id={`mixer-${group}`}
                 max={1}
                 min={0}
+                disabled={disabled}
                 onChange={(event) =>
                   onVolumeChange(group, Number(event.target.value))
                 }
@@ -141,6 +147,7 @@ export function CompactMixer({
                 aria-label={`Mute ${groupLabels[group]}`}
                 aria-pressed={channel.muted}
                 className={`size-11 rounded-md text-xs font-black ${channel.muted ? "bg-danger/15 text-danger" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}
+                disabled={disabled}
                 onClick={() => onMutedChange(group, !channel.muted)}
                 type="button"
               >
@@ -150,6 +157,7 @@ export function CompactMixer({
                 aria-label={`Solo ${groupLabels[group]}`}
                 aria-pressed={channel.solo}
                 className={`size-11 rounded-md text-xs font-black ${channel.solo ? "bg-accent/15 text-accent" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}
+                disabled={disabled}
                 onClick={() => onSoloChange(group, !channel.solo)}
                 type="button"
               >

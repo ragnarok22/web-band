@@ -109,11 +109,16 @@ describe("drum pattern editor", () => {
     const user = userEvent.setup();
     render(<DrumPatternEditor />);
 
-    await user.click(await screen.findByRole("button", { name: "Play draft" }));
+    const playDraft = await screen.findByRole("button", {
+      name: "Draft preview",
+    });
+    expect(playDraft).toHaveAttribute("aria-pressed", "false");
+    await user.click(playDraft);
     act(() => useAudioStore.setState({ status: "playing" }));
     await user.clear(screen.getByRole("textbox", { name: "Pattern name" }));
 
-    const stop = screen.getByRole("button", { name: "Stop" });
+    const stop = screen.getByRole("button", { name: "Draft preview" });
+    expect(stop).toHaveAttribute("aria-pressed", "true");
     expect(stop).toBeEnabled();
     act(() => useAudioStore.setState({ status: "suspended" }));
     expect(stop).toBeEnabled();
@@ -139,7 +144,7 @@ describe("drum pattern editor", () => {
     act(() => useAudioStore.setState({ status: "playing" }));
 
     await user.click(screen.getByRole("button", { name: "Save pattern" }));
-    expect(screen.getByRole("button", { name: "Stop" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Draft preview" })).toBeEnabled();
 
     const saved = create.mock.calls[0]![0]!;
     await act(async () => finishSave(saved));

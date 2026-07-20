@@ -84,6 +84,22 @@ describe("settings screen", () => {
     expect(document.documentElement.dataset.reduceMotion).toBe("true");
   });
 
+  it("disables persisted toggles until their stores hydrate", () => {
+    useAppearanceStore.setState({ hasHydrated: false });
+    useHistorySettingsStore.setState({ hasHydrated: false });
+    render(<SettingsScreen actions={actions()} />);
+
+    expect(
+      screen.getByRole("checkbox", { name: "Reduce motion" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("checkbox", { name: "Save practice history" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("spinbutton", { name: "Minimum session duration" }),
+    ).toBeDisabled();
+  });
+
   it("persists a global sound character", async () => {
     const user = userEvent.setup();
     render(<SettingsScreen actions={actions()} />);

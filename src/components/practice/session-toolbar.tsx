@@ -3,6 +3,7 @@
 import { Clock3, Focus, Keyboard, Sun } from "lucide-react";
 import type { Ref } from "react";
 
+import { WakeLockStatusMessage } from "@/components/practice/wake-lock-status";
 import { formatPracticeDuration } from "@/hooks/use-practice-timer";
 import type { WakeLockStatus } from "@/hooks/use-wake-lock";
 
@@ -13,16 +14,9 @@ interface SessionToolbarProps {
   onShortcuts: () => void;
   onWakeLockChange: (enabled: boolean) => void;
   wakeLockEnabled: boolean;
+  wakeLockDisabled?: boolean;
   wakeLockStatus: WakeLockStatus;
 }
-
-const wakeLockCopy: Record<WakeLockStatus, string> = {
-  active: "Screen awake",
-  error: "Wake Lock unavailable",
-  idle: "Keep screen awake",
-  requesting: "Requesting Wake Lock",
-  unsupported: "Wake Lock unsupported",
-};
 
 export function SessionToolbar({
   elapsedSeconds,
@@ -31,6 +25,7 @@ export function SessionToolbar({
   onShortcuts,
   onWakeLockChange,
   wakeLockEnabled,
+  wakeLockDisabled = false,
   wakeLockStatus,
 }: SessionToolbarProps) {
   return (
@@ -65,15 +60,22 @@ export function SessionToolbar({
         Shortcuts
       </button>
       <button
+        aria-describedby={
+          wakeLockStatus === "error" || wakeLockStatus === "unsupported"
+            ? "wake-lock-status"
+            : undefined
+        }
+        aria-label="Keep screen awake while playing"
         aria-pressed={wakeLockEnabled}
-        className={`border-border flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors ${wakeLockEnabled ? "bg-accent/10 text-accent" : "text-muted-strong hover:bg-surface-hover hover:text-foreground"}`}
+        className={`border-border flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${wakeLockEnabled ? "bg-accent/10 text-accent" : "text-muted-strong hover:bg-surface-hover hover:text-foreground"}`}
+        disabled={wakeLockDisabled}
         onClick={() => onWakeLockChange(!wakeLockEnabled)}
-        title={wakeLockCopy[wakeLockStatus]}
         type="button"
       >
         <Sun aria-hidden="true" className="size-4" />
-        Awake
+        Keep awake
       </button>
+      <WakeLockStatusMessage status={wakeLockStatus} />
     </section>
   );
 }
