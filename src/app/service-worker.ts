@@ -25,7 +25,7 @@ const serwist = new Serwist({
   navigationPreload: true,
   precacheEntries: self.__SW_MANIFEST,
   runtimeCaching: defaultCache,
-  skipWaiting: true,
+  skipWaiting: false,
 });
 
 serwist.addEventListeners();

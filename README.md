@@ -201,9 +201,9 @@ Values are parsed defensively and clamped before use. Corrupted settings fall ba
 
 `src/app/manifest.ts` defines the installable app metadata and generated 192px, 512px, and maskable icons. Serwist precaches the built application assets and the `/practice`, `/patterns`, `/editor`, `/history`, `/settings`, and `/about` routes; built-in pattern data and synthesis code are part of that shell.
 
-After the first successful production visit, every local-first route reloads offline with saved local data. A service-worker controller change shows a reload notification when a new version becomes active.
+After the first successful production visit, every local-first route reloads offline with saved local data. Web Band owns service-worker registration so updatefound and waiting workers are visible: users apply a waiting update explicitly, reload only after the new worker takes control, and receive targeted retry guidance if registration, installation, or activation fails.
 
-No remote resources or audio files are cached.
+The production PWA suite seeds IndexedDB records and local preferences, verifies them after an offline service-worker navigation, and starts synthesized playback offline while asserting that Play triggers no HTTP requests. Update coverage installs a second worker, applies it through the notification UI, confirms takeover, and exercises the reload action. No remote resources or audio files are cached.
 
 ## Import and Export
 

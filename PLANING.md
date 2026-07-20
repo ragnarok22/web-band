@@ -136,10 +136,10 @@ Last audited against the source on 2026-07-19.
 - [x] **Precache local-first routes.** Cache Practice, Patterns, Editor, History, and Settings with `/practice` as the document fallback.
 - [x] **Load the application shell offline.** Verify every current local-first route after service-worker control is established.
 - [x] **Notify after a controller update.** Show a reload notice when an activated service worker takes control.
-- [ ] **Handle the full update lifecycle.** Detect waiting/updatefound workers and registration or activation failures, and show accurate retry/reload guidance.
-- [ ] **Verify saved data offline.** Seed IndexedDB data, go offline, and prove custom content and preferences still load.
-- [ ] **Verify audio offline.** Start synthesized playback offline and assert the engine reaches Playing without network requests.
-- [ ] **Test update notifications.** Exercise the service-worker update UI rather than relying only on static component behavior.
+- [x] **Handle the full update lifecycle.** Detect waiting/updatefound workers and registration or activation failures, and show accurate retry/reload guidance.
+- [x] **Verify saved data offline.** Seed IndexedDB data, go offline, and prove custom content and preferences still load.
+- [x] **Verify audio offline.** Start synthesized playback offline and assert the engine reaches Playing without network requests.
+- [x] **Test update notifications.** Exercise the service-worker update UI rather than relying only on static component behavior.
 
 ## Phase 11: Accessibility, Motion, And Error Recovery
 

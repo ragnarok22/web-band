@@ -23,6 +23,8 @@ const withSerwist = withSerwistInit({
     { url: "/settings", revision: getRevision() },
   ],
   disable: process.env.NODE_ENV === "development",
+  register: false,
+  reloadOnOnline: false,
   swDest: "public/sw.js",
   swSrc: "src/app/service-worker.ts",
 });

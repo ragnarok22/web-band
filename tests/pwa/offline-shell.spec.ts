@@ -1,26 +1,18 @@
 import { expect, test } from "@playwright/test";
 
+import { establishServiceWorkerControl, trackPageErrors } from "./pwa-helpers";
+
 test("loads every local-first route offline after the first visit", async ({
   context,
   page,
 }) => {
-  const pageErrors: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.goto("/practice");
+  const pageErrors = trackPageErrors(page);
+  await establishServiceWorkerControl(page);
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
-  await page.reload();
-  await expect
-    .poll(() =>
-      page.evaluate(() => Boolean(navigator.serviceWorker.controller)),
-    )
-    .toBe(true);
-
   await context.setOffline(true);
-  await page.reload({ waitUntil: "domcontentloaded" });
+  const response = await page.reload({ waitUntil: "domcontentloaded" });
+  expect(response?.fromServiceWorker()).toBe(true);
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
   await expect(
     page.getByRole("button", { exact: true, name: "Play" }),
