@@ -185,8 +185,8 @@ Last audited against the source on 2026-07-19.
 
 - [x] **Document setup and architecture.** Keep requirements, commands, route behavior, audio ownership, persistence, schemas, pattern format, backup, PWA, browser support, and limitations in `README.md`.
 - [x] **Document repository workflow.** Keep concise, executable guidance in `AGENTS.md` for future sessions.
-- [ ] **Correct stale README claims.** Align test coverage, 320px behavior, count-in E2E, custom strumming status, fills, and other limitations with executable evidence.
-- [ ] **Update docs with completed tasks.** Revise README architecture, settings, backup, PWA, and testing sections whenever this checklist changes shipped behavior.
+- [x] **Correct stale README claims.** Align test coverage, 320px behavior, count-in E2E, custom strumming status, fills, and other limitations with executable evidence.
+- [x] **Update docs with completed tasks.** Revise README architecture, settings, backup, PWA, and testing sections whenever this checklist changes shipped behavior.
 
 ## Definition Of Done
 
