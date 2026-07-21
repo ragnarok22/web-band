@@ -3,8 +3,8 @@
 ## Ground Truth
 
 - This is one private Next.js 16 App Router package, not a monorepo. `pnpm-workspace.yaml` only configures dependency build policy; run commands from the repository root.
-- Use Node.js 20+ and the `package.json`-pinned pnpm 11.13.1.
-- Treat `PLANING.md` as the original product specification, not current architecture. It still mentions absent items such as Framer Motion and `/about`; prefer scripts, config, and source when it conflicts.
+- Use Node.js 20.19+, 22.13+, or 24+ and the `package.json`-pinned pnpm 11.15.1.
+- Treat `PLANING.md` as implementation history and a release checklist, not architectural ground truth; prefer scripts, config, and source when they conflict.
 - Keep the product client-only: no API routes, server actions, backend, auth, analytics, cloud persistence, recorded audio, or external audio assets. Drum sounds are synthesized in the browser.
 
 ## Commands

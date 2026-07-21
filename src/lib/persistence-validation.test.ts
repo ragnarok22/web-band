@@ -382,7 +382,7 @@ describe("persistence validation", () => {
     );
   });
 
-  it("requires standalone backup pattern references to resolve", () => {
+  it("requires live backup pattern references to resolve", () => {
     const cases = [
       {
         expected:
@@ -396,14 +396,6 @@ describe("persistence validation", () => {
           "Practice settings pattern ID missing-pattern is not included in this backup.",
         mutate: (backup: BackupEnvelope) => {
           backup.data.settings.practice.selectedPatternId = "missing-pattern";
-        },
-      },
-      {
-        expected:
-          "Practice preset preset-1 pattern ID missing-pattern is not included in this backup.",
-        mutate: (backup: BackupEnvelope) => {
-          backup.data.practicePresets[0]!.configuration.patternId =
-            "missing-pattern";
         },
       },
     ];
@@ -424,7 +416,7 @@ describe("persistence validation", () => {
     );
   });
 
-  it("requires standalone custom strumming references to resolve", () => {
+  it("requires live custom strumming references to resolve", () => {
     const backup = createBackup();
     const customPattern = createStrummingPattern();
     backup.data.settings.guidedPractice.strummingPattern = customPattern;
@@ -434,17 +426,28 @@ describe("persistence validation", () => {
     expect(validateBackupEnvelope(backup).errors).toContain(
       `Guided practice strumming pattern ID ${customPattern.id} is not included in this backup.`,
     );
+  });
 
-    const presetBackup = createBackup();
-    presetBackup.data.practicePresets[0]!.configuration.guidedPractice = {
+  it("allows historical presets to retain deleted custom content", () => {
+    const drumBackup = createBackup();
+    drumBackup.data.practicePresets[0]!.configuration.patternId =
+      "deleted-custom-pattern";
+
+    expect(validateBackupEnvelope(drumBackup)).toEqual({
+      errors: [],
+      success: true,
+    });
+
+    const strummingBackup = createBackup();
+    strummingBackup.data.practicePresets[0]!.configuration.guidedPractice = {
       mode: "strumming",
-      strummingPattern: customPattern,
+      strummingPattern: createStrummingPattern("deleted-custom-strumming"),
     };
-    expect(validateBackupEnvelope(presetBackup).success).toBe(true);
-    presetBackup.data.customStrummingPatterns = [];
-    expect(validateBackupEnvelope(presetBackup).errors).toContain(
-      `Practice preset preset-1 strumming pattern ID ${customPattern.id} is not included in this backup.`,
-    );
+
+    expect(validateBackupEnvelope(strummingBackup)).toEqual({
+      errors: [],
+      success: true,
+    });
   });
 
   it("rejects custom chord progressions that collide with built-in IDs", () => {

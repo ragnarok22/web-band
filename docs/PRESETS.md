@@ -111,7 +111,7 @@ One share file can hold from 1 through 100 patterns. Files in this directory int
 | `step`         | Zero-based grid position. It must be within the pattern's calculated step count.                           |
 | `velocity`     | Loudness from `0` through `1`. Values around `0.8` or higher read as accents in the UI.                    |
 | `probability`  | Optional trigger probability from `0` through `1`. Omit it for deterministic song practice.                |
-| `flam`         | Optional boolean. It is stored by the editor but currently has no audible scheduler behavior.              |
+| `flam`         | Optional boolean. It schedules a quieter second hit up to 40 ms after the initial hit.                     |
 | `timingOffset` | Optional timing shift in seconds from `-0.1` through `0.1`.                                                |
 
 Each instrument can appear at most once on a given step. Different instruments may share a step, such as a kick and crash on the first beat.

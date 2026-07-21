@@ -784,25 +784,6 @@ export function validateBackupEnvelope(
       `Practice settings pattern ID ${data.settings.practice.selectedPatternId} is not included in this backup.`,
     );
   }
-  if (Array.isArray(data.practicePresets)) {
-    for (const preset of data.practicePresets) {
-      const patternId =
-        isRecord(preset) && isRecord(preset.configuration)
-          ? preset.configuration.patternId
-          : undefined;
-      if (
-        validatePracticePreset(preset).success &&
-        isRecord(preset) &&
-        typeof patternId === "string" &&
-        !availablePatternIds.has(patternId)
-      ) {
-        errors.push(
-          `Practice preset ${String(preset.id)} pattern ID ${patternId} is not included in this backup.`,
-        );
-      }
-    }
-  }
-
   const availableChordProgressionIds = new Set(builtInChordProgressionIds);
   if (Array.isArray(data.customChordProgressions)) {
     for (const progression of data.customChordProgressions) {
@@ -851,32 +832,6 @@ export function validateBackupEnvelope(
       `Guided practice strumming pattern ID ${data.settings.guidedPractice.strummingPattern.id} is not included in this backup.`,
     );
   }
-  if (Array.isArray(data.practicePresets)) {
-    for (const preset of data.practicePresets) {
-      const guidedPractice =
-        isRecord(preset) &&
-        isRecord(preset.configuration) &&
-        isRecord(preset.configuration.guidedPractice)
-          ? preset.configuration.guidedPractice
-          : undefined;
-      const strummingPattern =
-        guidedPractice?.mode === "strumming" &&
-        isRecord(guidedPractice.strummingPattern)
-          ? guidedPractice.strummingPattern
-          : undefined;
-      if (
-        validatePracticePreset(preset).success &&
-        isRecord(preset) &&
-        typeof strummingPattern?.id === "string" &&
-        !availableStrummingPatternIds.has(strummingPattern.id)
-      ) {
-        errors.push(
-          `Practice preset ${String(preset.id)} strumming pattern ID ${strummingPattern.id} is not included in this backup.`,
-        );
-      }
-    }
-  }
-
   return { errors, success: errors.length === 0 };
 }
 

@@ -47,6 +47,26 @@ worker.
       failure, opaque prepared data, and rejection before worker creation above
       25 MB.
 
+## Final release gate automated run
+
+Run on July 21, 2026 against the working tree containing the retained-preset
+backup fix and final documentation corrections.
+
+| Command                          | Result                                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile` | Passed with pnpm 11.15.1; lockfile was already up to date                                |
+| `pnpm format:check`              | Passed                                                                                   |
+| `pnpm lint`                      | Passed                                                                                   |
+| `pnpm typecheck`                 | Passed after Next.js route type generation                                               |
+| `pnpm test:coverage`             | 92 files and 474 tests passed; all configured coverage thresholds passed                 |
+| `CI=1 pnpm test:e2e`             | 121 passed and 31 intentional project-specific skips across all four configured projects |
+| `pnpm test:pwa`                  | 5 production PWA tests passed after a fresh build                                        |
+| `pnpm build`                     | Passed; every application route was statically prerendered                               |
+
+This run verifies the current changes but does not satisfy the separate
+clean-checkout gate until those changes are committed and rerun from the exact
+release commit.
+
 ## Physical device matrix
 
 Run every applicable check with system sound enhancements disabled. Record the

@@ -419,6 +419,61 @@ describe("backup service", () => {
     expect(deps.storage.exportSnapshot).toHaveBeenCalledOnce();
   });
 
+  it("backs up and clears retained presets after their custom pattern is deleted", async () => {
+    const deps = dependencies();
+    const retainedSnapshot: PersistenceSnapshot = {
+      ...structuredClone(emptySnapshot),
+      practicePresets: [
+        {
+          configuration: {
+            bpm: 90,
+            countInMeasures: 1,
+            fillFrequency: null,
+            guidedPractice: { mode: "drums" },
+            humanization: 0,
+            patternId: "deleted-custom-pattern",
+            swing: 0,
+          },
+          createdAt: "2026-07-18T12:00:00.000Z",
+          id: "historical-preset",
+          isFavorite: false,
+          lastUsedAt: null,
+          name: "Historical preset",
+          updatedAt: "2026-07-18T12:00:00.000Z",
+        },
+      ],
+    };
+    vi.mocked(deps.storage.exportSnapshot).mockResolvedValue(retainedSnapshot);
+    const service = new BackupService(deps);
+
+    const backup = await service.createCurrentBackup();
+    await expect(
+      service.importBackup(backup, "replace"),
+    ).resolves.toMatchObject({ mode: "replace" });
+    await expect(service.clearAllLocalData()).resolves.toMatchObject({
+      cleared: true,
+    });
+    expect(deps.downloadEnvelope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          practicePresets: [
+            expect.objectContaining({ id: "historical-preset" }),
+          ],
+        }),
+      }),
+    );
+    expect(deps.storage.importSnapshot).toHaveBeenNthCalledWith(
+      1,
+      retainedSnapshot,
+      "replace",
+    );
+    expect(deps.storage.importSnapshot).toHaveBeenNthCalledWith(
+      2,
+      emptySnapshot,
+      "replace",
+    );
+  });
+
   it("aborts deletion when its generated safety backup is invalid", async () => {
     const deps = dependencies();
     vi.mocked(deps.storage.exportSnapshot).mockResolvedValueOnce({

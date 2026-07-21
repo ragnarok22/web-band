@@ -253,7 +253,7 @@ Recommended:
 - iOS Safari 16.4 or newer for installed PWA behavior.
 - HTTPS in production, which is required for service workers outside localhost.
 
-The automated browser matrix runs the functional suite in Chromium, Firefox, WebKit, and mobile Chromium. Project-specific skips keep reduced-motion integration on desktop Chromium, omit axe scans from mobile Chromium, and skip one WebKit keyboard-navigation assertion that depends on browser focus behavior. Automation does not establish audible timbre, output-device behavior, or installed-PWA behavior.
+The automated browser matrix runs the functional suite in Chromium, Firefox, WebKit, and mobile Chromium. Project-specific skips keep reduced-motion integration on desktop Chromium, run axe scans and target geometry in desktop and mobile Chromium, and skip the WebKit keyboard-navigation test that depends on the host system's Full Keyboard Access setting. Automation does not establish audible timbre, output-device behavior, or installed-PWA behavior.
 
 The physical release matrix currently confirms desktop Chromium with macOS built-in speakers. Desktop Safari, headphones, Android installed PWA, and iOS installed PWA checks remain open; see [`docs/RELEASE_CHECKS.md`](docs/RELEASE_CHECKS.md).
 
@@ -298,7 +298,7 @@ Playwright runs the real browser audio engine and verifies:
 - Focused axe scans, skip navigation, dialog and editor keyboard behavior, focus restoration, and reduced-motion preferences.
 - Production service-worker control and offline loading for every local-first route.
 
-The Web Audio implementation remains real in production. Unit component tests mock only the engine boundary where browser audio is unavailable in jsdom.
+The Web Audio implementation remains real in production. Web Audio-dependent component behavior mocks the engine boundary in jsdom; browser E2E exercises the real engine.
 
 See [`docs/RELEASE_CHECKS.md`](docs/RELEASE_CHECKS.md) for the latest
 performance evidence and the physical desktop/mobile listening matrix.
@@ -308,12 +308,13 @@ performance evidence and the physical desktop/mobile listening matrix.
 - Wake Lock depends on browser support and a secure context.
 - Fills use a finite category- and meter-aware template library rather than user-authored or song-specific arrangements.
 - Chord symbols are text guidance only; Web Band does not synthesize guitar chords.
+- Deleting custom content does not rewrite historical practice presets; presets with missing references remain exportable but cannot be loaded unless that content is restored.
 - Session finalization on route navigation is best effort; abrupt browser or process termination can interrupt the final asynchronous IndexedDB write.
 - Data is local to one browser profile unless the user exports and imports a backup.
-- Automated tests verify scheduling, state, node creation, output-level differences, and error-free playback, but they do not prove audible timbre or installed-device behavior. Those require the physical checks in `docs/RELEASE_CHECKS.md`.
+- Automated tests verify scheduling, state, node creation, configured gain and dynamics differences, and error-free playback, but they do not prove audible timbre or installed-device behavior. Those require the physical checks in `docs/RELEASE_CHECKS.md`.
 
 ## Future Improvements
 
 - Add custom strumming-pattern sharing.
-- Add category-specific fill arrangements and optional alternate synthesis characters.
+- Expand the category- and meter-aware fill library and the existing synthesis-character options.
 - Continue physical-device listening checks, especially installed iOS PWA audio and Wake Lock behavior.

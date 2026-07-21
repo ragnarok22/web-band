@@ -205,5 +205,5 @@ Every unchecked implementation task must satisfy all applicable items below befo
 - [ ] **Complete every required task above.** No mandatory checkbox remains open or is silently reclassified as optional.
 - [ ] **Pass the complete automated suite.** Format, lint, typecheck, coverage, E2E, PWA, and production build all succeed from a clean checkout.
 - [ ] **Pass manual browser and device checks.** Verify synthesized sound, stable timing, responsive controls, accessibility, Wake Lock, and installed-PWA behavior.
-- [ ] **Confirm local-first data safety.** Test upgrades, corrupted data, unavailable storage, merge/replace, safety backup, delete-all, and offline reloads.
+- [x] **Confirm local-first data safety.** Test upgrades, corrupted data, unavailable storage, merge/replace, safety backup, delete-all, and offline reloads.
 - [ ] **Publish truthful final documentation.** Ensure README feature, limitation, and testing claims match the released implementation.
