@@ -92,24 +92,67 @@ test("opens a library pattern in practice and restores it after reload", async (
   expect(browserErrors).toEqual([]);
 });
 
-test("queues an active pattern change without committing it early", async ({
+test("navigates patterns by keyboard and commits active changes on a boundary", async ({
   page,
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
+  const patternSelect = page.getByRole("combobox", {
+    name: "Current pattern",
+  });
+  const bpmInput = page.getByRole("spinbutton", { name: "Current BPM" });
+
+  await page.getByText("Practice room", { exact: true }).click();
+  await page.keyboard.press("ArrowRight");
+  await expect(patternSelect).toHaveValue("driving-eighths");
+  await expect(
+    page.getByRole("heading", { name: "Driving Eighths" }),
+  ).toBeVisible();
+
+  await page.keyboard.press("ArrowLeft");
+  await expect(patternSelect).toHaveValue("basic-rock");
+  await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
+
+  await bpmInput.focus();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowLeft");
+  await expect(bpmInput).toBeFocused();
+  await expect(patternSelect).toHaveValue("basic-rock");
+
+  await bpmInput.fill("220");
+  await page.keyboard.press("Enter");
+  await expect(bpmInput).toHaveValue("220");
   await page.getByText("Off", { exact: true }).click();
   await page.getByRole("button", { exact: true, name: "Play" }).click();
   await expect(page.getByTestId("transport-status")).toHaveText(
     "Groove playing",
   );
 
-  await page
-    .getByRole("combobox", { name: "Current pattern" })
-    .selectOption("modern-pop-groove");
+  await page.getByText("Practice room", { exact: true }).click();
+  await page.keyboard.press("ArrowRight");
+  await expect(patternSelect).toHaveValue("driving-eighths");
   await expect(
     page.getByText("Queued after a transition fill", { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
+  await expect(page.getByTestId("practice-live-region")).toHaveText(
+    "Driving Eighths queued after a transition fill.",
+  );
+
+  const beatVisualizer = page.getByRole("region", {
+    name: "Beat visualization",
+  });
+  await expect(beatVisualizer).toContainText("Measure 2", { timeout: 4_000 });
+  await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Driving Eighths" }),
+  ).toBeVisible({ timeout: 5_000 });
+  await expect(
+    page.getByText("Queued after a transition fill", { exact: true }),
+  ).toBeHidden();
+  await expect(page.getByTestId("practice-live-region")).toHaveText(
+    "Pattern changed to Driving Eighths.",
+  );
   await page.getByRole("button", { name: "Stop playback" }).click();
   expect(browserErrors).toEqual([]);
 });

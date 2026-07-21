@@ -22,7 +22,15 @@ test("records, persists, and deletes a real practice session", async ({
       }),
     );
   });
-  await page.goto("/practice");
+  await page.goto("/settings");
+  await expect(
+    page.getByRole("checkbox", { name: "Save practice history" }),
+  ).toBeChecked();
+  await expect(
+    page.getByRole("spinbutton", { name: "Minimum session duration" }),
+  ).toHaveValue("1");
+  await page.getByRole("link", { exact: true, name: "Practice" }).focus();
+  await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
   await page.getByText("Off", { exact: true }).click();
   await page.getByRole("button", { exact: true, name: "Play" }).click();
@@ -33,7 +41,14 @@ test("records, persists, and deletes a real practice session", async ({
 
   await page.getByRole("link", { name: "History" }).click();
   await expect(page).toHaveURL(/\/history$/);
-  await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
+  const session = page.getByRole("article").filter({
+    has: page.getByRole("heading", { name: "Basic Rock" }),
+  });
+  await expect(session).toBeVisible();
+  await expect(session.getByText("Drum groove", { exact: true })).toBeVisible();
+  await expect(session.getByText("rock · 4/4", { exact: true })).toBeVisible();
+  await expect(session.getByText("90 BPM", { exact: true })).toBeVisible();
+  await expect(session.getByText(/\d+ sec/)).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();

@@ -47,6 +47,10 @@ class FakeAudioRuntime implements AudioRuntime {
   readonly scheduledBpmChanges: Array<{ bpm: number; time: number }> = [];
   readonly swingCalls: Array<{ amount: number; subdivision: "8n" | "16n" }> =
     [];
+  readonly timeSignatureCalls: Array<{
+    denominator: number;
+    numerator: number;
+  }> = [];
   bpm = 90;
   deferCallbacks = false;
   deferDraws = false;
@@ -107,7 +111,9 @@ class FakeAudioRuntime implements AudioRuntime {
   setSwing(amount: number, subdivision: "8n" | "16n"): void {
     this.swingCalls.push({ amount, subdivision });
   }
-  setTimeSignature(): void {}
+  setTimeSignature(numerator: number, denominator: number): void {
+    this.timeSignatureCalls.push({ denominator, numerator });
+  }
   async startAudio(): Promise<void> {}
   startTransport(): void {
     this.state = "started";
@@ -171,6 +177,94 @@ describe("pattern scheduler", () => {
       sixteenth: 0,
     });
   });
+
+  it.each([
+    {
+      countInInterval: "4n",
+      denominator: 4,
+      id: "simple-two-four",
+      numerator: 2,
+      sixteenthsPerBar: 8,
+    },
+    {
+      countInInterval: "4n",
+      denominator: 4,
+      id: "simple-five-four",
+      numerator: 5,
+      sixteenthsPerBar: 20,
+    },
+    {
+      countInInterval: "8n",
+      denominator: 8,
+      id: "simple-seven-eight",
+      numerator: 7,
+      sixteenthsPerBar: 14,
+    },
+    {
+      countInInterval: "8n",
+      denominator: 8,
+      id: "basic-jazz-ride",
+      numerator: 12,
+      sixteenthsPerBar: 24,
+    },
+  ])(
+    "schedules and rolls over the $id meter directly",
+    ({ countInInterval, denominator, id, numerator, sixteenthsPerBar }) => {
+      const pattern = utilityPatterns.find((candidate) => candidate.id === id);
+      if (!pattern) throw new Error(`Missing utility pattern: ${id}`);
+      const runtime = new FakeAudioRuntime();
+      const instruments: PatternInstrumentPlayer = {
+        trigger: vi.fn(),
+        triggerCountIn: vi.fn(),
+      };
+      const timeline = new VisualTimeline();
+      const visuals = vi.fn();
+      timeline.subscribe(visuals);
+      const scheduler = new PatternScheduler(
+        runtime,
+        instruments,
+        timeline,
+        () => 1,
+      );
+
+      scheduler.schedule(pattern, schedulerOptions());
+
+      expect(runtime.timeSignatureCalls).toEqual([{ denominator, numerator }]);
+      expect(runtime.repeats[0]).toMatchObject({
+        duration: "1m",
+        interval: countInInterval,
+        startTime: 0,
+      });
+      expect(runtime.repeats[1]).toMatchObject({
+        interval: "16n",
+        startTime: "1m",
+      });
+
+      const sixteenthsPerBeat = 16 / denominator;
+      runtime.repeats[0]?.callback(1, (numerator - 1) * sixteenthsPerBeat);
+      expect(instruments.triggerCountIn).toHaveBeenCalledWith(1, false);
+      expect(visuals).toHaveBeenLastCalledWith({
+        beat: numerator - 1,
+        isAccent: false,
+        measure: 1,
+        phase: "count-in",
+      });
+
+      for (let offset = 0; offset <= sixteenthsPerBar; offset += 1) {
+        runtime.repeats[1]?.callback(
+          2 + offset / 100,
+          sixteenthsPerBar + offset,
+        );
+      }
+      expect(visuals).toHaveBeenLastCalledWith({
+        isAccent: expect.any(Boolean),
+        measure: 2,
+        patternStep: 0,
+        phase: "pattern",
+        sixteenth: 0,
+      });
+    },
+  );
 
   it("advances an eighth-note visual playhead beyond its first native step", () => {
     const runtime = new FakeAudioRuntime();

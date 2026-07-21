@@ -91,11 +91,32 @@ test("starts, changes tempo, pauses, resumes, and stops the groove", async ({
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("90");
 
-  await page.getByText("Off", { exact: true }).click();
+  const countIn = page.getByRole("group", { name: "Count-in length" });
+  await countIn.getByText("1 bar", { exact: true }).click();
+  await expect(countIn.getByRole("radio", { name: "1 bar" })).toBeChecked();
+  const beatVisualizer = page.getByRole("region", {
+    name: "Beat visualization",
+  });
+  const countInDisplay = beatVisualizer.locator('[data-motion="count-in"]');
+
   await page.getByRole("button", { exact: true, name: "Play" }).click();
   await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
+    "Count in: listen for the downbeat",
   );
+  await expect(page.getByTestId("playback-live-region")).toHaveText(
+    "Count in: listen for the downbeat",
+  );
+  await expect(countInDisplay).toHaveAttribute("aria-hidden", "false");
+  await expect(beatVisualizer.locator(".beat-step--active")).toHaveCount(0);
+
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+    { timeout: 7_000 },
+  );
+  await expect(countInDisplay).toHaveAttribute("aria-hidden", "true");
+  await expect
+    .poll(() => beatVisualizer.locator(".beat-step--active").count())
+    .toBe(1);
 
   await page.getByRole("button", { name: "Increase BPM by 5" }).click();
   await expect(

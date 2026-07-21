@@ -173,13 +173,13 @@ Last audited against the source on 2026-07-19.
 - [x] **Cover UI behavior with Testing Library.** Test transport, BPM, editor, filters, presets, settings, storage notices, and guided controls in jsdom with fake IndexedDB.
 - [x] **Configure cross-browser E2E.** Run Chromium, Firefox, WebKit, and mobile Chromium against the real browser audio engine.
 - [x] **Configure production PWA E2E.** Build and serve production separately before testing offline behavior.
-- [ ] **Fix the current Chromium E2E failures.** Reproduce and repair backup restore, custom pattern editing, and pattern sharing; keep regression coverage.
-- [ ] **Cover count-in to groove in E2E.** Start with a nonzero count-in and assert the audible-state transition rather than disabling count-in first.
-- [ ] **Cover keyboard pattern navigation in E2E.** Verify left/right changes, editable-target suppression, and measure-aligned active changes.
-- [ ] **Cover a meaningful recorded session in E2E.** Exercise the configured nonzero threshold instead of setting it to zero.
-- [ ] **Cover every meter directly.** Add focused musical-time/scheduler tests for 2/4, 5/4, 7/8, and 12/8 in addition to common meters.
-- [ ] **Add coverage thresholds.** Set justified line, branch, function, and statement minimums so `pnpm test:coverage` can detect regressions.
-- [ ] **Make the full release suite green.** Pass format, lint, typecheck, unit/coverage, E2E, PWA, and production build in the required command forms.
+- [x] **Fix the current Chromium E2E failures.** Reproduce and repair backup restore, custom pattern editing, and pattern sharing; keep regression coverage.
+- [x] **Cover count-in to groove in E2E.** Start with a nonzero count-in and assert the audible-state transition rather than disabling count-in first.
+- [x] **Cover keyboard pattern navigation in E2E.** Verify left/right changes, editable-target suppression, and measure-aligned active changes.
+- [x] **Cover a meaningful recorded session in E2E.** Exercise the configured nonzero threshold instead of setting it to zero.
+- [x] **Cover every meter directly.** Add focused musical-time/scheduler tests for 2/4, 5/4, 7/8, and 12/8 in addition to common meters.
+- [x] **Add coverage thresholds.** Set justified line, branch, function, and statement minimums so `pnpm test:coverage` can detect regressions.
+- [x] **Make the full release suite green.** Pass format, lint, typecheck, unit/coverage, E2E, PWA, and production build in the required command forms.
 
 ## Phase 14: Documentation And Release
 

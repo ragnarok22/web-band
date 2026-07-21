@@ -26,12 +26,15 @@ test("exports, removes, and imports a shared custom pattern", async ({
     .getByRole("button", { name: /Kick, measure 1, column 1,.*empty/ })
     .click();
   await page.getByRole("button", { name: "Save pattern" }).click();
+  await expect(page).toHaveURL(/\/editor\?pattern=custom-/);
   await expect(page.getByText("Pattern saved locally.")).toBeVisible();
 
   await page.getByRole("link", { name: "Back to patterns" }).click();
+  await expect(page).toHaveURL(/\/patterns$/);
   const card = page
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: patternName }) });
+  await expect(card).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
   await card
     .getByRole("button", { name: `Export ${patternName} pattern` })
