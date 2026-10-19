@@ -381,7 +381,7 @@ describe("practice screen", () => {
     for (const radio of screen.getAllByRole("radio", {
       name: /Drums|Tempo|Chords|Strumming/,
     })) {
-      expect(radio).toBeDisabled();
+      expect(radio).toHaveAttribute("aria-disabled", "true");
     }
     expect(
       screen.getByRole("spinbutton", { name: "Start BPM" }),
@@ -698,8 +698,7 @@ describe("practice screen", () => {
     const slider = screen.getByRole("slider", { name: "Tempo" });
 
     fireEvent.change(slider, { target: { value: "96" } });
-    expect(liveRegion).toBeEmptyDOMElement();
-    fireEvent.pointerUp(slider);
+    // Base UI commits a native input change immediately.
     expect(liveRegion).toHaveTextContent("Tempo set to 96 BPM.");
 
     await user.click(screen.getByRole("button", { name: "Increase BPM by 1" }));

@@ -47,20 +47,21 @@ export function GuidedPracticePanel({
   );
 
   return (
-    <section aria-labelledby="guided-practice-heading" className="grid gap-3">
-      <div className="flex items-end justify-between gap-3 px-1">
-        <div>
-          <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
-            Practice path
-          </p>
-          <h2
-            className="text-foreground mt-1 text-xl font-black"
-            id="guided-practice-heading"
-          >
-            Guided practice
-          </h2>
-        </div>
-        <p className="text-muted-foreground hidden max-w-xs text-right text-xs sm:block">
+    <section
+      aria-labelledby="guided-practice-heading"
+      className="grid min-w-0 gap-4"
+    >
+      <div className="min-w-0 px-1">
+        <p className="text-primary text-[0.65rem] leading-4 font-extrabold tracking-[0.18em] uppercase">
+          Practice path
+        </p>
+        <h2
+          className="text-foreground mt-1 text-xl leading-7 font-black tracking-tight"
+          id="guided-practice-heading"
+        >
+          Guided practice
+        </h2>
+        <p className="text-muted-foreground mt-2 max-w-sm text-xs leading-5">
           Cues follow the active drum groove without changing its feel.
         </p>
       </div>

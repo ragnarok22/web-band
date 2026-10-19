@@ -36,7 +36,7 @@ export function PatternCard({
 }: PatternCardProps) {
   return (
     <Card
-      role="article"
+      as="article"
       className="group h-full min-w-0 gap-0 p-4 transition-colors [contain-intrinsic-size:auto_28rem] [content-visibility:auto] sm:p-5"
     >
       <div className="mb-4 flex items-start justify-between gap-3">

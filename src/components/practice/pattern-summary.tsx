@@ -3,7 +3,14 @@ import { m } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxList,
+  ComboboxItem,
+} from "@/components/ui/combobox";
 
 import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
 import {
@@ -34,6 +41,9 @@ export function PatternSummary({
   swing,
 }: PatternSummaryProps) {
   const reducedMotion = useAppReducedMotion();
+  const selectedPattern =
+    patterns.find(({ id }) => id === (pendingPatternId ?? pattern.id)) ??
+    pattern;
 
   return (
     <Card className="relative gap-0 p-5">
@@ -69,24 +79,46 @@ export function PatternSummary({
             {pattern.name}
           </h1>
         </m.div>
-        <label className="mt-4 block">
-          <span className="text-muted-foreground mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
-            Quick select
-          </span>
-          <NativeSelect
-            aria-label="Current pattern"
-            className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-xl border px-3 text-sm font-bold"
-            onChange={(event) => onPatternChange(event.target.value)}
-            value={pendingPatternId ?? pattern.id}
+        <div className="mt-4">
+          <label
+            htmlFor="quick-pattern-select"
+            className="text-muted-foreground mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase"
           >
-            {patterns.map((candidate) => (
-              <option key={candidate.id} value={candidate.id}>
-                {candidate.name} - {candidate.timeSignature.numerator}/
-                {candidate.timeSignature.denominator}
-              </option>
-            ))}
-          </NativeSelect>
-        </label>
+            Quick select
+          </label>
+          <Combobox
+            items={patterns}
+            value={selectedPattern}
+            itemToStringLabel={formatQuickPattern}
+            itemToStringValue={(item: DrumPattern) => item.id}
+            isItemEqualToValue={(item, value) => item.id === value.id}
+            onValueChange={(item) => {
+              if (item) onPatternChange(item.id);
+            }}
+            autoHighlight
+          >
+            <ComboboxInput
+              id="quick-pattern-select"
+              aria-label="Current pattern"
+              placeholder="Search patterns…"
+              className="min-h-11 w-full [&_input]:min-h-11"
+            />
+            <ComboboxContent>
+              <ComboboxEmpty>No patterns found.</ComboboxEmpty>
+              <ComboboxList>
+                {(candidate: DrumPattern) => (
+                  <ComboboxItem
+                    key={candidate.id}
+                    value={candidate}
+                    className="min-h-11"
+                  >
+                    {formatQuickPattern(candidate)}
+                  </ComboboxItem>
+                )}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
+        </div>
         {pendingPatternId ? (
           <p className="text-secondary-accent mt-2 text-xs font-bold">
             Queued after a transition fill
@@ -124,4 +156,8 @@ export function PatternSummary({
       </div>
     </Card>
   );
+}
+
+function formatQuickPattern(pattern: DrumPattern): string {
+  return `${pattern.name} - ${pattern.timeSignature.numerator}/${pattern.timeSignature.denominator}`;
 }

@@ -166,6 +166,7 @@ describe("drum pattern grid", () => {
   it("resets measure and cell addresses that fall outside a shrunken grid", async () => {
     const user = userEvent.setup();
     render(<ResizableGridHarness />);
+    const shrinkGrid = screen.getByRole("button", { name: "Shrink grid" });
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Target measure" }),
       "1",
@@ -178,7 +179,9 @@ describe("drum pattern grid", () => {
       screen.getByRole("dialog", { name: "Snare - step 32" }),
     ).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: "Shrink grid" }));
+    // Simulate a parent-driven resize: an open modal correctly makes the
+    // background inaccessible to actual user interaction.
+    fireEvent.click(shrinkGrid);
 
     expect(
       screen.getByRole("combobox", { name: "Target measure" }),

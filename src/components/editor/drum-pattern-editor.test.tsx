@@ -168,7 +168,7 @@ describe("drum pattern editor", () => {
     await user.click(
       await screen.findByRole("button", { name: "Delete pattern" }),
     );
-    const dialog = screen.getByRole("dialog", {
+    const dialog = screen.getByRole("alertdialog", {
       name: `Delete ${existing.name}?`,
     });
     await user.click(
