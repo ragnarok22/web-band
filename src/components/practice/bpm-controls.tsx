@@ -185,7 +185,7 @@ export function BpmControls({
           ) : null}
         </div>
         {embedded ? (
-          <PopoverContent>
+          <PopoverContent className="[&_[data-slot=slider-track]]:bg-border-strong">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <PopoverTitle>Tempo options</PopoverTitle>
               <PopoverDescription className="tabular-nums">
