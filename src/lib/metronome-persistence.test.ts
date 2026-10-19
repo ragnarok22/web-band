@@ -7,6 +7,8 @@ import {
   createBackupEnvelope,
   defaultBackupPreferences,
   normalizeBackupEnvelope,
+  parseBackupText,
+  serializeBackupEnvelope,
 } from "@/lib/backup-envelope";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { createDefaultGuidedPracticeValues } from "@/stores/guided-practice-store";
@@ -106,9 +108,8 @@ describe("metronome persistence boundaries", () => {
       },
       defaultBackupPreferences,
     );
-    expect(
-      normalizeBackupEnvelope(JSON.parse(JSON.stringify(envelope))),
-    ).toEqual(envelope);
+    const serialized = serializeBackupEnvelope(envelope);
+    expect(parseBackupText(serialized).envelope).toEqual(envelope);
     expect(envelope.data.practiceSessions[0]).not.toHaveProperty("patternId");
   });
 
