@@ -48,7 +48,8 @@ export function EditorHeader({ onPlay, onSave, status }: EditorHeaderProps) {
           >
             {status.dirty ? "Unsaved changes" : "Saved locally"}
           </span>
-          <Button variant="outline"
+          <Button
+            variant="outline"
             aria-label="Draft preview"
             aria-pressed={status.playing}
             className="border-border bg-surface-elevated text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold disabled:opacity-40"

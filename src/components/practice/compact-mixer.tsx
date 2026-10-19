@@ -1,6 +1,10 @@
 "use client";
 
 import { RotateCcw, SlidersVertical, Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Toggle } from "@/components/ui/toggle";
 
 import { mixerGroups } from "@/lib/mixer";
 import type { MixerGroup, MixerSettings } from "@/types/audio";
@@ -42,9 +46,10 @@ export function CompactMixer({
   const masterPercent = Math.round(masterVolume * 100);
 
   return (
-    <section
+    <Card
+      role="region"
       aria-labelledby="mixer-heading"
-      className="border-border bg-surface rounded-2xl border p-4 sm:p-5"
+      className="gap-0 p-4 sm:p-5"
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -58,7 +63,9 @@ export function CompactMixer({
             <p className="text-muted-foreground text-xs">Six musical groups</p>
           </div>
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           aria-label="Reset mixer"
           className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg border disabled:cursor-not-allowed disabled:opacity-45"
           disabled={disabled}
@@ -67,16 +74,16 @@ export function CompactMixer({
           type="button"
         >
           <RotateCcw aria-hidden="true" className="size-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="border-border mb-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 border-b pb-4">
-        <button
+        <Toggle
           aria-label="Master mute"
-          aria-pressed={masterMuted}
+          pressed={masterMuted}
           className={`flex size-11 items-center justify-center rounded-lg disabled:cursor-not-allowed disabled:opacity-45 ${masterMuted ? "bg-danger/15 text-danger" : "bg-surface-elevated text-primary"}`}
           disabled={disabled}
-          onClick={onMasterMuteToggle}
+          onPressedChange={onMasterMuteToggle}
           type="button"
         >
           {masterMuted ? (
@@ -84,27 +91,22 @@ export function CompactMixer({
           ) : (
             <Volume2 aria-hidden="true" className="size-5" />
           )}
-        </button>
-        <label
-          className="text-muted-strong text-xs font-bold"
-          htmlFor="mixer-master"
-        >
+        </Toggle>
+        <div className="text-muted-strong text-xs font-bold">
           Master
-          <input
+          <Slider
+            aria-label="Master"
             aria-valuetext={`${masterPercent} percent`}
-            className="tempo-range mt-2 block w-full"
+            className="mt-2"
             id="mixer-master"
             max={1}
             min={0}
             disabled={disabled}
-            onChange={(event) =>
-              onMasterVolumeChange(Number(event.target.value))
-            }
+            onValueChange={(value) => onMasterVolumeChange(Number(value))}
             step={0.01}
-            type="range"
             value={masterVolume}
           />
-        </label>
+        </div>
         <output
           className="text-muted-foreground w-10 text-right text-xs font-extrabold tabular-nums"
           htmlFor="mixer-master"
@@ -122,51 +124,45 @@ export function CompactMixer({
               className="bg-surface-elevated grid grid-cols-[minmax(4.5rem,auto)_1fr_auto_auto] items-center gap-1 rounded-lg p-2"
               key={group}
             >
-              <label
-                className="text-foreground text-xs font-extrabold"
-                htmlFor={`mixer-${group}`}
-              >
+              <span className="text-foreground text-xs font-extrabold">
                 {groupLabels[group]}
-              </label>
-              <input
+              </span>
+              <Slider
                 aria-label={`${groupLabels[group]} volume`}
                 aria-valuetext={`${percentage} percent`}
-                className="tempo-range min-w-0"
+                className="min-w-0"
                 id={`mixer-${group}`}
                 max={1}
                 min={0}
                 disabled={disabled}
-                onChange={(event) =>
-                  onVolumeChange(group, Number(event.target.value))
-                }
+                onValueChange={(value) => onVolumeChange(group, Number(value))}
                 step={0.01}
-                type="range"
                 value={channel.volume}
               />
-              <button
+              <Toggle
                 aria-label={`Mute ${groupLabels[group]}`}
-                aria-pressed={channel.muted}
+                pressed={channel.muted}
                 className={`size-11 rounded-md text-xs font-black ${channel.muted ? "bg-danger/15 text-danger" : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"}`}
                 disabled={disabled}
-                onClick={() => onMutedChange(group, !channel.muted)}
+                onPressedChange={(pressed) => onMutedChange(group, pressed)}
                 type="button"
               >
                 M
-              </button>
-              <button
+              </Toggle>
+              <Toggle
                 aria-label={`Solo ${groupLabels[group]}`}
-                aria-pressed={channel.solo}
+                pressed={channel.solo}
                 className={`size-11 rounded-md text-xs font-black ${channel.solo ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"}`}
                 disabled={disabled}
-                onClick={() => onSoloChange(group, !channel.solo)}
+                onPressedChange={(pressed) => onSoloChange(group, pressed)}
                 type="button"
               >
                 S
-              </button>
+              </Toggle>
             </div>
           );
         })}
       </div>
-    </section>
+    </Card>
   );
 }

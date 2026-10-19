@@ -86,7 +86,8 @@ export function PracticePresetBar({
         </p>
       </div>
       <div className="grid shrink-0 grid-cols-2 gap-2">
-        <Button variant="outline"
+        <Button
+          variant="outline"
           aria-label="Save current setup"
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-extrabold"
           onClick={() => {

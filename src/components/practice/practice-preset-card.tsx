@@ -104,7 +104,9 @@ export function PracticePresetCard({
                 </p>
               ) : null}
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="ghost" size="icon"
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="border-border text-muted-strong hover:bg-surface-hover flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-extrabold"
                   disabled={isPending}
                   onClick={() => {
@@ -117,7 +119,9 @@ export function PracticePresetCard({
                   <X aria-hidden="true" className="size-4" />
                   Cancel
                 </Button>
-                <Button variant="ghost" size="icon"
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="bg-primary text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
                   disabled={isPending}
                   type="submit"
@@ -133,7 +137,9 @@ export function PracticePresetCard({
             </h3>
           )}
         </div>
-        <Button variant="ghost" size="icon"
+        <Button
+          variant="ghost"
+          size="icon"
           aria-label={`${preset.name} favorite`}
           aria-pressed={preset.isFavorite}
           className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${preset.isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
@@ -186,7 +192,8 @@ export function PracticePresetCard({
             </p>
           ) : null}
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button variant="outline"
+            <Button
+              variant="outline"
               autoFocus
               className="border-border text-muted-strong hover:bg-surface-hover min-h-11 rounded-xl border px-3 text-sm font-extrabold"
               disabled={isPending}
@@ -198,7 +205,8 @@ export function PracticePresetCard({
             >
               Cancel
             </Button>
-            <Button variant="destructive"
+            <Button
+              variant="destructive"
               aria-label={`Delete ${preset.name} permanently`}
               className="bg-danger text-background min-h-11 rounded-xl px-3 text-sm font-black"
               disabled={isPending}
@@ -285,7 +293,8 @@ function CardAction({
   onClick,
 }: CardActionProps) {
   return (
-    <Button variant="outline"
+    <Button
+      variant="outline"
       aria-label={label}
       className="border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center rounded-xl border"
       disabled={disabled}

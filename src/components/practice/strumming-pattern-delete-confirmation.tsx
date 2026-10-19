@@ -17,14 +17,16 @@ export function StrummingPatternDeleteConfirmation({
         Delete {name} permanently?
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground min-h-11 rounded-lg border px-3 text-sm font-extrabold"
           onClick={onCancel}
           type="button"
         >
           Cancel
         </Button>
-        <Button variant="destructive"
+        <Button
+          variant="destructive"
           aria-label={`Delete ${name} permanently`}
           className="bg-danger text-background min-h-11 rounded-lg px-3 text-sm font-black"
           onClick={onConfirm}

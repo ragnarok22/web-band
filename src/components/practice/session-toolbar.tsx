@@ -39,7 +39,8 @@ export function SessionToolbar({
         <span className="sr-only">Practice duration </span>
         <span>{formatPracticeDuration(elapsedSeconds)}</span>
       </div>
-      <Button variant="outline"
+      <Button
+        variant="outline"
         className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors"
         onClick={onFocus}
         ref={focusButtonRef}
@@ -48,7 +49,8 @@ export function SessionToolbar({
         <Focus aria-hidden="true" className="size-4" />
         Focus
       </Button>
-      <Button variant="outline"
+      <Button
+        variant="outline"
         aria-label="Open Shortcuts"
         className="border-border text-muted-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors"
         onClick={onShortcuts}
@@ -57,13 +59,14 @@ export function SessionToolbar({
         <Keyboard aria-hidden="true" className="size-4" />
         Shortcuts
       </Button>
-      <Button variant="outline"
+      <Button
+        variant="outline"
         aria-describedby={
           wakeLockStatus === "error" || wakeLockStatus === "unsupported"
             ? "wake-lock-status"
             : undefined
         }
-        aria-label="Keep screen awake while playing"
+        aria-label="Keep awake while playing"
         aria-pressed={wakeLockEnabled}
         className={`border-border flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-extrabold transition-colors disabled:cursor-not-allowed disabled:opacity-45 ${wakeLockEnabled ? "bg-primary/10 text-primary" : "text-muted-strong hover:bg-surface-hover hover:text-foreground"}`}
         disabled={wakeLockDisabled}

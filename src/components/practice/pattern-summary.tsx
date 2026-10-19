@@ -1,5 +1,9 @@
 import { AudioLines } from "lucide-react";
 import { m } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
 import {
@@ -32,7 +36,7 @@ export function PatternSummary({
   const reducedMotion = useAppReducedMotion();
 
   return (
-    <section className="border-border bg-surface relative overflow-hidden rounded-2xl border p-5">
+    <Card className="relative gap-0 p-5">
       <div
         aria-hidden="true"
         className="bg-primary/8 absolute -top-20 -right-20 size-48 rounded-full blur-3xl"
@@ -47,9 +51,12 @@ export function PatternSummary({
           transition={motionTransition(reducedMotion, 0.12)}
         >
           <div className="mb-6 flex items-center justify-between">
-            <span className="border-primary/25 bg-primary/10 text-primary rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
+            <Badge
+              variant="outline"
+              className="border-primary/25 bg-primary/10 text-primary tracking-[0.12em] uppercase"
+            >
               {formatPatternCategory(pattern.category)}
-            </span>
+            </Badge>
             <AudioLines
               aria-hidden="true"
               className="text-muted-foreground size-5"
@@ -66,7 +73,7 @@ export function PatternSummary({
           <span className="text-muted-foreground mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
             Quick select
           </span>
-          <select
+          <NativeSelect
             aria-label="Current pattern"
             className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-xl border px-3 text-sm font-bold"
             onChange={(event) => onPatternChange(event.target.value)}
@@ -78,7 +85,7 @@ export function PatternSummary({
                 {candidate.timeSignature.denominator}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         {pendingPatternId ? (
           <p className="text-secondary-accent mt-2 text-xs font-bold">
@@ -86,13 +93,9 @@ export function PatternSummary({
           </p>
         ) : null}
         <label className="text-muted-strong mt-3 flex min-h-11 cursor-pointer items-center gap-2 text-xs leading-5 font-bold">
-          <input
+          <Checkbox
             checked={immediatePatternSwitch}
-            className="accent-primary mt-1 size-4 shrink-0"
-            onChange={(event) =>
-              onImmediatePatternSwitchChange(event.target.checked)
-            }
-            type="checkbox"
+            onCheckedChange={onImmediatePatternSwitchChange}
           />
           <span>Switch same-meter patterns immediately</span>
         </label>
@@ -119,6 +122,6 @@ export function PatternSummary({
           </div>
         </dl>
       </div>
-    </section>
+    </Card>
   );
 }

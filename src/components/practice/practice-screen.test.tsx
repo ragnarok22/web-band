@@ -165,11 +165,14 @@ describe("practice screen", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "Keep screen awake while playing",
+        name: "Keep awake while playing",
       }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "Mute Kick" })).toBeDisabled();
-    expect(screen.getByRole("radio", { name: /Tempo/ })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: /Tempo/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(screen.getByRole("slider", { name: "Tempo" })).toBeDisabled();
   });
 
@@ -895,7 +898,7 @@ describe("practice screen", () => {
     expect(request).toHaveBeenCalledWith("screen");
     expect(
       screen.getByRole("button", {
-        name: "Keep screen awake while playing",
+        name: "Keep awake while playing",
       }),
     ).toHaveAttribute("aria-describedby", "wake-lock-status");
 

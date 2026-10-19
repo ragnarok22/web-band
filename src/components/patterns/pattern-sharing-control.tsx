@@ -86,7 +86,8 @@ export function PatternSharingControl() {
     <div>
       <div className="flex flex-wrap gap-2">
         {customPatterns.length > 0 ? (
-          <Button variant="outline"
+          <Button
+            variant="outline"
             className="border-border bg-surface text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
             disabled={isPending}
             onClick={exportPatterns}
@@ -96,7 +97,8 @@ export function PatternSharingControl() {
             Export my patterns
           </Button>
         ) : null}
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className="border-border bg-surface text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
           disabled={isPending}
           onClick={() => fileInputRef.current?.click()}

@@ -33,7 +33,7 @@ describe("practice mode selector", () => {
     render(<PracticeModeSelector disabled mode="chords" onChange={onChange} />);
 
     for (const radio of screen.getAllByRole("radio")) {
-      expect(radio).toBeDisabled();
+      expect(radio).toHaveAttribute("aria-disabled", "true");
     }
     expect(screen.getByText(/Stop the current session/)).toBeInTheDocument();
   });
@@ -41,9 +41,7 @@ describe("practice mode selector", () => {
   it("keeps choices in two usable columns inside the settings sidebar", () => {
     render(<SelectorHarness />);
 
-    const choices = screen
-      .getByRole("radiogroup", { name: "Practice mode" })
-      .querySelector(".grid");
+    const choices = screen.getByRole("radiogroup", { name: "Practice mode" });
     expect(choices).toHaveClass("grid-cols-2");
     expect(choices).not.toHaveClass("lg:grid-cols-4");
   });
@@ -53,9 +51,8 @@ describe("practice mode selector", () => {
 
     for (const radio of screen.getAllByRole("radio")) {
       const label = radio.closest("label");
-      const card = label?.querySelector(":scope > span");
       expect(label).toHaveClass("flex");
-      expect(card).toHaveClass("h-full", "w-full");
+      expect(label).toHaveClass("h-full", "w-full");
     }
   });
 });

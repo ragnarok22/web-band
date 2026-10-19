@@ -48,7 +48,7 @@ test("exports, removes, and imports a shared custom pattern", async ({
 
   await card.getByRole("link", { name: `Edit ${patternName}` }).click();
   await page.getByRole("button", { name: "Delete pattern" }).click();
-  const deleteDialog = page.getByRole("dialog", {
+  const deleteDialog = page.getByRole("alertdialog", {
     name: `Delete ${patternName}?`,
   });
   await deleteDialog.getByRole("button", { name: "Delete pattern" }).click();

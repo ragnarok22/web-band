@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock3 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import type { CountInMeasures } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
@@ -41,24 +42,26 @@ export function CountInControl({
           </p>
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-1.5">
+      <RadioGroup
+        aria-label="Count-in length"
+        className="grid grid-cols-4 gap-1.5"
+        value={String(measures)}
+        disabled={disabled}
+        onValueChange={(value) => onChange(Number(value) as CountInMeasures)}
+      >
         {choices.map((choice) => (
-          <label key={choice.value}>
-            <input
-              checked={measures === choice.value}
-              className="peer sr-only"
-              disabled={disabled}
-              name="count-in"
-              onChange={() => onChange(choice.value)}
-              type="radio"
-              value={choice.value}
+          <label
+            key={choice.value}
+            className="border-border text-muted-strong has-data-checked:border-primary/60 has-data-checked:bg-primary/10 has-data-checked:text-primary flex min-h-11 cursor-pointer items-center justify-center gap-1 rounded-lg border px-1 text-xs font-extrabold has-data-disabled:opacity-45"
+          >
+            <RadioGroupItem
+              aria-label={choice.label}
+              value={String(choice.value)}
             />
-            <span className="border-border text-muted-strong peer-checked:border-secondary-accent/60 peer-checked:bg-secondary-accent/10 peer-checked:text-accent-strong peer-focus-visible:outline-primary flex min-h-11 cursor-pointer items-center justify-center rounded-lg border text-xs font-extrabold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
-              {choice.label}
-            </span>
+            <span>{choice.label}</span>
           </label>
         ))}
-      </div>
+      </RadioGroup>
     </fieldset>
   );
 }

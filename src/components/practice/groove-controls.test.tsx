@@ -21,9 +21,11 @@ describe("groove controls labels", () => {
         name: new RegExp(name),
       });
 
-      expect(slider.labels).toHaveLength(1);
-      const label = slider.labels!.item(0)!;
-      expect(label.control).toBe(slider);
+      expect(slider).toHaveAccessibleName(name);
+      const labelId = slider.getAttribute("aria-labelledby");
+      expect(labelId).toBeTruthy();
+      const label = document.getElementById(labelId!)!;
+      expect(label).toHaveTextContent(name);
       expect(label.querySelector("output")).toBeNull();
       expect(slider).toHaveAccessibleName(name);
     },

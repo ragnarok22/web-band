@@ -65,7 +65,8 @@ export function GuidedPracticePanel({
         </p>
       </div>
 
-      <Button variant="outline"
+      <Button
+        variant="outline"
         aria-controls="guided-practice-settings"
         aria-expanded={settingsOpen}
         className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"

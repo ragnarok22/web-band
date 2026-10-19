@@ -157,7 +157,8 @@ export function StrummingTrainerPanel({
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className={buttonClass}
           disabled={controlsDisabled}
           onClick={(event) => openEditor("new", event)}
@@ -168,7 +169,8 @@ export function StrummingTrainerPanel({
         </Button>
         {selectedCustom ? (
           <>
-            <Button variant="outline"
+            <Button
+              variant="outline"
               className={buttonClass}
               disabled={controlsDisabled}
               onClick={(event) => openEditor(selectedCustom, event)}
@@ -177,7 +179,8 @@ export function StrummingTrainerPanel({
               <Pencil aria-hidden="true" className="size-4" />
               Edit
             </Button>
-            <Button variant="destructive"
+            <Button
+              variant="destructive"
               className={`${buttonClass} border-danger/30 text-danger`}
               disabled={controlsDisabled}
               onClick={() => setConfirmingDelete(true)}

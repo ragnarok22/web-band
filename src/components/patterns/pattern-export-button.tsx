@@ -20,7 +20,9 @@ export function PatternExportButton({
 
   return (
     <>
-      <Button variant="outline" size="icon"
+      <Button
+        variant="outline"
+        size="icon"
         aria-label={`Export ${pattern.name} pattern`}
         className="border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors"
         onClick={() => {

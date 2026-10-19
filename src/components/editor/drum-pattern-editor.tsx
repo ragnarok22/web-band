@@ -250,7 +250,8 @@ function PatternEditorSession({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline"
+            <Button
+              variant="outline"
               className="border-border text-muted-strong hover:text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
               onClick={() => setConfirmation("clear")}
               type="button"
@@ -259,7 +260,8 @@ function PatternEditorSession({
               Clear pattern
             </Button>
             {sourcePatternId ? (
-              <Button variant="destructive"
+              <Button
+                variant="destructive"
                 className="border-danger/35 text-danger hover:bg-danger/10 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
                 onClick={() => setConfirmation("delete")}
                 type="button"

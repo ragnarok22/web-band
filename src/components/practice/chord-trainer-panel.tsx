@@ -235,7 +235,9 @@ function ChordTrainerHeader({
           Chord trainer
         </h3>
       </div>
-      <Button variant="ghost" size="icon"
+      <Button
+        variant="ghost"
+        size="icon"
         aria-label={`${progressionName} favorite`}
         aria-pressed={isFavorite}
         className={`${buttonClass} min-w-11 px-0`}
@@ -331,7 +333,8 @@ function ProgressionActions({
 }: ProgressionActionsProps) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      <Button variant="outline"
+      <Button
+        variant="outline"
         className={buttonClass}
         disabled={disabled}
         onClick={(event) => onOpenEditor("new", event)}
@@ -341,7 +344,8 @@ function ProgressionActions({
         New
       </Button>
       {availableSelected?.isBuiltIn ? (
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className={buttonClass}
           disabled={disabled}
           onClick={onCopy}
@@ -352,7 +356,8 @@ function ProgressionActions({
         </Button>
       ) : availableSelected ? (
         <>
-          <Button variant="outline"
+          <Button
+            variant="outline"
             className={buttonClass}
             disabled={disabled}
             onClick={(event) => onOpenEditor(availableSelected, event)}
@@ -361,7 +366,8 @@ function ProgressionActions({
             <Pencil aria-hidden="true" className="size-4" />
             Edit
           </Button>
-          <Button variant="destructive"
+          <Button
+            variant="destructive"
             className={`${buttonClass} border-danger/30 text-danger`}
             disabled={disabled}
             onClick={onRequestDelete}
@@ -385,29 +391,25 @@ function ChordTrainerOptions({
   return (
     <div className="border-border mt-4 grid gap-2 border-t pt-4 sm:grid-cols-2">
       <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
-        <input
+        <Checkbox
           checked={configuration.repeat}
-          className="accent-primary size-5"
           disabled={disabled}
-          onChange={(event) =>
-            onChange({ ...configuration, repeat: event.target.checked })
+          onCheckedChange={(checked) =>
+            onChange({ ...configuration, repeat: checked })
           }
-          type="checkbox"
         />
         Repeat progression
       </label>
       <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
-        <input
+        <Checkbox
           checked={configuration.showCountdown}
-          className="accent-primary size-5"
           disabled={disabled}
-          onChange={(event) =>
+          onCheckedChange={(checked) =>
             onChange({
               ...configuration,
-              showCountdown: event.target.checked,
+              showCountdown: checked,
             })
           }
-          type="checkbox"
         />
         Show change countdown
       </label>

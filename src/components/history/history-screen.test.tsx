@@ -90,7 +90,7 @@ describe("history screen", () => {
       screen.getByRole("button", { name: "Delete Basic Rock session" }),
     );
     expect(
-      screen.getByRole("dialog", { name: "Delete this session?" }),
+      screen.getByRole("alertdialog", { name: "Delete this session?" }),
     ).toBeVisible();
     expect(deleteOne).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Delete session" }));
@@ -119,7 +119,7 @@ describe("history screen", () => {
 
     await user.click(screen.getByRole("button", { name: "Clear all history" }));
     expect(
-      screen.getByRole("dialog", { name: "Clear practice history?" }),
+      screen.getByRole("alertdialog", { name: "Clear practice history?" }),
     ).toBeVisible();
     expect(clearAll).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Clear all" }));
@@ -148,7 +148,9 @@ describe("history screen", () => {
     await user.click(
       screen.getByRole("button", { name: "Delete Basic Rock session" }),
     );
-    const dialog = screen.getByRole("dialog", { name: "Delete this session?" });
+    const dialog = screen.getByRole("alertdialog", {
+      name: "Delete this session?",
+    });
     await user.click(
       within(dialog).getByRole("button", { name: "Delete session" }),
     );

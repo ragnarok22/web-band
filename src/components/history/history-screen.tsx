@@ -77,7 +77,8 @@ export function HistoryScreen() {
             </p>
           </div>
           {sessions.length > 0 ? (
-            <Button variant="destructive"
+            <Button
+              variant="destructive"
               className="border-border text-muted-strong hover:border-danger/40 hover:text-danger flex min-h-11 items-center justify-center gap-2 self-start rounded-xl border px-4 text-sm font-extrabold transition-colors sm:self-auto"
               onClick={() => openConfirmation("all")}
               type="button"

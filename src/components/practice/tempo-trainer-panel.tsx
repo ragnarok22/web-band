@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 import type { TempoTrainerConfiguration } from "@/types/practice";
@@ -101,7 +104,7 @@ export function TempoTrainerPanel({
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="text-muted-strong text-xs font-bold">
           Start BPM
-          <input
+          <Input
             aria-describedby={
               invalidDraft?.field === "startBpm" ? errorId : undefined
             }
@@ -119,7 +122,7 @@ export function TempoTrainerPanel({
         </label>
         <label className="text-muted-strong text-xs font-bold">
           Target BPM
-          <input
+          <Input
             aria-describedby={
               invalidDraft?.field === "endBpm" ? errorId : undefined
             }
@@ -137,7 +140,7 @@ export function TempoTrainerPanel({
         </label>
         <label className="text-muted-strong text-xs font-bold">
           Change by
-          <input
+          <Input
             aria-describedby={
               invalidDraft?.field === "increment" ? errorId : undefined
             }
@@ -159,33 +162,35 @@ export function TempoTrainerPanel({
           Change interval
         </legend>
         <div className="mt-1.5 grid grid-cols-[1fr_1fr] gap-2 sm:grid-cols-[1fr_1fr_8rem]">
-          {(["measures", "seconds"] as const).map((type) => (
-            <label key={type}>
-              <input
-                checked={configuration.interval.type === type}
-                className="peer sr-only"
-                disabled={disabled}
-                name="tempo-interval-type"
-                onChange={() => {
-                  setInvalidDraft(null);
-                  onChange({
-                    ...configuration,
-                    interval:
-                      type === "measures"
-                        ? { measures: intervalValue, type }
-                        : { seconds: intervalValue, type },
-                  });
-                }}
-                type="radio"
-              />
-              <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-primary/60 peer-checked:text-primary peer-focus-visible:outline-primary flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 text-sm font-extrabold capitalize peer-focus-visible:outline-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
+          <RadioGroup
+            aria-label="Change interval"
+            className="col-span-2 grid grid-cols-2"
+            value={configuration.interval.type}
+            disabled={disabled}
+            onValueChange={(value) => {
+              setInvalidDraft(null);
+              onChange({
+                ...configuration,
+                interval:
+                  value === "measures"
+                    ? { measures: intervalValue, type: "measures" }
+                    : { seconds: intervalValue, type: "seconds" },
+              });
+            }}
+          >
+            {(["measures", "seconds"] as const).map((type) => (
+              <label
+                key={type}
+                className="border-border bg-surface-elevated has-data-checked:border-primary/60 has-data-checked:text-primary flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold capitalize"
+              >
+                <RadioGroupItem value={type} />
                 {type}
-              </span>
-            </label>
-          ))}
+              </label>
+            ))}
+          </RadioGroup>
           <label className="col-span-2 sm:col-span-1">
             <span className="sr-only">Interval length</span>
-            <input
+            <Input
               aria-describedby={
                 invalidDraft?.field === "interval" ? errorId : undefined
               }
@@ -220,29 +225,25 @@ export function TempoTrainerPanel({
 
       <div className="border-border mt-4 grid gap-2 border-t pt-4 sm:grid-cols-2">
         <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
-          <input
+          <Checkbox
             checked={configuration.stopAtTarget}
-            className="accent-primary size-5"
             disabled={disabled}
-            onChange={(event) =>
-              onChange({ ...configuration, stopAtTarget: event.target.checked })
+            onCheckedChange={(checked) =>
+              onChange({ ...configuration, stopAtTarget: checked })
             }
-            type="checkbox"
           />
           Stop at target
         </label>
         <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
-          <input
+          <Checkbox
             checked={configuration.resetToStartingBpmOnStop}
-            className="accent-primary size-5"
             disabled={disabled}
-            onChange={(event) =>
+            onCheckedChange={(checked) =>
               onChange({
                 ...configuration,
-                resetToStartingBpmOnStop: event.target.checked,
+                resetToStartingBpmOnStop: checked,
               })
             }
-            type="checkbox"
           />
           Reset tempo on stop
         </label>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
+import { Card } from "@/components/ui/card";
 
 import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 import { clampBpm, MAX_BPM, MIN_BPM } from "@/lib/musical-time";
@@ -52,9 +53,10 @@ export function BpmControls({
   }
 
   return (
-    <section
+    <Card
+      role="region"
       aria-labelledby="tempo-heading"
-      className="border-border bg-surface rounded-2xl border p-4 sm:p-5"
+      className="gap-0 p-4 sm:p-5"
     >
       <div className="mb-4 flex items-center justify-between">
         <div>
@@ -107,9 +109,6 @@ export function BpmControls({
 
       <Slider
         aria-label="Tempo"
-        aria-valuemax={MAX_BPM}
-        aria-valuemin={MIN_BPM}
-        aria-valuenow={bpm}
         aria-valuetext={`${bpm} BPM`}
         className="mb-5"
         disabled={disabled}
@@ -160,6 +159,6 @@ export function BpmControls({
         <Hand aria-hidden="true" className="size-4" />
         Tap tempo <Kbd>T</Kbd>
       </Button>
-    </section>
+    </Card>
   );
 }

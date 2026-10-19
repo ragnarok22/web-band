@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { Modal } from "@/components/shared/modal";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import type { BackupPreview } from "@/lib/backup-envelope";
 import type { ImportMode } from "@/types/persistence";
@@ -86,19 +87,18 @@ export function BackupPreviewDialog({
 
         <fieldset className="mt-6">
           <legend className="text-sm font-extrabold">Import behavior</legend>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <label className="border-border has-checked:border-primary has-checked:bg-primary/8 flex min-h-14 items-start gap-3 rounded-xl border p-3">
-              <input
-                checked={mode === "merge"}
-                className="mt-1 size-5 accent-[var(--primary)]"
-                disabled={isPending}
-                name="import-mode"
-                onChange={() => {
-                  setMode("merge");
-                  setReplaceConfirmed(false);
-                }}
-                type="radio"
-              />
+          <RadioGroup
+            aria-label="Import behavior"
+            value={mode}
+            disabled={isPending}
+            className="mt-3 grid gap-2 sm:grid-cols-2"
+            onValueChange={(value) => {
+              setMode(value as ImportMode);
+              setReplaceConfirmed(false);
+            }}
+          >
+            <label className="border-border has-data-checked:border-primary has-data-checked:bg-primary/8 flex min-h-14 items-start gap-3 rounded-xl border p-3">
+              <RadioGroupItem value="merge" className="mt-1" />
               <span>
                 <strong className="block text-sm">
                   Merge with current data
@@ -108,15 +108,8 @@ export function BackupPreviewDialog({
                 </span>
               </span>
             </label>
-            <label className="border-border has-checked:border-danger has-checked:bg-danger/8 flex min-h-14 items-start gap-3 rounded-xl border p-3">
-              <input
-                checked={mode === "replace"}
-                className="mt-1 size-5 accent-[var(--danger)]"
-                disabled={isPending}
-                name="import-mode"
-                onChange={() => setMode("replace")}
-                type="radio"
-              />
+            <label className="border-border has-data-checked:border-danger has-data-checked:bg-danger/8 flex min-h-14 items-start gap-3 rounded-xl border p-3">
+              <RadioGroupItem value="replace" className="mt-1" />
               <span>
                 <strong className="block text-sm">Replace current data</strong>
                 <span className="text-muted-foreground mt-1 block text-xs leading-4">
@@ -124,7 +117,7 @@ export function BackupPreviewDialog({
                 </span>
               </span>
             </label>
-          </div>
+          </RadioGroup>
         </fieldset>
 
         {mode === "replace" ? (

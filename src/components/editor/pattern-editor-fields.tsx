@@ -1,4 +1,7 @@
 "use client";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import {
   resizePatternDraft,
@@ -56,7 +59,7 @@ export function PatternEditorFields({
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
         <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
           Pattern name
-          <input
+          <Input
             className={`${inputClass} mt-1.5 text-base`}
             maxLength={100}
             name="pattern-name"
@@ -68,7 +71,7 @@ export function PatternEditorFields({
         </label>
         <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
           Genre / category
-          <select
+          <NativeSelect
             className={`${inputClass} mt-1.5`}
             name="pattern-category"
             onChange={(event) =>
@@ -81,12 +84,12 @@ export function PatternEditorFields({
                 {category === "custom" ? "Utility" : titleCase(category)}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
       </div>
       <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
         Description
-        <textarea
+        <Textarea
           className={`${inputClass} mt-1.5 min-h-24 resize-y py-3 leading-6`}
           maxLength={1000}
           name="pattern-description"
@@ -211,7 +214,7 @@ function SelectField({
   return (
     <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
       {label}
-      <select
+      <NativeSelect
         className={`${inputClass} mt-1.5`}
         name={name}
         onChange={(event) => onChange(event.target.value)}
@@ -222,7 +225,7 @@ function SelectField({
             {option.label}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </label>
   );
 }
@@ -241,7 +244,7 @@ function NumberField({
   return (
     <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
       {label}
-      <input
+      <Input
         className={`${inputClass} mt-1.5 tabular-nums`}
         max={220}
         min={40}

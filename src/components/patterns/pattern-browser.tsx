@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { Card } from "@/components/ui/card";
 
 import {
   FilterX,
@@ -300,9 +301,10 @@ function PatternFiltersPanel({
   sort,
 }: PatternFiltersPanelProps) {
   return (
-    <section
+    <Card
+      role="region"
       aria-label="Pattern filters"
-      className="border-border bg-surface mb-6 rounded-2xl border p-4 sm:p-5"
+      className="mb-6 gap-0 p-4 sm:p-5"
     >
       <div className="grid gap-3 sm:grid-cols-[1.7fr_auto]">
         <label className="border-border bg-surface-elevated focus-within:border-primary flex min-h-12 items-center gap-2 rounded-xl border px-3">
@@ -316,7 +318,8 @@ function PatternFiltersPanel({
             value={filters.search}
           />
         </label>
-        <Button variant="outline"
+        <Button
+          variant="outline"
           aria-expanded={isOpen}
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
           onClick={onToggle}
@@ -397,7 +400,8 @@ function PatternFiltersPanel({
         />
       </div>
       <div className={isOpen ? "block" : "hidden sm:block"}>
-        <Button variant="ghost"
+        <Button
+          variant="ghost"
           className="text-muted-strong hover:text-foreground mt-3 flex min-h-11 items-center gap-2 text-xs font-extrabold transition-colors"
           onClick={onClear}
           type="button"
@@ -406,7 +410,7 @@ function PatternFiltersPanel({
           Clear filters
         </Button>
       </div>
-    </section>
+    </Card>
   );
 }
 

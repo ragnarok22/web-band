@@ -1,4 +1,5 @@
 "use client";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import type { PracticeMode } from "@/types/practice";
 
@@ -44,22 +45,22 @@ export function PracticeModeSelector({
     <fieldset
       aria-describedby={disabled ? "practice-mode-disabled" : undefined}
       className="border-border bg-surface rounded-2xl border p-3 sm:p-4"
-      role="radiogroup"
     >
       <legend className="sr-only">Practice mode</legend>
-      <div className="grid grid-cols-2 gap-2">
+      <RadioGroup
+        aria-label="Practice mode"
+        className="grid grid-cols-2 gap-2"
+        value={mode}
+        disabled={disabled}
+        onValueChange={(value) => onChange(value as PracticeMode)}
+      >
         {modes.map((choice, index) => (
-          <label className="flex min-w-0" key={choice.value}>
-            <input
-              checked={mode === choice.value}
-              className="peer sr-only"
-              disabled={disabled}
-              name="practice-mode"
-              onChange={() => onChange(choice.value)}
-              type="radio"
-              value={choice.value}
-            />
-            <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-primary/60 peer-checked:bg-primary/10 peer-checked:text-primary peer-focus-visible:outline-primary flex h-full min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
+          <label
+            className="border-border bg-surface-elevated text-muted-strong has-data-checked:border-primary/60 has-data-checked:bg-primary/10 has-data-checked:text-primary flex h-full min-h-16 w-full min-w-0 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 has-data-disabled:opacity-45"
+            key={choice.value}
+          >
+            <RadioGroupItem aria-label={choice.label} value={choice.value} />
+            <span className="flex min-w-0 items-center gap-3">
               <span
                 aria-hidden="true"
                 className="border-border bg-background flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-black tabular-nums"
@@ -77,7 +78,7 @@ export function PracticeModeSelector({
             </span>
           </label>
         ))}
-      </div>
+      </RadioGroup>
       {disabled ? (
         <p
           className="text-muted-foreground mt-2 text-xs"

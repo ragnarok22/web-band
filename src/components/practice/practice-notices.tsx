@@ -1,5 +1,6 @@
 import { Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 
 import type { CountInMeasures } from "@/types/audio";
 
@@ -21,7 +22,7 @@ export function PracticeNotices({
   return (
     <>
       {showOnboarding ? (
-        <aside
+        <Alert
           className="border-primary/20 bg-primary/7 text-muted-strong flex items-start gap-3 rounded-xl border p-4 text-sm leading-6"
           role="note"
         >
@@ -36,7 +37,9 @@ export function PracticeNotices({
               ? "The groove starts immediately."
               : `You will hear ${countInMeasures === 1 ? "one measure" : `${countInMeasures} measures`} of count-in, then the groove.`}
           </p>
-          <Button variant="ghost" size="icon"
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label="Dismiss audio tip"
             className="text-muted-foreground hover:bg-surface-hover hover:text-foreground flex size-11 shrink-0 items-center justify-center rounded-lg transition-colors"
             onClick={onDismiss}
@@ -44,26 +47,27 @@ export function PracticeNotices({
           >
             <X aria-hidden="true" className="size-4" />
           </Button>
-        </aside>
+        </Alert>
       ) : null}
 
       {errorMessage ? (
-        <p
-          className="border-danger/30 bg-danger/10 text-foreground rounded-xl border p-4 text-sm"
+        <Alert
+          variant="destructive"
+          className="border-danger/30 bg-danger/10 p-4"
           role="alert"
         >
           {errorMessage}
-        </p>
+        </Alert>
       ) : null}
 
       {noticeMessage ? (
-        <p
+        <Alert
           aria-live="polite"
           className="border-primary/20 bg-primary/7 text-muted-strong rounded-xl border p-4 text-sm"
           role="status"
         >
           {noticeMessage}
-        </p>
+        </Alert>
       ) : null}
     </>
   );

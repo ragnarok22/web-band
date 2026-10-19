@@ -107,7 +107,8 @@ export function FocusMode({
             {pattern.name}
           </h1>
         </div>
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className="border-border bg-surface text-muted-strong hover:text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
           onClick={onExit}
           type="button"
@@ -169,7 +170,8 @@ export function FocusMode({
           reducedMotion={reducedMotion}
           status={status}
         />
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className="border-border bg-surface text-muted-strong hover:text-foreground mx-auto flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold disabled:opacity-35"
           disabled={!canStop}
           onClick={onStop}

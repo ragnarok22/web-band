@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 import { Copy, Heart, Pencil, Play, Square, Target } from "lucide-react";
 import Link from "next/link";
@@ -34,11 +35,17 @@ export function PatternCard({
   pattern,
 }: PatternCardProps) {
   return (
-    <article className="border-border bg-surface hover:border-border-strong group flex h-full min-w-0 flex-col rounded-2xl border p-4 transition-colors [contain-intrinsic-size:auto_28rem] [content-visibility:auto] sm:p-5">
+    <Card
+      role="article"
+      className="group h-full min-w-0 gap-0 p-4 transition-colors [contain-intrinsic-size:auto_28rem] [content-visibility:auto] sm:p-5"
+    >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.12em] uppercase">
-            <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
+            <Badge
+              variant="outline"
+              className="border-primary/25 bg-primary/10 text-primary"
+            >
               {formatPatternCategory(pattern.category)}
             </Badge>
             <span className="text-muted-foreground">{pattern.difficulty}</span>
@@ -56,7 +63,9 @@ export function PatternCard({
           {isCustomDrumPattern(pattern) ? (
             <PatternExportButton pattern={pattern} />
           ) : null}
-          <Button variant="ghost" size="icon"
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label={`${pattern.name} favorite`}
             aria-pressed={isFavorite}
             className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait disabled:opacity-50 ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
@@ -129,7 +138,8 @@ export function PatternCard({
           )}
           {pattern.isBuiltIn ? "Duplicate" : "Edit"}
         </Link>
-        <Button variant="outline"
+        <Button
+          variant="outline"
           aria-label={`${pattern.name} preview`}
           aria-pressed={isPreviewing}
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-extrabold transition-colors"
@@ -152,6 +162,6 @@ export function PatternCard({
           Practice
         </Button>
       </div>
-    </article>
+    </Card>
   );
 }

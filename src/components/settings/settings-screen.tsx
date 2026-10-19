@@ -114,7 +114,8 @@ export function SettingsScreen({
             Return app preferences to their defaults without removing patterns,
             presets, favorites, or practice history.
           </p>
-          <Button variant="outline"
+          <Button
+            variant="outline"
             className="border-border text-foreground hover:bg-surface-hover mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
             onClick={resetSettings}
             type="button"
@@ -136,7 +137,8 @@ export function SettingsScreen({
             storage is left alone, and a backup download is started before
             deletion.
           </p>
-          <Button variant="destructive"
+          <Button
+            variant="destructive"
             className="border-danger/45 text-danger mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
             onClick={() => {
               setDeleteError(null);

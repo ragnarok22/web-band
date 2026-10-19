@@ -2,6 +2,10 @@
 
 import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import type { FillFrequency } from "@/types/audio";
 
@@ -45,9 +49,10 @@ export function GrooveControls({
   const humanizationPercent = Math.round(humanization * 100);
 
   return (
-    <section
+    <Card
+      role="region"
       aria-labelledby="groove-controls-heading"
-      className="border-border bg-surface grid gap-4 rounded-2xl border p-4 sm:p-5"
+      className="gap-4 p-4 sm:p-5"
     >
       <div className="flex items-center gap-3">
         <span className="bg-surface-elevated text-primary flex size-10 items-center justify-center rounded-lg">
@@ -66,7 +71,8 @@ export function GrooveControls({
         </div>
       </div>
 
-      <button
+      <Button
+        variant="outline"
         aria-controls="groove-settings"
         aria-expanded={settingsOpen}
         className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
@@ -78,7 +84,7 @@ export function GrooveControls({
           aria-hidden="true"
           className={`size-5 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
         />
-      </button>
+      </Button>
 
       <div
         className={`${settingsOpen ? "block" : "hidden"} sm:block`}
@@ -86,40 +92,36 @@ export function GrooveControls({
       >
         <div className="mb-4 block">
           <span className="text-muted-strong mb-2 flex justify-between text-xs font-bold">
-            <label htmlFor="swing">Swing</label>
+            <span>Swing</span>
             <output htmlFor="swing">{swingPercent}%</output>
           </span>
-          <input
+          <Slider
+            aria-label="Swing"
             aria-valuetext={`${swingPercent} percent swing`}
-            className="tempo-range w-full"
             disabled={disabled}
             id="swing"
             max={0.65}
             min={0}
-            onChange={(event) => onSwingChange(Number(event.target.value))}
+            onValueChange={(value) => onSwingChange(Number(value))}
             step={0.01}
-            type="range"
             value={swing}
           />
         </div>
 
         <div className="mb-4 block">
           <span className="text-muted-strong mb-2 flex justify-between text-xs font-bold">
-            <label htmlFor="humanization">Human touch</label>
+            <span>Human touch</span>
             <output htmlFor="humanization">{humanizationPercent}%</output>
           </span>
-          <input
+          <Slider
+            aria-label="Human touch"
             aria-valuetext={`${humanizationPercent} percent humanization`}
-            className="tempo-range w-full"
             disabled={disabled}
             id="humanization"
             max={1}
             min={0}
-            onChange={(event) =>
-              onHumanizationChange(Number(event.target.value))
-            }
+            onValueChange={(value) => onHumanizationChange(Number(value))}
             step={0.01}
-            type="range"
             value={humanization}
           />
         </div>
@@ -128,7 +130,7 @@ export function GrooveControls({
           <span className="text-muted-strong mb-2 block text-xs font-bold">
             Phrase fills
           </span>
-          <select
+          <NativeSelect
             className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-lg border px-3 text-sm font-bold"
             disabled={disabled}
             id="fill-frequency"
@@ -142,9 +144,9 @@ export function GrooveControls({
                 {option.label}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
       </div>
-    </section>
+    </Card>
   );
 }

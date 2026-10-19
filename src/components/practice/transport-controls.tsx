@@ -51,7 +51,9 @@ export function TransportControls({
       aria-label="Playback controls"
       className="flex items-center justify-center gap-3 sm:gap-5"
     >
-      <Button variant="outline" size="icon"
+      <Button
+        variant="outline"
+        size="icon"
         aria-label="Stop playback"
         className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-14 items-center justify-center rounded-xl border transition-colors disabled:opacity-35"
         disabled={!canStop}
@@ -94,7 +96,9 @@ export function TransportControls({
         </m.span>
       </Button>
 
-      <Button variant="outline" size="icon"
+      <Button
+        variant="outline"
+        size="icon"
         aria-label="Pause playback"
         className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-14 items-center justify-center rounded-xl border transition-colors disabled:opacity-35"
         disabled={!isRunning}

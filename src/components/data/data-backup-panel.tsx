@@ -131,7 +131,8 @@ export function DataBackupPanel({
             : "mt-6 flex flex-col gap-2 sm:flex-row"
         }
       >
-        <Button variant="outline"
+        <Button
+          variant="outline"
           className="border-border bg-surface-elevated text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold disabled:opacity-45"
           disabled={isPending}
           onClick={() => void exportData()}
