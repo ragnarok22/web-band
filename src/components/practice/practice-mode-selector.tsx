@@ -50,6 +50,12 @@ const modes: Array<{
     label: "Tempo",
     value: "tempoTrainer",
   },
+  {
+    description: "Develop timing with an independent click and subdivisions.",
+    icon: Timer,
+    label: "Metronome",
+    value: "metronome",
+  },
 ];
 
 export function PracticeModeSelector({
@@ -99,15 +105,6 @@ export function PracticeModeSelector({
             </span>
           </label>
         ))}
-        <button
-          aria-label="Metronome — Coming soon"
-          className="border-border text-muted-foreground flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm"
-          disabled
-          type="button"
-        >
-          <Timer aria-hidden="true" className="size-[1.125rem]" />
-          Metronome <span className="text-[0.65rem]">Coming soon</span>
-        </button>
       </RadioGroup>
       {disabled ? (
         <p className="sr-only" id={`${id}-disabled`}>

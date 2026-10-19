@@ -14,6 +14,7 @@ interface PlaybackStatusProps {
   isReady: boolean;
   status: AudioEngineStatus;
   timeSignature: TimeSignature;
+  pulsesPerMeasure?: number;
 }
 
 export function PlaybackStatus({
@@ -22,9 +23,10 @@ export function PlaybackStatus({
   isReady,
   status,
   timeSignature,
+  pulsesPerMeasure,
 }: PlaybackStatusProps) {
   const remainingRef = useRef<HTMLSpanElement>(null);
-  const beatsPerMeasure = timeSignature.numerator;
+  const beatsPerMeasure = pulsesPerMeasure ?? timeSignature.numerator;
   const totalClicks = Math.max(1, countInMeasures) * beatsPerMeasure;
   const isError = status === "error";
   const Indicator = isError ? CircleAlert : CircleDot;

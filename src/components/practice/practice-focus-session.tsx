@@ -25,6 +25,7 @@ interface PracticeFocusSessionProps {
   onExit: () => void;
   onFinish: () => void;
   onPlay: () => void;
+  onPause: () => void;
   onShortcutsClose: () => void;
   onStop: () => void;
   pattern: DrumPattern;
@@ -50,6 +51,7 @@ export function PracticeFocusSession({
   onExit,
   onFinish,
   onPlay,
+  onPause,
   onShortcutsClose,
   onStop,
   pattern,
@@ -75,6 +77,7 @@ export function PracticeFocusSession({
         onExit={onExit}
         onFinish={onFinish}
         onPlay={onPlay}
+        onPause={onPause}
         onStop={onStop}
         pattern={pattern}
         showOnboarding={showOnboarding}

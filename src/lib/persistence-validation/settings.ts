@@ -1,5 +1,6 @@
 import { isSoundCharacter } from "@/audio/synthesis/sound-profiles";
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
+import { isMetronomeConfiguration } from "@/lib/metronome-validation";
 import {
   isPracticeMode,
   validateChordTrainerConfiguration,
@@ -21,7 +22,7 @@ const MAX_RECENT_PATTERNS = 20;
 
 export function validatePracticeSettings(
   value: unknown,
-  version: 1 | 2 | 3 | 4,
+  version: 1 | 2 | 3 | 4 | 5,
 ): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value))
@@ -98,6 +99,7 @@ export function validatePracticeSettings(
 
 export function validateGuidedPracticeSettings(
   value: unknown,
+  version: 1 | 2 | 3 | 4 | 5 = 5,
 ): PersistenceValidationResult {
   const errors: string[] = [];
   if (!isRecord(value))
@@ -111,11 +113,16 @@ export function validateGuidedPracticeSettings(
       "tempoTrainer",
       "chordTrainer",
       "strummingPattern",
+      ...(version >= 5 ? ["metronome"] : []),
     ])
   )
     errors.push("Guided practice settings fields are invalid.");
   if (!isPracticeMode(value.mode))
     errors.push("Guided practice settings mode is invalid.");
+  if (version < 5 && value.mode === "metronome")
+    errors.push("Legacy guided practice mode is invalid.");
+  if (version >= 5 && !isMetronomeConfiguration(value.metronome))
+    errors.push("Metronome settings are invalid.");
   if (!validateTempoTrainerConfiguration(value.tempoTrainer).success)
     errors.push("Guided practice tempo trainer settings are invalid.");
   if (!validateChordTrainerConfiguration(value.chordTrainer).success)

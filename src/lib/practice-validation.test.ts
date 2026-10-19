@@ -66,12 +66,14 @@ function createPreset(): PracticePreset {
 describe("practice validation", () => {
   it("validates practice modes and every strum action", () => {
     expect(
-      ["drums", "tempoTrainer", "chords", "strumming"].every(isPracticeMode),
+      ["drums", "tempoTrainer", "chords", "strumming", "metronome"].every(
+        isPracticeMode,
+      ),
     ).toBe(true);
     expect(["down", "up", "mute", "rest", "hold"].every(isStrumAction)).toBe(
       true,
     );
-    expect(isPracticeMode("metronome")).toBe(false);
+    expect(isPracticeMode("guitarInput")).toBe(false);
     expect(isStrumAction("accent")).toBe(false);
   });
 

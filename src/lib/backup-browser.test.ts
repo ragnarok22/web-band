@@ -130,13 +130,13 @@ describe("backup browser adapter", () => {
     const preview = await previewPromise;
     expect(preview).toMatchObject({
       fileName: "backup.json",
-      sourceVersion: 4,
+      sourceVersion: 5,
       totalRecords: 0,
     });
     expect(preview).not.toHaveProperty("envelope");
     expect(getPreparedBackup(preview)).toEqual({
       envelope: envelope(),
-      sourceVersion: 4,
+      sourceVersion: 5,
     });
     expect(worker.terminate).toHaveBeenCalledOnce();
   });

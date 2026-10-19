@@ -11,6 +11,7 @@ import { HistorySessionList } from "@/components/history/history-session-list";
 import { HistorySummary } from "@/components/history/history-summary";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import type { PracticeSession } from "@/types/persistence";
+import { getPracticeSessionTitle } from "@/lib/practice-history";
 
 export function HistoryScreen() {
   const sessions = usePracticeHistoryStore((state) => state.sessions);
@@ -161,12 +162,14 @@ export function HistoryScreen() {
       {confirmation && confirmation !== "all" ? (
         <HistoryConfirmationDialog
           confirmLabel="Delete session"
-          description={`Remove the ${confirmation.patternName} session from your local journal? This cannot be undone.`}
+          description={`Remove the ${getPracticeSessionTitle(confirmation)} session from your local journal? This cannot be undone.`}
           heading="Delete this session?"
           onClose={closeConfirmation}
           onConfirm={async () => {
             await usePracticeHistoryStore.getState().deleteOne(confirmation.id);
-            setAnnouncement(`${confirmation.patternName} session deleted.`);
+            setAnnouncement(
+              `${getPracticeSessionTitle(confirmation)} session deleted.`,
+            );
           }}
         />
       ) : null}

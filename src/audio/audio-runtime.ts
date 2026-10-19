@@ -15,6 +15,8 @@ export interface AudioRuntime {
   getContext(): BaseAudioContext;
   getContextState(): AudioContextState;
   getTransportState(): RuntimeTransportState;
+  getPpq(): number;
+  getTransportTicks(): number;
   pauseTransport(): void;
   resetTransport(): void;
   scheduleCallback(callback: () => void, time: number): number;
@@ -24,6 +26,10 @@ export interface AudioRuntime {
     interval: string,
     startTime?: string | number,
     duration?: string,
+  ): number;
+  scheduleRepeatTicks(
+    callback: (time: number, tick: number) => void,
+    intervalTicks: number,
   ): number;
   setBpm(bpm: number, smooth: boolean): void;
   setBpmAtTime(bpm: number, time: number): void;
@@ -72,6 +78,36 @@ export class ToneAudioRuntime implements AudioRuntime {
 
   getTransportState(): RuntimeTransportState {
     return Tone.getTransport().state;
+  }
+
+  getPpq(): number {
+    return Tone.getTransport().PPQ;
+  }
+
+  getTransportTicks(): number {
+    return Tone.getTransport().getTicksAtTime(Tone.getContext().immediate());
+  }
+
+  scheduleRepeatTicks(
+    callback: (time: number, tick: number) => void,
+    intervalTicks: number,
+  ): number {
+    const tracker: RepeatTracker = { intervalTicks, nextTick: 0, startTick: 0 };
+    const id = Tone.getTransport().scheduleRepeat(
+      (time) => {
+        // Snap to the event's source tick, skipping missed slots after throttling.
+        const sourceTick =
+          Math.round(Tone.getTransport().getTicksAtTime(time) / intervalTicks) *
+          intervalTicks;
+        const tick = Math.max(tracker.nextTick, sourceTick);
+        tracker.nextTick = tick + intervalTicks;
+        callback(time, tick);
+      },
+      `${intervalTicks}i`,
+      "0i",
+    );
+    this.repeatTrackers.set(id, tracker);
+    return id;
   }
 
   pauseTransport(): void {

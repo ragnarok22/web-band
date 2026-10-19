@@ -71,7 +71,7 @@ export function SavePracticePresetDialog({
           <div>
             <p className="text-primary flex items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.15em] uppercase">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
-              Keep this groove
+              Keep this setup
             </p>
             <h2
               className="mt-1 text-2xl font-black tracking-[-0.04em]"

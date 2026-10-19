@@ -7,7 +7,7 @@ import { getTempoTrainerPosition } from "@/lib/tempo-trainer";
 import type { TimeSignature } from "@/types/pattern";
 import type {
   GuidanceFrame,
-  GuidedPracticeConfiguration,
+  PatternGuidedPracticeConfiguration,
 } from "@/types/practice";
 
 export interface GuidedPracticeTick {
@@ -44,7 +44,7 @@ function assertTimeSignature(timeSignature: TimeSignature): void {
 export class GuidedPracticeController {
   private absoluteSixteenth = 0;
   private completedMeasures = 0;
-  private configuration: GuidedPracticeConfiguration | null = null;
+  private configuration: PatternGuidedPracticeConfiguration | null = null;
   private currentBpm = 90;
   private elapsedSeconds = 0;
   private latestMeasureBoundarySeconds = 0;
@@ -54,7 +54,7 @@ export class GuidedPracticeController {
   private timeSignature: TimeSignature | null = null;
 
   begin(
-    configuration: GuidedPracticeConfiguration,
+    configuration: PatternGuidedPracticeConfiguration,
     timeSignature: TimeSignature,
     bpm: number,
   ): void {

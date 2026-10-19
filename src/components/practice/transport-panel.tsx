@@ -8,6 +8,7 @@ interface TransportPanelProps {
   footer?: ReactNode;
   isReady?: boolean;
   isFinishing?: boolean;
+  finishWithFill?: boolean;
   onFinish: () => void;
   onPause: () => void;
   onPlay: () => void;
@@ -21,6 +22,7 @@ export function TransportPanel({
   footer,
   isReady = true,
   isFinishing = false,
+  finishWithFill = true,
   onFinish,
   onPause,
   onPlay,
@@ -38,6 +40,7 @@ export function TransportPanel({
           {children}
         </div>
         <TransportControls
+          finishWithFill={finishWithFill}
           isFinishing={isFinishing}
           onFinish={onFinish}
           onPause={onPause}

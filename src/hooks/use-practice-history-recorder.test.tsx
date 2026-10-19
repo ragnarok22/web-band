@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { guidanceTimeline } from "@/audio/guidance-timeline";
+import { createDefaultMetronomeConfiguration } from "@/lib/metronome";
 import { basicRockPattern } from "@/data/patterns";
 import { usePracticeHistoryRecorder } from "@/hooks/use-practice-history-recorder";
 import { defaultHistorySettings } from "@/db/repositories/history-settings-repository";
@@ -165,6 +166,46 @@ describe("practice history recorder", () => {
     expect(validatePracticeSession(record.mock.calls[0]![0]).success).toBe(
       true,
     );
+  });
+
+  it("records metronome metadata without borrowing the selected drum pattern", async () => {
+    useHistorySettingsStore.setState({ minimumDurationSeconds: 1 });
+    const guidedPractice: GuidedPracticeConfiguration = {
+      mode: "metronome",
+      metronome: {
+        ...createDefaultMetronomeConfiguration(),
+        timeSignature: { numerator: 6, denominator: 8 },
+        accentPattern: [true, false],
+        subdivision: 3,
+      },
+    };
+    const { rerender } = renderHook(
+      (props: RecorderProps) => useRecorder(props, onSaveError),
+      { initialProps: { bpm: 80, guidedPractice, status: "counting-in" } },
+    );
+    setElapsed(4000);
+    rerender({ bpm: 80, guidedPractice, status: "playing" });
+    setElapsed(6000);
+    rerender({ bpm: 80, guidedPractice, status: "paused" });
+    setElapsed(10000);
+    rerender({ bpm: 80, guidedPractice, status: "playing" });
+    setElapsed(12000);
+    rerender({ bpm: 80, guidedPractice, status: "stopped" });
+    await act(async () => Promise.resolve());
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        practiceMode: "metronome",
+        durationSeconds: 4,
+        startingBpm: 80,
+        endingBpm: 80,
+        timeSignature: "6/8",
+        metronome: { trainingMode: "manual", subdivision: 3 },
+      }),
+    );
+    const saved = record.mock.calls[0]![0];
+    expect(saved).not.toHaveProperty("patternId");
+    expect(saved).not.toHaveProperty("patternName");
+    expect(validatePracticeSession(saved).success).toBe(true);
   });
 
   it("does not save when history is disabled", async () => {

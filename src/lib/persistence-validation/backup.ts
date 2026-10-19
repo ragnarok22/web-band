@@ -98,7 +98,8 @@ export function validateBackupEnvelope(
     value.version !== 1 &&
     value.version !== 2 &&
     value.version !== 3 &&
-    value.version !== 4
+    value.version !== 4 &&
+    value.version !== 5
   )
     errors.push("Backup version is unsupported.");
   if (!isCanonicalUtcIsoTimestamp(value.exportedAt))
@@ -115,7 +116,9 @@ export function validateBackupEnvelope(
         ? 2
         : value.version === 3
           ? 3
-          : (4 as const);
+          : value.version === 4
+            ? 4
+            : (5 as const);
   if (
     !hasExactKeys(data, [
       "customPatterns",
@@ -157,13 +160,30 @@ export function validateBackupEnvelope(
   validateCollection(
     data.practicePresets,
     "Practice presets",
-    validatePracticePreset,
+    (preset) => {
+      const result = validatePracticePreset(preset);
+      if (
+        version < 5 &&
+        isRecord(preset) &&
+        isRecord(preset.configuration) &&
+        isRecord(preset.configuration.guidedPractice) &&
+        preset.configuration.guidedPractice.mode === "metronome"
+      )
+        return {
+          success: false,
+          errors: ["Legacy backups cannot contain metronome presets."],
+        };
+      return result;
+    },
     errors,
   );
   validateCollection(
     data.practiceSessions,
     "Practice sessions",
-    validatePracticeSession,
+    (session) =>
+      version < 5 && isRecord(session) && session.practiceMode === "metronome"
+        ? { success: false, errors: ["Legacy session mode is invalid."] }
+        : validatePracticeSession(session),
     errors,
   );
   const collections = [
@@ -191,7 +211,10 @@ export function validateBackupEnvelope(
       errors.push("Backup settings fields are invalid.");
     if (!validatePracticeSettings(data.settings.practice, version).success)
       errors.push("Backup practice settings are invalid.");
-    if (!validateGuidedPracticeSettings(data.settings.guidedPractice).success)
+    if (
+      !validateGuidedPracticeSettings(data.settings.guidedPractice, version)
+        .success
+    )
       errors.push("Backup guided practice settings are invalid.");
     if (
       !validateHistorySettings(

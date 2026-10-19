@@ -4,6 +4,7 @@ import { Drum, Settings2, SlidersHorizontal, Volume2 } from "lucide-react";
 import Link from "next/link";
 
 import { CompactMixer } from "@/components/practice/compact-mixer";
+import { MetronomeSettings } from "@/components/practice/metronome-settings";
 import { GrooveControls } from "@/components/practice/groove-controls";
 import {
   Accordion,
@@ -24,6 +25,8 @@ export function PracticeSettings({
 }) {
   const character = usePracticeStore((state) => state.soundCharacter);
   const setCharacter = usePracticeStore((state) => state.setSoundCharacter);
+  if (practice.guidedPractice.mode === "metronome")
+    return <MetronomeSettings practice={practice} />;
   return (
     <Accordion defaultValue={["sound"]} multiple className="px-4">
       <AccordionItem value="sound">

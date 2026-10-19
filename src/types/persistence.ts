@@ -11,6 +11,9 @@ import type {
   PracticeMode,
   StrummingPattern,
   TempoTrainerConfiguration,
+  MetronomeConfiguration,
+  MetronomeSubdivision,
+  PatternGuidedPracticeConfiguration,
 } from "@/types/practice";
 import type { DrumPattern } from "@/types/pattern";
 
@@ -77,26 +80,45 @@ export interface PracticeSettings {
 }
 
 export interface GuidedPracticeSettings {
+  metronome: MetronomeConfiguration;
   mode: PracticeMode;
   tempoTrainer: TempoTrainerConfiguration;
   chordTrainer: ChordTrainerConfiguration;
   strummingPattern: StrummingPattern;
 }
 
+export type GuidedPracticeSettingsV1 = Omit<
+  GuidedPracticeSettings,
+  "metronome" | "mode"
+> & { mode: Exclude<PracticeMode, "metronome"> };
+
 export interface HistorySettings {
   enabled: boolean;
   minimumDurationSeconds: number;
 }
 
-export interface PracticePresetConfiguration {
+export interface PatternPracticePresetConfiguration {
   patternId: string;
   bpm: number;
   countInMeasures: CountInMeasures;
   swing: number;
   humanization: number;
   fillFrequency: FillFrequency;
-  guidedPractice: GuidedPracticeConfiguration;
+  guidedPractice: PatternGuidedPracticeConfiguration;
 }
+
+export interface MetronomePracticePresetConfiguration {
+  bpm: number;
+  countInMeasures: CountInMeasures;
+  guidedPractice: Extract<GuidedPracticeConfiguration, { mode: "metronome" }>;
+  patternId?: never;
+  swing?: never;
+  humanization?: never;
+  fillFrequency?: never;
+}
+
+export type PracticePresetConfiguration =
+  PatternPracticePresetConfiguration | MetronomePracticePresetConfiguration;
 
 export interface PracticePreset {
   id: string;
@@ -120,21 +142,37 @@ export type CustomChordProgression = ChordProgression & {
   updatedAt: string;
 };
 
-export interface PracticeSession {
+interface PracticeSessionBase {
   id: string;
   startedAt: string;
   endedAt: string;
   durationSeconds: number;
-  patternId: string;
-  patternName: string;
-  category: string;
   startingBpm: number;
   endingBpm: number;
   timeSignature: string;
-  practiceMode: PracticeMode;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface PatternPracticeSession extends PracticeSessionBase {
+  practiceMode: Exclude<PracticeMode, "metronome">;
+  patternId: string;
+  patternName: string;
+  category: string;
+}
+
+export interface MetronomePracticeSession extends PracticeSessionBase {
+  practiceMode: "metronome";
+  metronome: {
+    trainingMode: "manual" | "progressive";
+    subdivision: MetronomeSubdivision;
+  };
+  patternId?: never;
+  patternName?: never;
+  category?: never;
+}
+
+export type PracticeSession = PatternPracticeSession | MetronomePracticeSession;
 
 export interface PersistenceSnapshot {
   customPatterns: CustomDrumPattern[];
@@ -144,6 +182,18 @@ export interface PersistenceSnapshot {
   customStrummingPatterns: CustomStrummingPattern[];
   practicePresets: PracticePreset[];
   practiceSessions: PracticeSession[];
+}
+
+interface PersistenceSnapshotV1 extends Omit<
+  PersistenceSnapshot,
+  "practicePresets" | "practiceSessions"
+> {
+  practicePresets: Array<
+    Omit<PracticePreset, "configuration"> & {
+      configuration: PatternPracticePresetConfiguration;
+    }
+  >;
+  practiceSessions: PatternPracticeSession[];
 }
 
 export interface BackupSettings {
@@ -189,11 +239,11 @@ export interface BackupPreferencesV3 {
 
 export interface BackupSettingsV1 {
   practice: PracticeSettingsV1;
-  guidedPractice: GuidedPracticeSettings;
+  guidedPractice: GuidedPracticeSettingsV1;
   history: HistorySettings;
 }
 
-export interface BackupDataV1 extends PersistenceSnapshot {
+export interface BackupDataV1 extends PersistenceSnapshotV1 {
   settings: BackupSettingsV1;
 }
 
@@ -204,8 +254,8 @@ export interface BackupEnvelopeV1 {
   data: BackupDataV1;
 }
 
-export interface BackupDataV2 extends PersistenceSnapshot {
-  settings: Omit<BackupSettings, "practice"> & {
+export interface BackupDataV2 extends PersistenceSnapshotV1 {
+  settings: Omit<BackupSettingsV1, "practice"> & {
     practice: PracticeSettingsV2;
   };
 }
@@ -217,9 +267,9 @@ export interface BackupEnvelopeV2 {
   data: BackupDataV2;
 }
 
-export interface BackupDataV3 extends PersistenceSnapshot {
+export interface BackupDataV3 extends PersistenceSnapshotV1 {
   preferences: BackupPreferencesV3;
-  settings: Omit<BackupSettings, "practice"> & {
+  settings: Omit<BackupSettingsV1, "practice"> & {
     practice: PracticeSettingsV3;
   };
 }
@@ -231,9 +281,9 @@ export interface BackupEnvelopeV3 {
   data: BackupDataV3;
 }
 
-export interface BackupDataV4 extends PersistenceSnapshot {
+export interface BackupDataV4 extends PersistenceSnapshotV1 {
   preferences: BackupPreferences;
-  settings: BackupSettings;
+  settings: Omit<BackupSettingsV1, "practice"> & { practice: PracticeSettings };
 }
 
 export interface BackupEnvelopeV4 {
@@ -243,9 +293,23 @@ export interface BackupEnvelopeV4 {
   data: BackupDataV4;
 }
 
-export type BackupEnvelope = BackupEnvelopeV4;
+export interface BackupEnvelopeV5 {
+  app: "web-band";
+  version: 5;
+  exportedAt: string;
+  data: PersistenceSnapshot & {
+    preferences: BackupPreferences;
+    settings: BackupSettings;
+  };
+}
+
+export type BackupEnvelope = BackupEnvelopeV5;
 export type VersionedBackupEnvelope =
-  BackupEnvelopeV1 | BackupEnvelopeV2 | BackupEnvelopeV3 | BackupEnvelopeV4;
+  | BackupEnvelopeV1
+  | BackupEnvelopeV2
+  | BackupEnvelopeV3
+  | BackupEnvelopeV4
+  | BackupEnvelopeV5;
 
 export type ImportMode = "merge" | "replace";
 

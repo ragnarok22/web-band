@@ -28,6 +28,23 @@ interface ScheduledRepeat {
 }
 
 export class FakeAudioRuntime implements AudioRuntime {
+  readonly tickRepeats: Array<{
+    callback: (time: number, tick: number) => void;
+    intervalTicks: number;
+  }> = [];
+  getPpq(): number {
+    return 192;
+  }
+  getTransportTicks(): number {
+    return 0;
+  }
+  scheduleRepeatTicks(
+    callback: (time: number, tick: number) => void,
+    intervalTicks: number,
+  ): number {
+    this.tickRepeats.push({ callback, intervalTicks });
+    return this.tickRepeats.length;
+  }
   readonly clearedCallbacks: number[] = [];
   readonly cleared: number[] = [];
   readonly drawCallbacks: Array<() => void> = [];
@@ -56,7 +73,7 @@ export class FakeAudioRuntime implements AudioRuntime {
     this.cleared.push(scheduleId);
   }
   getContext(): BaseAudioContext {
-    throw new Error("Not used by the scheduler test.");
+    return { currentTime: 0 } as BaseAudioContext;
   }
   getContextState(): AudioContextState {
     return "running";

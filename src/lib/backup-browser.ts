@@ -12,7 +12,7 @@ import type { BackupEnvelope } from "@/types/persistence";
 
 interface PreparedBackup {
   envelope: BackupEnvelope;
-  sourceVersion: 1 | 2 | 3 | 4;
+  sourceVersion: BackupPreview["sourceVersion"];
 }
 
 const preparedBackups = new WeakMap<object, PreparedBackup>();

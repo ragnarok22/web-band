@@ -1,4 +1,5 @@
 import { validateBackupEnvelope } from "@/lib/persistence-validation";
+import { createDefaultMetronomeConfiguration } from "@/lib/metronome";
 import type {
   BackupEnvelope,
   BackupPreferences,
@@ -69,7 +70,7 @@ export function createBackupEnvelope(
       settings: structuredClone(settings),
     },
     exportedAt: exportedAt.toISOString(),
-    version: 4,
+    version: 5,
   };
 }
 
@@ -123,7 +124,7 @@ export function normalizeBackupEnvelope(value: unknown): BackupEnvelope {
   }
 
   const envelope = structuredClone(value as VersionedBackupEnvelope);
-  if (envelope.version === 4) return envelope;
+  if (envelope.version === 5) return envelope;
 
   const legacyPractice =
     envelope.version === 1
@@ -133,19 +134,28 @@ export function normalizeBackupEnvelope(value: unknown): BackupEnvelope {
         }
       : structuredClone(envelope.data.settings.practice);
   const settings: BackupSettings = {
-    guidedPractice: structuredClone(envelope.data.settings.guidedPractice),
+    guidedPractice: {
+      ...structuredClone(envelope.data.settings.guidedPractice),
+      metronome: createDefaultMetronomeConfiguration(),
+    },
     history: structuredClone(envelope.data.settings.history),
     practice: {
       ...legacyPractice,
-      bpmAdjustmentStep: 1,
-      restoreLastPractice: true,
+      bpmAdjustmentStep:
+        envelope.version === 4
+          ? envelope.data.settings.practice.bpmAdjustmentStep
+          : 1,
+      restoreLastPractice:
+        envelope.version === 4
+          ? envelope.data.settings.practice.restoreLastPractice
+          : true,
     },
   };
   if (settings.history.minimumDurationSeconds === 0) {
     settings.history.minimumDurationSeconds = 1;
   }
   const preferences =
-    envelope.version === 3
+    envelope.version === 3 || envelope.version === 4
       ? {
           ...structuredClone(envelope.data.preferences),
           appearance: {
@@ -162,7 +172,7 @@ export function normalizeBackupEnvelope(value: unknown): BackupEnvelope {
       preferences,
       settings,
     },
-    version: 4,
+    version: 5,
   };
 }
 

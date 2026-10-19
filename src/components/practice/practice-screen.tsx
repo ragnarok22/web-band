@@ -49,6 +49,7 @@ export function PracticeScreen() {
       onExit={practice.exitFocusMode}
       onFinish={practice.finishWithFill}
       onPlay={() => void practice.play()}
+      onPause={practice.pause}
       onShortcutsClose={() => practice.setShortcutsOpen(false)}
       onStop={practice.stop}
       pattern={practice.pattern}
@@ -86,15 +87,19 @@ export function PracticeScreen() {
           aria-label="Practice session"
           className="flex min-w-0 flex-col gap-4"
         >
-          <PatternSummary
-            immediatePatternSwitch={practice.immediatePatternSwitch}
-            onPatternChange={practice.changePattern}
-            onImmediatePatternSwitchChange={practice.setImmediatePatternSwitch}
-            pattern={practice.pattern}
-            patterns={practice.patterns}
-            pendingPatternId={practice.pendingPatternId}
-            swing={practice.swing}
-          />
+          {practice.guidedPractice.mode !== "metronome" ? (
+            <PatternSummary
+              immediatePatternSwitch={practice.immediatePatternSwitch}
+              onPatternChange={practice.changePattern}
+              onImmediatePatternSwitchChange={
+                practice.setImmediatePatternSwitch
+              }
+              pattern={practice.pattern}
+              patterns={practice.patterns}
+              pendingPatternId={practice.pendingPatternId}
+              swing={practice.swing}
+            />
+          ) : null}
 
           <PracticePlayer
             practice={practice}

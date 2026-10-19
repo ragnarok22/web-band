@@ -32,6 +32,7 @@ export function GuidedPracticePanel({
   // Essential trainer setup stays in the workspace, not behind Controls.
   switch (mode) {
     case "drums":
+    case "metronome":
       return null;
     case "tempoTrainer":
       return (

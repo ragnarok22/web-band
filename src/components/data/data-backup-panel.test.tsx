@@ -114,7 +114,7 @@ describe("data backup panel", () => {
       expect(backupActions.importBackup).toHaveBeenCalledWith(
         expect.objectContaining({
           fileName: "web-band-backup.json",
-          sourceVersion: 4,
+          sourceVersion: 5,
         }),
         "merge",
       ),
@@ -167,7 +167,7 @@ describe("data backup panel", () => {
 
     await waitFor(() =>
       expect(backupActions.importBackup).toHaveBeenCalledWith(
-        expect.objectContaining({ sourceVersion: 4 }),
+        expect.objectContaining({ sourceVersion: 5 }),
         "replace",
       ),
     );

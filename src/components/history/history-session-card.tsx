@@ -2,6 +2,8 @@ import { Clock3, Gauge, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import type { PracticeSession } from "@/types/persistence";
+import { getPracticeSessionTitle } from "@/lib/practice-history";
+import { getSubdivisionLabel } from "@/lib/metronome";
 
 interface HistorySessionCardProps {
   onDelete: (session: PracticeSession) => void;
@@ -13,6 +15,7 @@ const modeLabels: Record<PracticeSession["practiceMode"], string> = {
   drums: "Drum groove",
   strumming: "Strumming",
   tempoTrainer: "Tempo trainer",
+  metronome: "Metronome",
 };
 
 const sessionTimeFormatter = new Intl.DateTimeFormat(undefined, {
@@ -34,6 +37,12 @@ export function HistorySessionCard({
   session,
 }: HistorySessionCardProps) {
   const time = sessionTimeFormatter.format(new Date(session.startedAt));
+  const title = getPracticeSessionTitle(session);
+  const [numerator, denominator] = session.timeSignature.split("/").map(Number);
+  const detail =
+    session.practiceMode === "metronome"
+      ? `${session.metronome.trainingMode === "progressive" ? "Progressive · 1 → 2 → 3 → 4" : getSubdivisionLabel(session.metronome.subdivision, { numerator: numerator!, denominator: denominator! })}`
+      : session.category;
   const bpm =
     session.startingBpm === session.endingBpm
       ? `${session.startingBpm} BPM`
@@ -51,10 +60,10 @@ export function HistorySessionCard({
           </span>
         </div>
         <h3 className="text-foreground mt-2 truncate text-xl font-black tracking-[-0.035em]">
-          {session.patternName}
+          {title}
         </h3>
         <p className="text-muted-foreground mt-1 text-sm capitalize">
-          {session.category} · {session.timeSignature}
+          {detail} · {session.timeSignature}
         </p>
       </div>
 
@@ -78,7 +87,7 @@ export function HistorySessionCard({
         <Button
           variant="ghost"
           size="icon"
-          aria-label={`Delete ${session.patternName} session`}
+          aria-label={`Delete ${title} session`}
           className="border-border text-muted-foreground hover:border-danger/40 hover:bg-danger/10 hover:text-danger flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors"
           onClick={() => onDelete(session)}
           type="button"

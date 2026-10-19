@@ -173,7 +173,9 @@ export function PracticePresetCard({
         </div>
         <div className="col-span-2 mt-2">
           <dt className="text-muted-foreground text-[0.62rem] font-extrabold tracking-wider uppercase">
-            Pattern
+            {preset.configuration.guidedPractice.mode === "metronome"
+              ? "Rhythm"
+              : "Pattern"}
           </dt>
           <dd className="text-muted-strong mt-1 truncate font-bold">
             {getPracticePatternSummary(preset.configuration)}

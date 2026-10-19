@@ -1,6 +1,34 @@
 import type { TimeSignature } from "@/types/pattern";
 
-export type PracticeMode = "drums" | "tempoTrainer" | "chords" | "strumming";
+export type PracticeMode =
+  "drums" | "tempoTrainer" | "chords" | "strumming" | "metronome";
+
+export type MetronomeSubdivision = 1 | 2 | 3 | 4;
+export type MetronomeClickKind = "accent" | "pulse" | "subdivision";
+
+export interface MetronomeConfiguration {
+  timeSignature: TimeSignature;
+  subdivision: MetronomeSubdivision;
+  accentPattern: boolean[];
+  subdivisionAudioMode: "pulse-only" | "pulse-guide";
+  metronomeVolume: number;
+  subdivisionVolume: number;
+  accentIntensity: number;
+  trainingMode: "manual" | "progressive";
+  measuresPerStage: 2 | 4 | 8 | 16;
+  endBehavior: "repeat" | "hold" | "stop";
+}
+
+export interface MetronomePosition {
+  phase: "count-in" | "metronome";
+  measure: number;
+  beat: number;
+  subdivisionIndex: number;
+  subdivision: MetronomeSubdivision;
+  stage: number;
+  stageMeasure: number;
+  isAccent: boolean;
+}
 
 export type TempoTrainerInterval =
   | {
@@ -76,7 +104,16 @@ export type GuidedPracticeConfiguration =
   | {
       mode: "strumming";
       strummingPattern: StrummingPattern;
+    }
+  | {
+      mode: "metronome";
+      metronome: MetronomeConfiguration;
     };
+
+export type PatternGuidedPracticeConfiguration = Exclude<
+  GuidedPracticeConfiguration,
+  { mode: "metronome" }
+>;
 
 export interface TempoTrainerPosition {
   currentBpm: number;

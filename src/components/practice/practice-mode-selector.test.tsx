@@ -14,14 +14,14 @@ function SelectorHarness() {
 }
 
 describe("practice mode selector", () => {
-  it("exposes four radio choices and updates the selected mode", async () => {
+  it("exposes five radio choices and updates the selected mode", async () => {
     const user = userEvent.setup();
     render(<SelectorHarness />);
 
     expect(
       screen.getByRole("radiogroup", { name: "Practice mode" }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    expect(screen.getAllByRole("radio")).toHaveLength(5);
     expect(screen.getByRole("radio", { name: /Drums/ })).toBeChecked();
 
     await user.click(screen.getByRole("radio", { name: /Tempo/ }));
@@ -84,7 +84,7 @@ describe("practice mode selector", () => {
     expect(screen.getByRole("radio", { name: "Strumming" })).toBeChecked();
   });
 
-  it("reserves a disabled, UI-only Metronome without changing modes", async () => {
+  it("selects Metronome as a first-class practice mode", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
@@ -94,12 +94,12 @@ describe("practice mode selector", () => {
         onChange={onChange}
       />,
     );
-    const metronome = screen.getByRole("button", {
-      name: "Metronome — Coming soon",
+    const metronome = screen.getByRole("radio", {
+      name: "Metronome",
     });
-    expect(metronome).toBeDisabled();
+    expect(metronome).not.toHaveAttribute("aria-disabled", "true");
     await user.click(metronome);
-    expect(onChange).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledWith("metronome");
     expect(screen.getByRole("radio", { name: "Drums" })).toBeChecked();
   });
 

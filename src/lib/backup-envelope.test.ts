@@ -35,7 +35,7 @@ function settings(): BackupSettings {
 }
 
 describe("backup envelope", () => {
-  it("creates a detached, canonical version 4 envelope", () => {
+  it("creates a detached, canonical version 5 envelope", () => {
     const snapshot = structuredClone(emptySnapshot);
     const backupSettings = settings();
     const envelope = createBackupEnvelope(
@@ -48,7 +48,7 @@ describe("backup envelope", () => {
     expect(envelope).toMatchObject({
       app: "web-band",
       exportedAt: "2026-07-18T12:34:56.789Z",
-      version: 4,
+      version: 5,
     });
     backupSettings.practice.bpm = 150;
     snapshot.favoritePatternIds.push("later");
@@ -98,13 +98,14 @@ describe("backup envelope", () => {
     };
     delete legacy.data.preferences;
     const legacySettings = legacy.data.settings as Record<string, unknown>;
+    delete (legacySettings.guidedPractice as Record<string, unknown>).metronome;
     legacySettings.practice = legacyPractice;
     const before = structuredClone(legacy);
 
     const parsed = parseBackupText(JSON.stringify(legacy));
 
     expect(parsed.sourceVersion).toBe(1);
-    expect(parsed.envelope.version).toBe(4);
+    expect(parsed.envelope.version).toBe(5);
     expect(parsed.envelope.data.settings.practice.soundCharacter).toBe(
       "balanced",
     );
@@ -132,14 +133,16 @@ describe("backup envelope", () => {
     const legacySettings = legacy.data.settings as {
       history: { minimumDurationSeconds: number };
       practice: Record<string, unknown>;
+      guidedPractice: Record<string, unknown>;
     };
+    delete legacySettings.guidedPractice.metronome;
     legacySettings.history.minimumDurationSeconds = 0;
     delete legacySettings.practice.bpmAdjustmentStep;
     delete legacySettings.practice.restoreLastPractice;
 
     const parsed = normalizeBackupEnvelope(legacy);
 
-    expect(parsed.version).toBe(4);
+    expect(parsed.version).toBe(5);
     expect(parsed.data.settings.history.minimumDurationSeconds).toBe(1);
     expect(parsed.data.preferences).toEqual(defaultBackupPreferences);
   });
@@ -154,11 +157,15 @@ describe("backup envelope", () => {
     const legacy = structuredClone(current) as unknown as {
       data: {
         preferences: { appearance: Record<string, unknown> };
-        settings: { practice: Record<string, unknown> };
+        settings: {
+          practice: Record<string, unknown>;
+          guidedPractice: Record<string, unknown>;
+        };
       };
       version: number;
     };
     legacy.version = 3;
+    delete legacy.data.settings.guidedPractice.metronome;
     delete legacy.data.settings.practice.bpmAdjustmentStep;
     delete legacy.data.settings.practice.restoreLastPractice;
     delete legacy.data.preferences.appearance.beatFlashIntensity;
@@ -166,7 +173,7 @@ describe("backup envelope", () => {
 
     const parsed = normalizeBackupEnvelope(legacy);
 
-    expect(parsed.version).toBe(4);
+    expect(parsed.version).toBe(5);
     expect(parsed.data.preferences.appearance).toEqual(
       defaultBackupPreferences.appearance,
     );

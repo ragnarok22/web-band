@@ -13,6 +13,8 @@ import type {
 import { basicRockPattern } from "@/data/patterns/rock";
 import { createDefaultMixerSettings } from "@/lib/mixer";
 import { useAudioStore } from "@/stores/audio-store";
+import { createDefaultMetronomeConfiguration } from "@/lib/metronome";
+import { metronomeTimeline } from "@/audio/metronome-timeline";
 
 function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
   return {
@@ -30,6 +32,15 @@ function playbackConfiguration(countInMeasures: 0 | 1 | 2 | 4 = 1) {
 }
 
 class FakeAudioRuntime implements AudioRuntime {
+  getPpq(): number {
+    return 192;
+  }
+  getTransportTicks(): number {
+    return 0;
+  }
+  scheduleRepeatTicks(callback: RuntimeCallback): number {
+    return this.scheduleRepeat(callback);
+  }
   readonly callbacks: RuntimeCallback[] = [];
   readonly clearedCallbacks: number[] = [];
   readonly drawCallbacks: Array<() => void> = [];
@@ -54,7 +65,7 @@ class FakeAudioRuntime implements AudioRuntime {
   cancelDraw(): void {}
   clearSchedule(): void {}
   getContext(): BaseAudioContext {
-    return null as unknown as BaseAudioContext;
+    return { currentTime: 0 } as BaseAudioContext;
   }
   getContextState(): AudioContextState {
     return this.contextState;
@@ -108,6 +119,7 @@ class FakeAudioRuntime implements AudioRuntime {
 
 function createInstruments(): ManagedInstruments {
   return {
+    triggerMetronome: vi.fn(),
     dispose: vi.fn(),
     setMasterVolume: vi.fn(),
     setMixer: vi.fn(),
@@ -154,6 +166,127 @@ describe("audio engine", () => {
     engine.stop();
     expect(useAudioStore.getState().status).toBe("stopped");
     expect(runtime.state).toBe("stopped");
+  });
+
+  it("runs an independent compound metronome, preserves pause, and isolates drum playback", async () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments = createInstruments();
+    const engine = new AudioEngine(runtime, () => instruments);
+    const config = {
+      bpm: 80,
+      countInMeasures: 0 as const,
+      masterVolume: 0.8,
+      guidedPractice: {
+        mode: "metronome" as const,
+        metronome: {
+          ...createDefaultMetronomeConfiguration(),
+          timeSignature: { numerator: 6, denominator: 8 },
+          accentPattern: [true, false],
+          subdivision: 3 as const,
+        },
+      },
+    };
+    await engine.play(config);
+    expect(runtime.setBpmCalls).toEqual([{ bpm: 120, smooth: false }]);
+    runtime.callbacks[0]?.(0, 0);
+    runtime.callbacks[0]?.(0.25, 96);
+    expect(instruments.trigger).not.toHaveBeenCalled();
+    expect(instruments.triggerCountIn).not.toHaveBeenCalled();
+    expect(instruments.triggerMetronome).toHaveBeenCalledTimes(2);
+    expect(engine.changePattern(basicRockPattern, vi.fn())).toBe(false);
+    expect(engine.queueStopWithFill()).toBe(false);
+    const count = runtime.callbacks.length;
+    engine.pause();
+    const paused = metronomeTimeline.getSnapshot();
+    await engine.play(config);
+    expect(runtime.callbacks).toHaveLength(count);
+    expect(metronomeTimeline.getSnapshot()).toEqual(paused);
+    engine.setBpm(100);
+    expect(runtime.setBpmCalls.at(-1)).toEqual({ bpm: 150, smooth: true });
+    engine.setSwing(0.5);
+    expect(runtime.setSwingCalls.at(-1)?.amount).toBe(0);
+    engine.stop();
+    runtime.callbacks[0]?.(2, 192);
+    expect(instruments.triggerMetronome).toHaveBeenCalledTimes(2);
+    expect(metronomeTimeline.getSnapshot()).toBeNull();
+  });
+
+  it("clears the previous scheduler when crossing between drums and metronome", async () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments = createInstruments();
+    const engine = new AudioEngine(runtime, () => instruments);
+    await engine.play(playbackConfiguration(0));
+    const drumCallback = runtime.callbacks[0];
+    const config = {
+      bpm: 80,
+      countInMeasures: 0 as const,
+      masterVolume: 1,
+      guidedPractice: {
+        mode: "metronome" as const,
+        metronome: createDefaultMetronomeConfiguration(),
+      },
+    };
+    await engine.play(config);
+    drumCallback?.(1, 0);
+    runtime.callbacks[1]?.(1, 0);
+    expect(instruments.trigger).not.toHaveBeenCalled();
+    expect(instruments.triggerMetronome).toHaveBeenCalledOnce();
+    await engine.play(playbackConfiguration(0));
+    runtime.callbacks[1]?.(2, 192);
+    runtime.callbacks[2]?.(2, 0);
+    expect(instruments.triggerMetronome).toHaveBeenCalledOnce();
+    expect(instruments.trigger).toHaveBeenCalled();
+    engine.dispose();
+  });
+
+  it("cancels metronome initialization on rapid Stop, then starts exactly once", async () => {
+    const runtime = new FakeAudioRuntime();
+    const instruments = createInstruments();
+    const engine = new AudioEngine(runtime, () => instruments);
+    let resolve!: () => void;
+    runtime.startPromise = new Promise<void>((done) => {
+      resolve = done;
+    });
+    const config = {
+      bpm: 80,
+      countInMeasures: 0 as const,
+      masterVolume: 1,
+      guidedPractice: {
+        mode: "metronome" as const,
+        metronome: createDefaultMetronomeConfiguration(),
+      },
+    };
+    const first = engine.play(config);
+    engine.stop();
+    resolve();
+    await first;
+    expect(runtime.callbacks).toHaveLength(0);
+    await Promise.all([engine.play(config), engine.play(config)]);
+    expect(runtime.callbacks).toHaveLength(1);
+    engine.dispose();
+  });
+
+  it("does not resurrect playback when Stop races a Play on an already initialized engine", async () => {
+    const runtime = new FakeAudioRuntime();
+    const engine = new AudioEngine(runtime, () => createInstruments());
+    const config = {
+      bpm: 80,
+      countInMeasures: 0 as const,
+      masterVolume: 1,
+      guidedPractice: {
+        mode: "metronome" as const,
+        metronome: createDefaultMetronomeConfiguration(),
+      },
+    };
+    await engine.play(config);
+    engine.stop();
+    const schedules = runtime.callbacks.length;
+    const pending = engine.play(config);
+    engine.stop();
+    await pending;
+    expect(runtime.state).toBe("stopped");
+    expect(runtime.callbacks).toHaveLength(schedules);
+    engine.dispose();
   });
 
   it("clamps BPM before updating the transport", () => {

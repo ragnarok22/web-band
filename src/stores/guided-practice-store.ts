@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { quarterDownstrokesPattern } from "@/data/strumming-patterns";
+import { createDefaultMetronomeConfiguration } from "@/lib/metronome";
+import { isMetronomeConfiguration } from "@/lib/metronome-validation";
 import {
   isChordTrainerConfiguration,
   isGuidedPracticeConfiguration,
@@ -16,6 +18,7 @@ import type {
   PracticeMode,
   StrummingPattern,
   TempoTrainerConfiguration,
+  MetronomeConfiguration,
 } from "@/types/practice";
 import type { GuidedPracticeSettings } from "@/types/persistence";
 
@@ -26,6 +29,7 @@ export interface GuidedPracticeValues {
   tempoTrainer: TempoTrainerConfiguration;
   chordTrainer: ChordTrainerConfiguration;
   strummingPattern: StrummingPattern;
+  metronome: MetronomeConfiguration;
 }
 
 interface GuidedPracticeStore extends GuidedPracticeValues {
@@ -37,6 +41,7 @@ interface GuidedPracticeStore extends GuidedPracticeValues {
     configuration: ChordTrainerConfiguration,
   ) => void;
   setMode: (mode: PracticeMode) => void;
+  setMetronomeConfiguration: (configuration: MetronomeConfiguration) => void;
   setStrummingPattern: (pattern: StrummingPattern) => void;
   setTempoTrainerConfiguration: (
     configuration: TempoTrainerConfiguration,
@@ -44,11 +49,12 @@ interface GuidedPracticeStore extends GuidedPracticeValues {
 }
 
 interface PersistedGuidedPracticeState extends GuidedPracticeValues {
-  version: 1;
+  version: 2;
 }
 
 export function createDefaultGuidedPracticeValues(): GuidedPracticeValues {
   return {
+    metronome: createDefaultMetronomeConfiguration(),
     chordTrainer: {
       progression: structuredClone(gDEmCProgression),
       repeat: true,
@@ -78,9 +84,14 @@ function loadGuidedPracticeValues(): GuidedPracticeValues {
   try {
     const rawValue = window.localStorage.getItem(GUIDED_PRACTICE_STORAGE_KEY);
     const value: unknown = rawValue ? JSON.parse(rawValue) : null;
-    if (!isRecord(value) || value.version !== 1) return defaults;
+    if (!isRecord(value) || (value.version !== 1 && value.version !== 2))
+      return defaults;
 
     return {
+      metronome:
+        value.version === 2 && isMetronomeConfiguration(value.metronome)
+          ? structuredClone(value.metronome)
+          : defaults.metronome,
       chordTrainer: isChordTrainerConfiguration(value.chordTrainer)
         ? structuredClone(value.chordTrainer)
         : defaults.chordTrainer,
@@ -101,11 +112,12 @@ function saveGuidedPracticeValues(values: GuidedPracticeValues): boolean {
   if (typeof window === "undefined") return false;
 
   const persisted: PersistedGuidedPracticeState = {
+    metronome: structuredClone(values.metronome),
     chordTrainer: structuredClone(values.chordTrainer),
     mode: values.mode,
     strummingPattern: structuredClone(values.strummingPattern),
     tempoTrainer: structuredClone(values.tempoTrainer),
-    version: 1,
+    version: 2,
   };
   try {
     window.localStorage.setItem(
@@ -122,6 +134,11 @@ export function getGuidedPracticeConfiguration(
   values: GuidedPracticeValues,
 ): GuidedPracticeConfiguration {
   switch (values.mode) {
+    case "metronome":
+      return {
+        mode: "metronome",
+        metronome: structuredClone(values.metronome),
+      };
     case "drums":
       return { mode: "drums" };
     case "tempoTrainer":
@@ -157,6 +174,12 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
         }
 
         switch (configuration.mode) {
+          case "metronome":
+            update({
+              mode: "metronome",
+              metronome: structuredClone(configuration.metronome),
+            });
+            break;
           case "drums":
             update({ mode: "drums" });
             break;
@@ -193,7 +216,8 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
           !isPracticeMode(settings.mode) ||
           !isTempoTrainerConfiguration(settings.tempoTrainer) ||
           !isChordTrainerConfiguration(settings.chordTrainer) ||
-          !isStrummingPattern(settings.strummingPattern)
+          !isStrummingPattern(settings.strummingPattern) ||
+          !isMetronomeConfiguration(settings.metronome)
         ) {
           throw new Error("Guided practice settings are invalid.");
         }
@@ -214,6 +238,11 @@ export const useGuidedPracticeStore = create<GuidedPracticeStore>(
           throw new Error("Guided practice mode is invalid.");
         }
         update({ mode });
+      },
+      setMetronomeConfiguration: (metronome) => {
+        if (!isMetronomeConfiguration(metronome))
+          throw new Error("Metronome configuration is invalid.");
+        update({ metronome: structuredClone(metronome) });
       },
       setStrummingPattern: (strummingPattern) => {
         if (!isStrummingPattern(strummingPattern)) {

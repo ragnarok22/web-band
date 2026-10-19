@@ -160,8 +160,8 @@ describe("practice screen — controls", () => {
       screen.getByRole("radiogroup", { name: "Practice mode" }),
     ).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Metronome — Coming soon" }),
-    ).toBeDisabled();
+      screen.getByRole("radio", { name: "Metronome" }),
+    ).not.toHaveAttribute("aria-disabled", "true");
   });
 
   it("applies master mute once per action under Strict Mode and restores the selected volume", async () => {

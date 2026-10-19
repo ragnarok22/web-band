@@ -6,6 +6,13 @@ import {
   type PatternInstrumentPlayer,
 } from "@/audio/pattern-scheduler";
 import { visualTimeline } from "@/audio/visual-timeline";
+import {
+  MetronomeScheduler,
+  type MetronomeInstrumentPlayer,
+  type MetronomeTimingEvent,
+} from "@/audio/metronome-scheduler";
+import { toMetronomeTransportBpm } from "@/lib/metronome";
+import { isMetronomeConfiguration } from "@/lib/metronome-validation";
 import { clampBpm } from "@/lib/musical-time";
 import { clampUnit } from "@/lib/mixer";
 import { useAudioStore } from "@/stores/audio-store";
@@ -16,13 +23,17 @@ import type {
   SoundCharacter,
 } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
-import type { GuidedPracticeConfiguration } from "@/types/practice";
+import type {
+  GuidedPracticeConfiguration,
+  PatternGuidedPracticeConfiguration,
+  MetronomeConfiguration,
+} from "@/types/practice";
 
-export interface PlaybackConfiguration {
+export interface PatternPlaybackConfiguration {
   bpm: number;
   countInMeasures: CountInMeasures;
   fillFrequency: FillFrequency;
-  guidedPractice: GuidedPracticeConfiguration;
+  guidedPractice: PatternGuidedPracticeConfiguration;
   humanization: number;
   masterVolume: number;
   mixer: MixerSettings;
@@ -31,7 +42,18 @@ export interface PlaybackConfiguration {
   swing: number;
 }
 
-export interface ManagedInstruments extends PatternInstrumentPlayer {
+export interface MetronomePlaybackConfiguration {
+  bpm: number;
+  countInMeasures: CountInMeasures;
+  masterVolume: number;
+  guidedPractice: Extract<GuidedPracticeConfiguration, { mode: "metronome" }>;
+}
+
+export type PlaybackConfiguration =
+  PatternPlaybackConfiguration | MetronomePlaybackConfiguration;
+
+export interface ManagedInstruments
+  extends PatternInstrumentPlayer, MetronomeInstrumentPlayer {
   dispose: () => void;
   setMasterVolume: (volume: number) => void;
   setMixer: (settings: MixerSettings) => void;
@@ -50,6 +72,10 @@ export class AudioEngine {
   private instruments: ManagedInstruments | null = null;
   private lifecycleGeneration = 0;
   private patternScheduler: PatternScheduler | null = null;
+  private metronomeScheduler: MetronomeScheduler | null = null;
+  private readonly metronomeTimingListeners = new Set<
+    (event: MetronomeTimingEvent) => void
+  >();
   private removeContextListener: (() => void) | null = null;
 
   constructor(
@@ -59,6 +85,12 @@ export class AudioEngine {
   ) {}
 
   async play(configuration: PlaybackConfiguration): Promise<void> {
+    if (
+      this.activeGuidedPractice &&
+      (this.activeGuidedPractice.mode === "metronome") !==
+        (configuration.guidedPractice.mode === "metronome")
+    )
+      this.stop();
     const transportState = this.runtime.getTransportState();
     const generation =
       transportState === "stopped"
@@ -70,9 +102,10 @@ export class AudioEngine {
         configuration.masterVolume,
         generation,
       );
-      if (!initialized) return;
+      if (!initialized || !this.isLifecycleCurrent(generation)) return;
 
-      this.instruments?.setSoundCharacter(configuration.soundCharacter);
+      if ("soundCharacter" in configuration)
+        this.instruments?.setSoundCharacter(configuration.soundCharacter);
 
       if (this.runtime.getContextState() === "suspended") {
         await this.runtime.startAudio();
@@ -102,42 +135,65 @@ export class AudioEngine {
         configuration.guidedPractice.mode === "tempoTrainer"
           ? configuration.guidedPractice.tempoTrainer.startBpm
           : configuration.bpm;
-      this.runtime.setBpm(clampBpm(startingBpm), false);
+      const metronome =
+        configuration.guidedPractice.mode === "metronome"
+          ? configuration.guidedPractice.metronome
+          : null;
+      if (metronome && !isMetronomeConfiguration(metronome))
+        throw new Error("Metronome configuration is invalid.");
+      this.runtime.setBpm(
+        metronome
+          ? toMetronomeTransportBpm(
+              clampBpm(startingBpm),
+              metronome.timeSignature,
+            )
+          : clampBpm(startingBpm),
+        false,
+      );
       this.setMasterVolume(configuration.masterVolume);
-      this.setMixer(configuration.mixer);
-      this.setFillFrequency(configuration.fillFrequency);
-      this.setHumanization(configuration.humanization);
-      this.setSwing(configuration.swing);
       this.runtime.stopTransport();
       this.runtime.resetTransport();
-      this.patternScheduler?.schedule(configuration.pattern, {
-        bpm: startingBpm,
-        countInMeasures: configuration.countInMeasures,
-        fillFrequency: configuration.fillFrequency,
-        guidedPractice: configuration.guidedPractice,
-        humanization: configuration.humanization,
-        onPatternStarted: () => {
-          if (
-            !this.isLifecycleCurrent(generation) ||
-            this.runtime.getTransportState() !== "started"
-          ) {
-            return;
-          }
-          this.currentPhase = "pattern";
-          useAudioStore.getState().setStatus("playing");
-        },
-        onTargetStop: () => {
-          if (
-            !this.isLifecycleCurrent(generation) ||
-            this.runtime.getTransportState() !== "started"
-          ) {
-            return;
-          }
+      const onStarted = () => {
+        if (
+          !this.isLifecycleCurrent(generation) ||
+          this.runtime.getTransportState() !== "started"
+        )
+          return;
+        this.currentPhase = "pattern";
+        useAudioStore.getState().setStatus("playing");
+      };
+      const onComplete = () => {
+        if (
+          this.isLifecycleCurrent(generation) &&
+          this.runtime.getTransportState() === "started"
+        )
           this.stop();
-        },
-        swing: configuration.swing,
-      });
-      this.activeGuidedPractice = configuration.guidedPractice;
+      };
+      if (metronome) {
+        this.patternScheduler?.clear();
+        this.metronomeScheduler?.schedule(metronome, {
+          countInMeasures: configuration.countInMeasures,
+          onStarted,
+          onComplete,
+        });
+      } else if ("pattern" in configuration) {
+        this.metronomeScheduler?.clear();
+        this.setMixer(configuration.mixer);
+        this.setFillFrequency(configuration.fillFrequency);
+        this.setHumanization(configuration.humanization);
+        this.setSwing(configuration.swing);
+        this.patternScheduler?.schedule(configuration.pattern, {
+          bpm: startingBpm,
+          countInMeasures: configuration.countInMeasures,
+          fillFrequency: configuration.fillFrequency,
+          guidedPractice: configuration.guidedPractice,
+          humanization: configuration.humanization,
+          onPatternStarted: onStarted,
+          onTargetStop: onComplete,
+          swing: configuration.swing,
+        });
+      }
+      this.activeGuidedPractice = structuredClone(configuration.guidedPractice);
       this.currentPhase =
         configuration.countInMeasures === 0 ? "pattern" : "count-in";
       useAudioStore
@@ -164,6 +220,7 @@ export class AudioEngine {
 
     this.runtime.pauseTransport();
     this.patternScheduler?.cancelPendingVisuals();
+    this.metronomeScheduler?.pause();
     this.instruments?.stop();
     useAudioStore.getState().setStatus("paused");
   }
@@ -178,6 +235,7 @@ export class AudioEngine {
     this.runtime.stopTransport();
     this.runtime.resetTransport();
     this.patternScheduler?.clear();
+    this.metronomeScheduler?.clear();
     this.instruments?.stop();
     this.currentPhase = null;
     this.activeGuidedPractice = null;
@@ -192,7 +250,15 @@ export class AudioEngine {
     if (this.activeGuidedPractice?.mode === "tempoTrainer") return;
 
     const nextBpm = clampBpm(bpm);
-    this.runtime.setBpm(nextBpm, smooth);
+    this.runtime.setBpm(
+      this.activeGuidedPractice?.mode === "metronome"
+        ? toMetronomeTransportBpm(
+            nextBpm,
+            this.activeGuidedPractice.metronome.timeSignature,
+          )
+        : nextBpm,
+      smooth,
+    );
     this.patternScheduler?.setBpm(nextBpm);
   }
 
@@ -213,6 +279,7 @@ export class AudioEngine {
   }
 
   setSwing(amount: number): void {
+    if (this.activeGuidedPractice?.mode === "metronome") return;
     this.patternScheduler?.setSwing(Math.min(0.65, Math.max(0, amount)));
   }
 
@@ -222,6 +289,7 @@ export class AudioEngine {
     mode: PatternChangeMode = "measure",
   ): boolean {
     if (
+      this.activeGuidedPractice?.mode === "metronome" ||
       !this.patternScheduler ||
       this.runtime.getTransportState() === "stopped"
     ) {
@@ -233,6 +301,7 @@ export class AudioEngine {
 
   queueStopWithFill(): boolean {
     if (
+      this.activeGuidedPractice?.mode === "metronome" ||
       !this.patternScheduler ||
       this.runtime.getTransportState() !== "started"
     ) {
@@ -247,9 +316,11 @@ export class AudioEngine {
     this.removeContextListener?.();
     this.removeContextListener = null;
     this.patternScheduler = null;
+    this.metronomeScheduler = null;
     this.currentPhase = null;
     this.instruments?.dispose();
     this.instruments = null;
+    this.metronomeTimingListeners.clear();
     useAudioStore.getState().setStatus("not-initialized");
   }
 
@@ -278,12 +349,24 @@ export class AudioEngine {
       this.instruments,
       visualTimeline,
     );
+    this.metronomeScheduler = new MetronomeScheduler(
+      this.runtime,
+      this.instruments,
+    );
+    this.metronomeScheduler.subscribeTiming((event) => {
+      for (const listener of this.metronomeTimingListeners) listener(event);
+    });
     this.removeContextListener = this.runtime.addContextStateListener(() => {
       const audioState = useAudioStore.getState().status;
       if (
         this.runtime.getContextState() === "suspended" &&
         (audioState === "playing" || audioState === "counting-in")
       ) {
+        if (this.activeGuidedPractice?.mode === "metronome") {
+          this.runtime.pauseTransport();
+          this.metronomeScheduler?.pause();
+          this.instruments?.stop();
+        }
         useAudioStore.getState().setStatus("suspended");
       }
     });
@@ -293,6 +376,23 @@ export class AudioEngine {
 
   private isLifecycleCurrent(generation: number): boolean {
     return generation === this.lifecycleGeneration;
+  }
+
+  updateMetronome(configuration: MetronomeConfiguration): void {
+    if (this.activeGuidedPractice?.mode !== "metronome") return;
+    this.metronomeScheduler?.update(configuration);
+    this.activeGuidedPractice = {
+      mode: "metronome",
+      metronome: structuredClone(configuration),
+    };
+  }
+
+  /** Register without initializing audio. Consumers must discard an epoch when cancelled. */
+  subscribeMetronomeTiming(
+    listener: (event: MetronomeTimingEvent) => void,
+  ): () => void {
+    this.metronomeTimingListeners.add(listener);
+    return () => this.metronomeTimingListeners.delete(listener);
   }
 }
 

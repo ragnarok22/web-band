@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createDefaultMetronomeConfiguration } from "@/lib/metronome";
 
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { basicRockPattern } from "@/data/patterns";
@@ -125,6 +126,7 @@ function createBackup(): BackupEnvelope {
       practiceSessions: [createSession()],
       settings: {
         guidedPractice: {
+          metronome: createDefaultMetronomeConfiguration(),
           chordTrainer: {
             progression: structuredClone(gDEmCProgression),
             repeat: true,
@@ -146,7 +148,7 @@ function createBackup(): BackupEnvelope {
       },
     },
     exportedAt: updatedAt,
-    version: 4,
+    version: 5,
   };
 }
 
@@ -266,7 +268,7 @@ describe("persistence validation", () => {
     expect(
       validateBackupEnvelope({ ...backup, app: "other-app" }).success,
     ).toBe(false);
-    expect(validateBackupEnvelope({ ...backup, version: 5 }).success).toBe(
+    expect(validateBackupEnvelope({ ...backup, version: 6 }).success).toBe(
       false,
     );
     expect(

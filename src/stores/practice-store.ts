@@ -86,10 +86,14 @@ export const usePracticeStore = create<PracticeStore>((set, get) => {
       update({
         bpm: configuration.bpm,
         countInMeasures: configuration.countInMeasures,
-        fillFrequency: configuration.fillFrequency,
-        humanization: configuration.humanization,
-        selectedPatternId: configuration.patternId,
-        swing: configuration.swing,
+        ...(configuration.patternId === undefined
+          ? {}
+          : {
+              fillFrequency: configuration.fillFrequency,
+              humanization: configuration.humanization,
+              selectedPatternId: configuration.patternId,
+              swing: configuration.swing,
+            }),
       });
     },
     hasHydrated: false,

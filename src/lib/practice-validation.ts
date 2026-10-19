@@ -1,5 +1,6 @@
 import { builtInChordProgressions } from "@/data/chord-progressions";
 import { MAX_BPM, MIN_BPM } from "@/lib/musical-time";
+import { isMetronomeConfiguration } from "@/lib/metronome-validation";
 import { isCanonicalUtcIsoTimestamp } from "@/lib/timestamp-validation";
 import type {
   CustomChordProgression,
@@ -25,6 +26,7 @@ const practiceModes = new Set<PracticeMode>([
   "tempoTrainer",
   "chords",
   "strumming",
+  "metronome",
 ]);
 
 const strumActions = new Set<StrumAction>([
@@ -358,6 +360,13 @@ export function validateGuidedPracticeConfiguration(
     case "strumming":
       nestedResult = validateStrummingPattern(value.strummingPattern);
       break;
+    case "metronome":
+      return {
+        success: isMetronomeConfiguration(value.metronome),
+        errors: isMetronomeConfiguration(value.metronome)
+          ? []
+          : ["Metronome configuration is invalid."],
+      };
   }
 
   return nestedResult.success
@@ -421,15 +430,25 @@ export function validatePracticePresetConfiguration(
     errors.push("Sound character is a global setting, not a practice preset.");
   }
 
-  if (!hasBoundedText(value.patternId, MAX_ID_LENGTH))
+  const metronome =
+    isRecord(value.guidedPractice) && value.guidedPractice.mode === "metronome";
+  if (
+    metronome &&
+    ["patternId", "swing", "humanization", "fillFrequency"].some((key) =>
+      Object.hasOwn(value, key),
+    )
+  )
+    errors.push("Metronome presets must not contain drum configuration.");
+  if (!metronome && !hasBoundedText(value.patternId, MAX_ID_LENGTH))
     errors.push("Practice preset pattern ID is invalid.");
   if (!isBpm(value.bpm)) errors.push("Practice preset BPM is invalid.");
   if (!isCountInMeasures(value.countInMeasures))
     errors.push("Practice preset count-in is invalid.");
-  if (!isSwing(value.swing)) errors.push("Practice preset swing is invalid.");
-  if (!isUnit(value.humanization))
+  if (!metronome && !isSwing(value.swing))
+    errors.push("Practice preset swing is invalid.");
+  if (!metronome && !isUnit(value.humanization))
     errors.push("Practice preset humanization is invalid.");
-  if (!isFillFrequency(value.fillFrequency))
+  if (!metronome && !isFillFrequency(value.fillFrequency))
     errors.push("Practice preset fill frequency is invalid.");
   if (!validateGuidedPracticeConfiguration(value.guidedPractice).success)
     errors.push("Practice preset guided practice configuration is invalid.");

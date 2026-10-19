@@ -15,6 +15,7 @@ import type { AudioEngineStatus } from "@/types/audio";
 
 interface TransportControlsProps {
   isFinishing?: boolean;
+  finishWithFill?: boolean;
   onFinish: () => void;
   onPause: () => void;
   onPlay: () => void;
@@ -25,6 +26,7 @@ interface TransportControlsProps {
 
 export function TransportControls({
   isFinishing = false,
+  finishWithFill = true,
   onFinish,
   onPause,
   onPlay,
@@ -38,8 +40,8 @@ export function TransportControls({
   const isRunning = status === "playing" || status === "counting-in";
   const canStop =
     isBusy || isRunning || status === "paused" || status === "suspended";
-  const action = getPlaybackAction(status, isFinishing);
-  const ActionIcon = isRunning ? Flag : Play;
+  const action = getPlaybackAction(status, isFinishing, finishWithFill);
+  const runningAction = finishWithFill ? onFinish : onPause;
   const stopHint = canStop
     ? "Stop immediately (Esc)."
     : "Start playback to enable Stop.";
@@ -74,7 +76,7 @@ export function TransportControls({
         title={playHint}
         className="play-control bg-primary text-accent-ink hover:bg-accent-strong h-12 min-w-28 rounded-xl px-4 font-extrabold disabled:opacity-50"
         disabled={playDisabled || isBusy || (isRunning && isFinishing)}
-        onClick={isRunning ? onFinish : onPlay}
+        onClick={isRunning ? runningAction : onPlay}
         type="button"
       >
         <m.span
@@ -86,24 +88,29 @@ export function TransportControls({
           key={action.label}
           transition={motionTransition(reducedMotion, 0.1)}
         >
-          <ActionIcon aria-hidden="true" className="size-5 fill-current" />
+          <PlaybackActionIcon
+            isRunning={isRunning}
+            finishWithFill={finishWithFill}
+          />
           {action.caption}
         </m.span>
       </Button>
 
-      <Button
-        variant="outline"
-        size="icon"
-        aria-label="Pause playback"
-        aria-describedby={`${descriptionId}-pause`}
-        title={pauseHint}
-        className="text-foreground disabled:text-muted-foreground size-11 rounded-xl disabled:opacity-35"
-        disabled={!isRunning}
-        onClick={onPause}
-        type="button"
-      >
-        <Pause aria-hidden="true" className="size-5 fill-current" />
-      </Button>
+      {finishWithFill ? (
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Pause playback"
+          aria-describedby={`${descriptionId}-pause`}
+          title={pauseHint}
+          className="text-foreground disabled:text-muted-foreground size-11 rounded-xl disabled:opacity-35"
+          disabled={!isRunning}
+          onClick={onPause}
+          type="button"
+        >
+          <Pause aria-hidden="true" className="size-5 fill-current" />
+        </Button>
+      ) : null}
       <span className="sr-only" id={`${descriptionId}-stop`}>
         {stopHint}
       </span>
@@ -125,8 +132,32 @@ function getPauseHint(status: AudioEngineStatus): string {
   return "Start playback to enable Pause.";
 }
 
-function getPlaybackAction(status: AudioEngineStatus, isFinishing: boolean) {
+function PlaybackActionIcon({
+  isRunning,
+  finishWithFill,
+}: {
+  isRunning: boolean;
+  finishWithFill: boolean;
+}) {
+  if (!isRunning)
+    return <Play aria-hidden="true" className="size-5 fill-current" />;
+  if (finishWithFill)
+    return <Flag aria-hidden="true" className="size-5 fill-current" />;
+  return <Pause aria-hidden="true" className="size-5 fill-current" />;
+}
+
+function getPlaybackAction(
+  status: AudioEngineStatus,
+  isFinishing: boolean,
+  finishWithFill: boolean,
+) {
   if (status === "playing" || status === "counting-in") {
+    if (!finishWithFill)
+      return {
+        label: "Pause playback",
+        caption: "Pause",
+        description: "Pause and keep your position (Space).",
+      };
     return {
       label: isFinishing ? "Finishing after fill" : "Finish with fill",
       caption: "Finish",

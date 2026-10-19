@@ -213,6 +213,7 @@ describe("backup service", () => {
     };
     delete legacy.data.preferences;
     const legacySettings = legacy.data.settings as Record<string, unknown>;
+    delete (legacySettings.guidedPractice as Record<string, unknown>).metronome;
     legacySettings.practice = legacyPractice;
     const deps = dependencies();
     const service = new BackupService(deps);
@@ -251,7 +252,7 @@ describe("backup service", () => {
       "refresh",
     ]);
     expect(deps.downloadEnvelope).toHaveBeenCalledWith(
-      expect.objectContaining({ app: "web-band", version: 4 }),
+      expect.objectContaining({ app: "web-band", version: 5 }),
     );
   });
 

@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { guidanceTimeline } from "@/audio/guidance-timeline";
+import { metronomeTimeline } from "@/audio/metronome-timeline";
+import { getSubdivisionLabel } from "@/lib/metronome";
+import type { MetronomeConfiguration } from "@/types/practice";
 import { builtInPatterns, getPatternById } from "@/data/patterns";
 import { getBuiltInStrummingPattern } from "@/data/strumming-patterns";
 import {
@@ -100,6 +103,7 @@ export function usePracticeController() {
   const swing = usePracticeStore((state) => state.swing);
   const wakeLockEnabled = usePracticeStore((state) => state.wakeLockEnabled);
   const mode = useGuidedPracticeStore((state) => state.mode);
+  const metronome = useGuidedPracticeStore((state) => state.metronome);
   const guidedPracticeHydrated = useGuidedPracticeStore(
     (state) => state.isHydrated,
   );
@@ -155,18 +159,22 @@ export function usePracticeController() {
   const guidedPractice = getGuidedPracticeConfiguration({
     chordTrainer,
     mode,
+    metronome,
     strummingPattern,
     tempoTrainer,
   });
-  const presetConfiguration: PracticePresetConfiguration = {
-    bpm,
-    countInMeasures,
-    fillFrequency,
-    guidedPractice,
-    humanization,
-    patternId: pattern.id,
-    swing,
-  };
+  const presetConfiguration: PracticePresetConfiguration =
+    guidedPractice.mode === "metronome"
+      ? { bpm, countInMeasures, guidedPractice }
+      : {
+          bpm,
+          countInMeasures,
+          fillFrequency,
+          guidedPractice,
+          humanization,
+          patternId: pattern.id,
+          swing,
+        };
   const loadedPresetName =
     loadedPreset &&
     arePracticePresetConfigurationsEqual(
@@ -177,6 +185,8 @@ export function usePracticeController() {
       : null;
   const elapsedSeconds = usePracticeTimer(status);
   const wakeLockStatus = useWakeLock(wakeLockEnabled, status);
+  const timeSignature =
+    mode === "metronome" ? metronome.timeSignature : pattern.timeSignature;
 
   usePracticeHistoryRecorder({
     bpm,
@@ -197,6 +207,24 @@ export function usePracticeController() {
       getAudioEngine().setBpm(nextBpm);
     }
     return nextBpm;
+  }
+
+  function changeMetronome(configuration: MetronomeConfiguration): void {
+    if (!isReady || status === "initializing") return;
+    if (
+      active &&
+      (configuration.timeSignature.numerator !==
+        metronome.timeSignature.numerator ||
+        configuration.timeSignature.denominator !==
+          metronome.timeSignature.denominator ||
+        configuration.trainingMode !== metronome.trainingMode ||
+        configuration.measuresPerStage !== metronome.measuresPerStage ||
+        configuration.endBehavior !== metronome.endBehavior)
+    )
+      return;
+    useGuidedPracticeStore.getState().setMetronomeConfiguration(configuration);
+    if (active && mode === "metronome")
+      getAudioEngine().updateMetronome(configuration);
   }
 
   function changeTrainerBpm(value: number): number | null {
@@ -286,6 +314,29 @@ export function usePracticeController() {
         trainerTargetAnnouncedRef.current = false;
       }
       previousTrainerBpmRef.current = currentBpm;
+    });
+  }, []);
+
+  useEffect(() => {
+    let previous: string | null = null;
+    return metronomeTimeline.subscribe((frame) => {
+      if (!frame || frame.phase === "count-in") {
+        previous = null;
+        return;
+      }
+      const key = `${frame.stage}:${frame.subdivision}`;
+      if (key === previous) return;
+      previous = key;
+      const config = useGuidedPracticeStore.getState().metronome;
+      const label = getSubdivisionLabel(
+        frame.subdivision,
+        config.timeSignature,
+      );
+      setPracticeAnnouncement(
+        config.trainingMode === "progressive"
+          ? `Stage ${frame.stage + 1} of 4: ${label}.`
+          : `Metronome: ${label}.`,
+      );
     });
   }, []);
 
@@ -384,26 +435,36 @@ export function usePracticeController() {
       return;
     }
 
-    markRecent(pattern.id);
+    if (guidedPractice.mode !== "metronome") markRecent(pattern.id);
     try {
-      await getAudioEngine().play({
-        bpm,
-        countInMeasures,
-        fillFrequency,
-        guidedPractice,
-        humanization,
-        masterVolume: masterMuted ? 0 : masterVolume,
-        mixer,
-        pattern,
-        soundCharacter,
-        swing,
-      });
+      await getAudioEngine().play(
+        guidedPractice.mode === "metronome"
+          ? {
+              bpm,
+              countInMeasures,
+              guidedPractice,
+              masterVolume: masterMuted ? 0 : masterVolume,
+            }
+          : {
+              bpm,
+              countInMeasures,
+              fillFrequency,
+              guidedPractice,
+              humanization,
+              masterVolume: masterMuted ? 0 : masterVolume,
+              mixer,
+              pattern,
+              soundCharacter,
+              swing,
+            },
+      );
     } catch {
       // The engine records and exposes a user-facing error through the audio store.
     }
   }
 
   function changePattern(patternId: string): void {
+    if (mode === "metronome") return;
     const nextPattern = patterns.find(
       (candidate) => candidate.id === patternId,
     );
@@ -446,6 +507,7 @@ export function usePracticeController() {
   }
 
   function changePatternByOffset(direction: -1 | 1): void {
+    if (mode === "metronome") return;
     if (patterns.length < 2) return;
     const selectedIndex = patterns.findIndex(
       ({ id }) => id === (pendingPatternId ?? pattern.id),
@@ -465,6 +527,24 @@ export function usePracticeController() {
       throw new Error(
         `${preset.name} has an invalid practice configuration: ${validation.errors.join(" ")}`,
       );
+    }
+
+    if (preset.configuration.guidedPractice.mode === "metronome") {
+      if (active) getAudioEngine().stop();
+      usePracticeStore.getState().applyConfiguration(preset.configuration);
+      useGuidedPracticeStore
+        .getState()
+        .applyConfiguration(preset.configuration.guidedPractice);
+      setLoadedPreset({
+        configuration: structuredClone(preset.configuration),
+        name: preset.name,
+      });
+      setPendingPatternId(null);
+      setFinishRequested(false);
+      announcePractice(
+        `Loaded ${preset.name}: Metronome, ${preset.configuration.bpm} BPM.`,
+      );
+      return;
     }
 
     const nextPattern = patterns.find(
@@ -573,6 +653,7 @@ export function usePracticeController() {
     changeBpm,
     changeFillFrequency,
     changeHumanization,
+    changeMetronome,
     changeMasterVolume,
     changeMixerMuted,
     changeMixerSolo,
@@ -598,6 +679,7 @@ export function usePracticeController() {
     loadedPresetName,
     masterMuted,
     masterVolume,
+    metronome,
     mixer,
     pattern,
     practiceAnnouncement,
@@ -618,6 +700,7 @@ export function usePracticeController() {
     stop,
     swing,
     tapTempo,
+    timeSignature,
     toggleMasterMute,
     wakeLockEnabled,
     wakeLockStatus,

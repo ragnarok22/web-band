@@ -13,6 +13,9 @@ import {
   stateEntry,
 } from "@/components/motion/motion-presets";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
+import { MetronomeVisualizer } from "@/components/practice/metronome-visualizer";
+import { TransportControls } from "@/components/practice/transport-controls";
+import { getSubdivisionLabel, getMetronomeMeter } from "@/lib/metronome";
 import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
 import { PracticeNotices } from "@/components/practice/practice-notices";
 import { formatPracticeDuration } from "@/hooks/use-practice-timer";
@@ -42,6 +45,7 @@ interface FocusModeProps {
   onExit: () => void;
   onFinish: () => void;
   onPlay: () => void;
+  onPause: () => void;
   onStop: () => void;
   pattern: DrumPattern;
   showOnboarding: boolean;
@@ -64,6 +68,7 @@ export function FocusMode({
   onExit,
   onFinish,
   onPlay,
+  onPause,
   onStop,
   pattern,
   showOnboarding,
@@ -104,7 +109,7 @@ export function FocusMode({
             ref={headingRef}
             tabIndex={-1}
           >
-            {pattern.name}
+            {configuration.mode === "metronome" ? "Metronome" : pattern.name}
           </h1>
         </div>
         <Button
@@ -139,18 +144,47 @@ export function FocusMode({
           </div>
         </div>
 
-        <GuidedPracticeDisplay
-          configuration={configuration}
-          timeSignature={pattern.timeSignature}
-        />
-        <BeatVisualizer
-          countInMeasures={countInMeasures}
-          detail={visualSubdivisionDetail}
-          intensity={beatFlashIntensity}
-          pattern={pattern}
-          status={status}
-        />
+        {configuration.mode === "metronome" ? (
+          <>
+            <p className="text-muted-strong text-center text-sm">
+              {configuration.metronome.timeSignature.numerator}/
+              {configuration.metronome.timeSignature.denominator} ·{" "}
+              {getMetronomeMeter(configuration.metronome.timeSignature).compound
+                ? "Dotted-quarter BPM"
+                : "Quarter-note BPM"}{" "}
+              ·{" "}
+              {configuration.metronome.trainingMode === "manual"
+                ? getSubdivisionLabel(
+                    configuration.metronome.subdivision,
+                    configuration.metronome.timeSignature,
+                  )
+                : "Progressive subdivisions"}
+            </p>
+            <MetronomeVisualizer
+              configuration={configuration.metronome}
+              countInMeasures={countInMeasures}
+              status={status}
+            />
+          </>
+        ) : (
+          <>
+            <GuidedPracticeDisplay
+              configuration={configuration}
+              timeSignature={pattern.timeSignature}
+            />
+            <BeatVisualizer
+              countInMeasures={countInMeasures}
+              detail={visualSubdivisionDetail}
+              intensity={beatFlashIntensity}
+              pattern={pattern}
+              status={status}
+            />
+          </>
+        )}
         <PracticeNotices
+          practiceLabel={
+            configuration.mode === "metronome" ? "metronome" : undefined
+          }
           countInMeasures={countInMeasures}
           errorMessage={errorMessage}
           noticeMessage={historyNotice}
@@ -162,24 +196,38 @@ export function FocusMode({
           status={wakeLockStatus}
         />
 
-        <FocusPlayControl
-          isFinishing={isFinishing}
-          isReady={isReady}
-          onFinish={onFinish}
-          onPlay={onPlay}
-          reducedMotion={reducedMotion}
-          status={status}
-        />
-        <Button
-          variant="outline"
-          className="border-border bg-surface text-muted-strong hover:text-foreground mx-auto flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold disabled:opacity-35"
-          disabled={!canStop}
-          onClick={onStop}
-          type="button"
-        >
-          <Square aria-hidden="true" className="size-4 fill-current" />
-          Stop now
-        </Button>
+        {configuration.mode === "metronome" ? (
+          <TransportControls
+            finishWithFill={false}
+            onFinish={onStop}
+            onPause={onPause}
+            onPlay={onPlay}
+            onStop={onStop}
+            status={status}
+            playDisabled={!isReady}
+          />
+        ) : (
+          <>
+            <FocusPlayControl
+              isFinishing={isFinishing}
+              isReady={isReady}
+              onFinish={onFinish}
+              onPlay={onPlay}
+              reducedMotion={reducedMotion}
+              status={status}
+            />
+            <Button
+              variant="outline"
+              className="border-border bg-surface text-muted-strong hover:text-foreground mx-auto flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold disabled:opacity-35"
+              disabled={!canStop}
+              onClick={onStop}
+              type="button"
+            >
+              <Square aria-hidden="true" className="size-4 fill-current" />
+              Stop now
+            </Button>
+          </>
+        )}
       </div>
     </m.main>
   );

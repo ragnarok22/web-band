@@ -10,6 +10,7 @@ interface PracticeNoticesProps {
   noticeMessage?: string | null;
   onDismiss: () => void;
   showOnboarding: boolean;
+  practiceLabel?: string;
 }
 
 export function PracticeNotices({
@@ -18,6 +19,7 @@ export function PracticeNotices({
   noticeMessage = null,
   onDismiss,
   showOnboarding,
+  practiceLabel = "groove",
 }: PracticeNoticesProps) {
   return (
     <>
@@ -34,8 +36,8 @@ export function PracticeNotices({
             Sound begins after you press Play because browsers require a direct
             interaction.{" "}
             {countInMeasures === 0
-              ? "The groove starts immediately."
-              : `You will hear ${countInMeasures === 1 ? "one measure" : `${countInMeasures} measures`} of count-in, then the groove.`}
+              ? `The ${practiceLabel} starts immediately.`
+              : `You will hear ${countInMeasures === 1 ? "one measure" : `${countInMeasures} measures`} of count-in, then the ${practiceLabel}.`}
           </p>
           <Button
             variant="ghost"

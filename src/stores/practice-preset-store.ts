@@ -39,13 +39,20 @@ interface PracticePresetStore {
 
 function getCurrentConfiguration(): PracticePresetConfiguration {
   const practice = usePracticeStore.getState();
+  const guidedPractice = getGuidedPracticeConfiguration(
+    useGuidedPracticeStore.getState(),
+  );
+  if (guidedPractice.mode === "metronome")
+    return {
+      bpm: practice.bpm,
+      countInMeasures: practice.countInMeasures,
+      guidedPractice,
+    };
   return {
     bpm: practice.bpm,
     countInMeasures: practice.countInMeasures,
     fillFrequency: practice.fillFrequency,
-    guidedPractice: getGuidedPracticeConfiguration(
-      useGuidedPracticeStore.getState(),
-    ),
+    guidedPractice,
     humanization: practice.humanization,
     patternId: practice.selectedPatternId,
     swing: practice.swing,

@@ -1,12 +1,14 @@
 import { builtInPatterns } from "@/data/patterns";
 import type { PracticePresetConfiguration } from "@/types/persistence";
 import type { PracticeMode } from "@/types/practice";
+import { getSubdivisionLabel } from "@/lib/metronome";
 
 const modeLabels: Record<PracticeMode, string> = {
   chords: "Chords",
   drums: "Drums",
   strumming: "Strumming",
   tempoTrainer: "Tempo trainer",
+  metronome: "Metronome",
 };
 
 function titleCaseIdentifier(value: string): string {
@@ -39,9 +41,13 @@ export function getPracticePatternSummary(
     case "strumming":
       return guidedPractice.strummingPattern.name;
     case "tempoTrainer":
-      return `${getDrumPatternName(configuration.patternId)} / ${guidedPractice.tempoTrainer.startBpm}-${guidedPractice.tempoTrainer.endBpm} BPM`;
+      return `${getDrumPatternName(configuration.patternId!)} / ${guidedPractice.tempoTrainer.startBpm}-${guidedPractice.tempoTrainer.endBpm} BPM`;
     case "drums":
-      return getDrumPatternName(configuration.patternId);
+      return getDrumPatternName(configuration.patternId!);
+    case "metronome": {
+      const config = guidedPractice.metronome;
+      return `${config.timeSignature.numerator}/${config.timeSignature.denominator} / ${config.trainingMode === "progressive" ? "Progressive subdivisions" : getSubdivisionLabel(config.subdivision, config.timeSignature)}`;
+    }
   }
 }
 

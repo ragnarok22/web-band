@@ -23,6 +23,7 @@ function createProps(): ComponentProps<typeof FocusMode> {
     onExit: vi.fn(),
     onFinish: vi.fn(),
     onPlay: vi.fn(),
+    onPause: vi.fn(),
     onStop: vi.fn(),
     pattern: basicRockPattern,
     showOnboarding: false,

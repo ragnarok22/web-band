@@ -23,6 +23,29 @@ afterEach(() => {
 });
 
 describe("guided practice store", () => {
+  it("migrates version 1 without losing any guided configurations", () => {
+    const { metronome: defaults, ...legacy } =
+      createDefaultGuidedPracticeValues();
+    window.localStorage.setItem(
+      GUIDED_PRACTICE_STORAGE_KEY,
+      JSON.stringify({ ...legacy, mode: "chords", version: 1 }),
+    );
+    useGuidedPracticeStore.getState().hydrate();
+    const state = useGuidedPracticeStore.getState();
+    expect(state.metronome).toEqual(defaults);
+    expect(
+      JSON.stringify({
+        chordTrainer: state.chordTrainer,
+        mode: state.mode,
+        strummingPattern: state.strummingPattern,
+        tempoTrainer: state.tempoTrainer,
+      }),
+    ).toBe(JSON.stringify({ ...legacy, mode: "chords" }));
+    useGuidedPracticeStore.getState().setMode("metronome");
+    expect(
+      JSON.parse(window.localStorage.getItem(GUIDED_PRACTICE_STORAGE_KEY)!),
+    ).toMatchObject({ version: 2, mode: "metronome" });
+  });
   it("reports a failed normal preference write", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("blocked");
@@ -58,7 +81,7 @@ describe("guided practice store", () => {
       JSON.parse(
         window.localStorage.getItem(GUIDED_PRACTICE_STORAGE_KEY) ?? "null",
       ),
-    ).toMatchObject({ mode: "chords", version: 1 });
+    ).toMatchObject({ mode: "chords", version: 2 });
     unsubscribe();
   });
 
@@ -75,7 +98,7 @@ describe("guided practice store", () => {
     const persisted = JSON.parse(
       window.localStorage.getItem(GUIDED_PRACTICE_STORAGE_KEY) ?? "null",
     ) as { version?: number } | null;
-    expect(persisted?.version).toBe(1);
+    expect(persisted?.version).toBe(2);
 
     useGuidedPracticeStore.setState({
       ...createDefaultGuidedPracticeValues(),

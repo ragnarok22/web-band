@@ -8,6 +8,7 @@ import { TransportPanel } from "@/components/practice/transport-panel";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import type { usePracticeController } from "@/hooks/use-practice-controller";
+import { getMetronomeMeter } from "@/lib/metronome";
 
 export function PracticeSessionControls({
   practice,
@@ -15,8 +16,10 @@ export function PracticeSessionControls({
   practice: ReturnType<typeof usePracticeController>;
 }) {
   const tempoTrainer = practice.guidedPractice.mode === "tempoTrainer";
+  const metronome = practice.guidedPractice.mode === "metronome";
   return (
     <TransportPanel
+      finishWithFill={!metronome}
       isReady={practice.isReady}
       isFinishing={practice.isFinishing}
       onFinish={practice.finishWithFill}
@@ -30,7 +33,12 @@ export function PracticeSessionControls({
           errorMessage={practice.errorMessage}
           isReady={practice.isReady}
           status={practice.status}
-          timeSignature={practice.pattern.timeSignature}
+          timeSignature={practice.timeSignature}
+          pulsesPerMeasure={
+            metronome
+              ? getMetronomeMeter(practice.timeSignature).pulsesPerMeasure
+              : undefined
+          }
         />
       }
       footer={
@@ -51,7 +59,7 @@ export function PracticeSessionControls({
               disabled={!practice.isReady || practice.active}
               measures={practice.countInMeasures}
               onChange={practice.setCountInMeasures}
-              timeSignature={practice.pattern.timeSignature}
+              timeSignature={practice.timeSignature}
             />
           </div>
           <SessionToolbar
@@ -73,17 +81,28 @@ export function PracticeSessionControls({
           </p>
         </div>
       ) : (
-        <BpmControls
-          embedded
-          showTapTempo={false}
-          adjustmentStep={practice.bpmAdjustmentStep}
-          bpm={practice.bpm}
-          defaultBpm={practice.pattern.defaultBpm}
-          disabled={!practice.isReady}
-          onChange={practice.changeBpm}
-          onCommit={practice.announceBpm}
-          onTap={practice.tapTempo}
-        />
+        <div>
+          <BpmControls
+            embedded
+            showTapTempo={false}
+            adjustmentStep={practice.bpmAdjustmentStep}
+            bpm={practice.bpm}
+            defaultBpm={metronome ? 80 : practice.pattern.defaultBpm}
+            resetDescription={metronome ? "Reset to 80 BPM" : undefined}
+            disabled={!practice.isReady}
+            onChange={practice.changeBpm}
+            onCommit={practice.announceBpm}
+            onTap={practice.tapTempo}
+          />
+          {metronome ? (
+            <p className="text-muted-foreground mt-1 text-center text-[0.65rem]">
+              BPM ={" "}
+              {getMetronomeMeter(practice.timeSignature).compound
+                ? "dotted-quarter pulse"
+                : "quarter-note beat"}
+            </p>
+          ) : null}
+        </div>
       )}
     </TransportPanel>
   );

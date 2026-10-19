@@ -84,6 +84,27 @@ describe("Tone audio runtime", () => {
     expect(tone.clearTimeout).toHaveBeenCalledWith(7);
   });
 
+  it("preserves exact tuplet ticks and skips lost slots instead of catching up clicks", () => {
+    const runtime = new ToneAudioRuntime();
+    const callback = vi.fn();
+    runtime.scheduleRepeatTicks(callback, 16);
+    expect(tone.scheduleRepeat).toHaveBeenLastCalledWith(
+      expect.any(Function),
+      "16i",
+      "0i",
+    );
+    const scheduled = tone.scheduleRepeat.mock.calls[0]?.[0] as (
+      time: number,
+    ) => void;
+    for (const tick of [0, 16, 32, 64, 768]) {
+      tone.getTicksAtTime.mockReturnValue(tick);
+      scheduled(tick / 192);
+    }
+    expect(callback.mock.calls.map(([, tick]) => tick)).toEqual([
+      0, 16, 32, 64, 768,
+    ]);
+  });
+
   it("pauses and stops at the immediate audio time instead of lookahead time", () => {
     const runtime = new ToneAudioRuntime();
     const callback = vi.fn();

@@ -85,6 +85,27 @@ describe("playback status", () => {
     expect(screen.getByTestId("count-in-remaining")).toHaveTextContent("2");
   });
 
+  it("counts primary compound pulses for the independent metronome", () => {
+    render(
+      <PlaybackStatus
+        {...defaults}
+        pulsesPerMeasure={2}
+        timeSignature={{ numerator: 6, denominator: 8 }}
+        status="counting-in"
+      />,
+    );
+    expect(screen.getByTestId("count-in-remaining")).toHaveTextContent("4");
+    act(() =>
+      visualTimeline.emit({
+        phase: "count-in",
+        measure: 2,
+        beat: 1,
+        isAccent: false,
+      }),
+    );
+    expect(screen.getByTestId("count-in-remaining")).toHaveTextContent("1");
+  });
+
   it("keeps initialization and loading feedback visible", () => {
     const view = render(<PlaybackStatus {...defaults} status="initializing" />);
     expect(screen.getByTestId("transport-status")).toHaveTextContent(

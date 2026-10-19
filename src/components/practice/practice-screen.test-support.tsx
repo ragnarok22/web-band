@@ -2,6 +2,7 @@ import { screen } from "@testing-library/react";
 import type userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, vi } from "vitest";
 import { guidanceTimeline } from "@/audio/guidance-timeline";
+import { metronomeTimeline } from "@/audio/metronome-timeline";
 import { builtInPatterns } from "@/data/patterns";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { useAudioStore } from "@/stores/audio-store";
@@ -49,6 +50,7 @@ const engine = vi.hoisted(() => ({
   setMixer: vi.fn(),
   setSwing: vi.fn(),
   stop: vi.fn(),
+  updateMetronome: vi.fn(),
 }));
 
 export function createPreset(
@@ -79,6 +81,7 @@ export function setupPracticeScreenTests() {
   beforeEach(() => {
     vi.clearAllMocks();
     guidanceTimeline.reset();
+    metronomeTimeline.reset();
     useAudioStore.setState({ errorMessage: null, status: "not-initialized" });
     useStorageStore.setState({ preferenceWriteFailures: [] });
     useGuidedPracticeStore.setState({

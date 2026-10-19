@@ -78,6 +78,7 @@ export function getMostUsedPattern(
     MostUsedPattern & { latestSessionId: string; latestStartedAt: string }
   >();
   for (const session of sessions) {
+    if (session.practiceMode === "metronome") continue;
     const current = patterns.get(session.patternId);
     const hasNewerName =
       !current ||
@@ -113,6 +114,12 @@ export function getMostUsedPattern(
         patternName: leader.patternName,
       }
     : null;
+}
+
+export function getPracticeSessionTitle(session: PracticeSession): string {
+  return session.practiceMode === "metronome"
+    ? "Metronome"
+    : session.patternName;
 }
 
 export function getMostUsedBpmRange(

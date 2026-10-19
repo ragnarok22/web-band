@@ -8,7 +8,11 @@ import { useHistorySettingsStore } from "@/stores/history-settings-store";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import type { AudioEngineStatus } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
-import type { PracticeSession } from "@/types/persistence";
+import type {
+  PracticeSession,
+  PatternPracticeSession,
+  MetronomePracticeSession,
+} from "@/types/persistence";
 import type { GuidedPracticeConfiguration } from "@/types/practice";
 
 interface PracticeHistoryRecorderOptions {
@@ -25,15 +29,20 @@ interface ActiveSession {
   activeSince: number | null;
   endingBpm: number;
   id: string;
-  metadata: Pick<
-    PracticeSession,
-    | "category"
-    | "patternId"
-    | "patternName"
-    | "practiceMode"
-    | "startingBpm"
-    | "timeSignature"
-  >;
+  metadata:
+    | Pick<
+        PatternPracticeSession,
+        | "category"
+        | "patternId"
+        | "patternName"
+        | "practiceMode"
+        | "startingBpm"
+        | "timeSignature"
+      >
+    | Pick<
+        MetronomePracticeSession,
+        "practiceMode" | "startingBpm" | "timeSignature" | "metronome"
+      >;
   startedAt: string;
 }
 
@@ -154,12 +163,24 @@ export function usePracticeHistoryRecorder({
           endingBpm: startingBpm,
           id: crypto.randomUUID(),
           metadata: {
-            category: pattern.category,
-            patternId: pattern.id,
-            patternName: pattern.name,
-            practiceMode: guidedPractice.mode,
-            startingBpm,
-            timeSignature: `${pattern.timeSignature.numerator}/${pattern.timeSignature.denominator}`,
+            ...(guidedPractice.mode === "metronome"
+              ? {
+                  practiceMode: "metronome" as const,
+                  startingBpm,
+                  timeSignature: `${guidedPractice.metronome.timeSignature.numerator}/${guidedPractice.metronome.timeSignature.denominator}`,
+                  metronome: {
+                    trainingMode: guidedPractice.metronome.trainingMode,
+                    subdivision: guidedPractice.metronome.subdivision,
+                  },
+                }
+              : {
+                  category: pattern.category,
+                  patternId: pattern.id,
+                  patternName: pattern.name,
+                  practiceMode: guidedPractice.mode,
+                  startingBpm,
+                  timeSignature: `${pattern.timeSignature.numerator}/${pattern.timeSignature.denominator}`,
+                }),
           },
           startedAt: new Date().toISOString(),
         };

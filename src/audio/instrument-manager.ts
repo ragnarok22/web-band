@@ -23,11 +23,13 @@ import type {
   VoiceMap,
 } from "@/types/audio";
 import type { DrumInstrument } from "@/types/pattern";
+import type { MetronomeClickKind } from "@/types/practice";
 
 export class InstrumentManager {
   private readonly buses: AudioNode[] = [];
   private readonly clickBus: GainNode;
   private readonly clickVoice: DrumVoice;
+  private readonly metronomeVoice: ClickVoice;
   private readonly compressor: DynamicsCompressorNode;
   private readonly groupBuses: Record<MixerGroup, GainNode>;
   private readonly masterGain: GainNode;
@@ -67,6 +69,8 @@ export class InstrumentManager {
       bus.connect(this.masterGain);
     }
     this.masterGain.connect(this.compressor).connect(context.destination);
+    // Neutral synthesized click, independent of drum channel mutes, solos and kit character.
+    this.metronomeVoice = new ClickVoice(context, this.masterGain);
     this.buses.push(
       ...Object.values(this.groupBuses),
       this.clickBus,
@@ -151,6 +155,14 @@ export class InstrumentManager {
     this.clickVoice.trigger(time, isDownbeat ? 1 : 0.62);
   }
 
+  triggerMetronome(
+    time: number,
+    kind: MetronomeClickKind,
+    velocity: number,
+  ): void {
+    if (velocity > 0) this.metronomeVoice.trigger(time, velocity, kind);
+  }
+
   setMasterVolume(volume: number, time = this.context.currentTime): void {
     this.masterGain.gain.cancelScheduledValues(time);
     this.masterGain.gain.setTargetAtTime(this.toGain(volume), time, 0.015);
@@ -186,6 +198,7 @@ export class InstrumentManager {
       voice?.stop?.();
     }
     this.clickVoice.stop?.();
+    this.metronomeVoice.stop();
   }
 
   dispose(): void {
@@ -194,6 +207,7 @@ export class InstrumentManager {
       voice?.dispose();
     }
     this.clickVoice.dispose();
+    this.metronomeVoice.dispose();
     this.masterGain.disconnect();
     for (const bus of this.buses) {
       bus.disconnect();

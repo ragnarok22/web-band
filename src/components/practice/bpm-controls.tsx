@@ -29,6 +29,7 @@ interface BpmControlsProps {
   adjustmentStep?: BpmAdjustmentStep;
   bpm: number;
   defaultBpm: number;
+  resetDescription?: string;
   disabled?: boolean;
   onChange: (bpm: number) => void;
   onCommit?: (bpm: number) => void;
@@ -41,6 +42,7 @@ export function BpmControls({
   adjustmentStep = 1,
   bpm,
   defaultBpm,
+  resetDescription = "Reset to pattern default",
   disabled = false,
   onChange,
   onCommit,
@@ -68,6 +70,7 @@ export function BpmControls({
   const reset = (
     <BpmReset
       defaultBpm={defaultBpm}
+      resetDescription={resetDescription}
       disabled={disabled}
       embedded={embedded}
       onChange={changeAndCommit}
@@ -216,17 +219,18 @@ export function BpmControls({
 
 function BpmReset({
   defaultBpm,
+  resetDescription,
   disabled,
   embedded,
   onChange,
 }: Pick<
   BpmControlsProps,
-  "defaultBpm" | "disabled" | "embedded" | "onChange"
+  "defaultBpm" | "resetDescription" | "disabled" | "embedded" | "onChange"
 >) {
   return (
     <Button
       aria-label={`Reset tempo to ${defaultBpm} BPM`}
-      title="Reset to pattern default"
+      title={resetDescription}
       variant="ghost"
       className={cn("min-h-11 gap-2 px-2", embedded && "ml-auto")}
       disabled={disabled}

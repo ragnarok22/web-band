@@ -34,7 +34,10 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await page.getByRole("button", { name: "Practice" }).click();
+  // The compact player keeps its onboarding tip in Focus, not the main workspace.
+  await page.getByRole("button", { name: "Focus", exact: true }).click();
   await page.getByRole("button", { name: "Dismiss audio tip" }).click();
+  await page.getByRole("button", { name: "Exit focus" }).click();
   await navigate(page, "Settings");
   await expect(
     page.getByRole("heading", { name: "Settings, kept simple." }),
@@ -90,7 +93,7 @@ test("exports, clears, and restores a custom pattern backup", async ({
   };
   const customPatternId = backupJson.data.customPatterns[0]?.id;
   expect(customPatternId).toBeTruthy();
-  expect(backupJson.version).toBe(4);
+  expect(backupJson.version).toBe(5);
   expect(backupJson.data.preferences).toMatchObject({
     appearance: {
       beatFlashIntensity: "strong",
@@ -193,9 +196,11 @@ test("exports, clears, and restores a custom pattern backup", async ({
   );
 
   await navigate(page, "Practice");
+  await page.getByRole("button", { name: "Focus", exact: true }).click();
   await expect(page.getByRole("note")).toContainText(
     "Sound begins after you press Play",
   );
+  await page.getByRole("button", { name: "Exit focus" }).click();
   await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await expect(
@@ -242,6 +247,7 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
   await navigate(page, "Practice");
+  await page.getByRole("button", { name: "Focus", exact: true }).click();
   await expect(page.getByRole("note")).toHaveCount(0);
   expect(browserErrors).toEqual([]);
 });

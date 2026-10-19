@@ -33,9 +33,9 @@ export function validatePracticeSession(
       "startedAt",
       "endedAt",
       "durationSeconds",
-      "patternId",
-      "patternName",
-      "category",
+      ...(value.practiceMode === "metronome"
+        ? ["metronome"]
+        : ["patternId", "patternName", "category"]),
       "startingBpm",
       "endingBpm",
       "timeSignature",
@@ -72,11 +72,31 @@ export function validatePracticeSession(
   ) {
     errors.push("Practice session duration cannot exceed elapsed time.");
   }
-  if (!hasBoundedText(value.patternId, MAX_ID_LENGTH))
+  if (value.practiceMode === "metronome") {
+    if (
+      !isRecord(value.metronome) ||
+      !hasExactKeys(value.metronome, ["trainingMode", "subdivision"]) ||
+      !["manual", "progressive"].includes(
+        value.metronome.trainingMode as string,
+      ) ||
+      ![1, 2, 3, 4].includes(value.metronome.subdivision as number)
+    )
+      errors.push("Practice session metronome details are invalid.");
+  }
+  if (
+    value.practiceMode !== "metronome" &&
+    !hasBoundedText(value.patternId, MAX_ID_LENGTH)
+  )
     errors.push("Practice session pattern ID is invalid.");
-  if (!hasBoundedText(value.patternName, MAX_NAME_LENGTH))
+  if (
+    value.practiceMode !== "metronome" &&
+    !hasBoundedText(value.patternName, MAX_NAME_LENGTH)
+  )
     errors.push("Practice session pattern name is invalid.");
-  if (!hasBoundedText(value.category, MAX_CATEGORY_LENGTH))
+  if (
+    value.practiceMode !== "metronome" &&
+    !hasBoundedText(value.category, MAX_CATEGORY_LENGTH)
+  )
     errors.push("Practice session category is invalid.");
   if (!isIntegerInRange(value.startingBpm, MIN_BPM, MAX_BPM))
     errors.push("Practice session starting BPM is invalid.");

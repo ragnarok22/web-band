@@ -20,11 +20,11 @@ for (const width of [320, 390, 640, 1024, 1280, 1440, 1920]) {
     const visualizer = page.getByRole("region", { name: "Beat visualization" });
     const originalWidth = (await visualizer.boundingBox())!.width;
     const modes = page.getByRole("radiogroup", { name: "Practice mode" });
-    await expect(modes.getByRole("radio")).toHaveCount(4);
+    await expect(modes.getByRole("radio")).toHaveCount(5);
     await expect(
-      page.getByRole("button", { name: "Metronome — Coming soon" }),
-    ).toBeDisabled();
-    for (const mode of ["Strumming", "Chords", "Tempo", "Drums"]) {
+      page.getByRole("radio", { name: "Metronome", exact: true }),
+    ).toBeEnabled();
+    for (const mode of ["Strumming", "Chords", "Tempo", "Metronome", "Drums"]) {
       await modes.getByText(mode, { exact: true }).click();
       await expect(
         modes.getByRole("radio", { name: mode, exact: true }),

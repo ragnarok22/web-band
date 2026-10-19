@@ -27,7 +27,7 @@ import type {
 } from "@/types/audio";
 import type { DrumPattern } from "@/types/pattern";
 import type { FillArrangement } from "@/types/fill";
-import type { GuidedPracticeConfiguration } from "@/types/practice";
+import type { PatternGuidedPracticeConfiguration } from "@/types/practice";
 
 const FLAM_DELAY_SECONDS = 0.03;
 const FLAM_VELOCITY_SCALE = 0.7;
@@ -36,7 +36,7 @@ export interface PatternSchedulerOptions {
   bpm: number;
   countInMeasures: CountInMeasures;
   fillFrequency: FillFrequency;
-  guidedPractice: GuidedPracticeConfiguration;
+  guidedPractice: PatternGuidedPracticeConfiguration;
   humanization: number;
   onPatternStarted: () => void;
   onTargetStop?: () => void;
@@ -542,7 +542,7 @@ export class PatternScheduler {
 
   private assertGuidedPatternCompatible(
     pattern: DrumPattern,
-    configuration: GuidedPracticeConfiguration,
+    configuration: PatternGuidedPracticeConfiguration,
   ): void {
     if (
       configuration.mode === "strumming" &&

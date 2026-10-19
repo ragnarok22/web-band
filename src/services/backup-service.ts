@@ -70,12 +70,16 @@ export interface BackupServiceDependencies {
   storage: BackupStorage;
 }
 
-function backupVersion(value: unknown): 1 | 2 | 3 | 4 | null {
+function backupVersion(value: unknown): 1 | 2 | 3 | 4 | 5 | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
   const version = (value as Record<string, unknown>).version;
-  return version === 1 || version === 2 || version === 3 || version === 4
+  return version === 1 ||
+    version === 2 ||
+    version === 3 ||
+    version === 4 ||
+    version === 5
     ? version
     : null;
 }
@@ -125,6 +129,7 @@ function getCurrentSettings(): BackupSettings {
   const history = useHistorySettingsStore.getState();
   return structuredClone({
     guidedPractice: {
+      metronome: guidedPractice.metronome,
       chordTrainer: guidedPractice.chordTrainer,
       mode: guidedPractice.mode,
       strummingPattern: guidedPractice.strummingPattern,
@@ -281,7 +286,10 @@ export class BackupService {
       issues.push("some app settings could not be saved for the next visit");
     }
     const shouldApplyPreferences =
-      sourceVersion === 3 || sourceVersion === 4 || mode === "replace";
+      sourceVersion === 3 ||
+      sourceVersion === 4 ||
+      sourceVersion === 5 ||
+      mode === "replace";
     let preferencesPersisted = true;
     if (shouldApplyPreferences) {
       try {
