@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { AlertTriangle, Download, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -304,7 +305,7 @@ export function ServiceWorkerUpdate() {
         <p className="text-muted-strong text-sm leading-6">{content.message}</p>
       </div>
       {content.action ? (
-        <button
+        <Button
           className="bg-primary text-accent-ink hover:bg-accent-strong min-h-11 shrink-0 rounded-lg px-3 font-bold transition-colors disabled:opacity-50"
           disabled={isPending}
           onClick={() => {
@@ -326,7 +327,7 @@ export function ServiceWorkerUpdate() {
           type="button"
         >
           {content.actionLabel}
-        </button>
+        </Button>
       ) : null}
     </aside>
   );

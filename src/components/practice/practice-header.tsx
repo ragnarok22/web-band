@@ -11,14 +11,14 @@ export function PracticeHeader({ status }: PracticeHeaderProps) {
   return (
     <header className="border-border flex min-h-20 items-center justify-between border-b py-4">
       <div className="flex items-center gap-3">
-        <span className="border-accent/25 bg-accent/10 text-accent flex size-11 items-center justify-center rounded-xl border shadow-[inset_0_1px_rgba(255,255,255,0.08)]">
+        <span className="border-primary/25 bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl border shadow-[inset_0_1px_rgba(255,255,255,0.08)]">
           <Drum aria-hidden="true" className="size-6" />
         </span>
         <div>
           <p className="text-foreground text-lg leading-tight font-extrabold tracking-[-0.03em]">
             Web Band
           </p>
-          <p className="text-muted text-xs font-semibold tracking-[0.12em] uppercase">
+          <p className="text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase">
             Practice room
           </p>
         </div>

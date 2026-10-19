@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { CircleAlert, RotateCcw } from "lucide-react";
 import { Component, type ErrorInfo, Fragment, type ReactNode } from "react";
@@ -65,14 +66,14 @@ export class SectionErrorBoundary extends Component<
         <p className="text-muted-foreground mt-2 leading-6">
           Your saved local work is untouched. Try loading this section again.
         </p>
-        <button
+        <Button
           className="bg-primary text-accent-ink hover:bg-accent-strong mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg px-4 font-extrabold"
           onClick={this.retry}
           type="button"
         >
           <RotateCcw aria-hidden="true" className="size-4" />
           Try again
-        </button>
+        </Button>
       </section>
     );
 

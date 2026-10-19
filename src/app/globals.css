@@ -227,7 +227,7 @@ h6 {
 .tempo-range::-webkit-slider-runnable-track {
   height: 0.35rem;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent), var(--surface-elevated));
+  background: linear-gradient(90deg, var(--primary), var(--surface-elevated));
 }
 
 .tempo-range::-moz-range-track {
@@ -239,7 +239,7 @@ h6 {
 .tempo-range::-moz-range-progress {
   height: 0.35rem;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--primary);
 }
 
 .tempo-range::-webkit-slider-thumb {
@@ -249,7 +249,7 @@ h6 {
   appearance: none;
   border: 3px solid var(--surface);
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--primary);
   box-shadow: 0 0 0 1px var(--border-strong);
 }
 
@@ -258,7 +258,7 @@ h6 {
   height: 1rem;
   border: 3px solid var(--surface);
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--primary);
   box-shadow: 0 0 0 1px var(--border-strong);
 }
 

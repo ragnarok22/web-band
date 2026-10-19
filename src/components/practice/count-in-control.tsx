@@ -34,7 +34,7 @@ export function CountInControl({
         </span>
         <div>
           <p className="text-foreground font-bold">Count-in</p>
-          <p className="text-muted mt-1 text-xs leading-5">
+          <p className="text-muted-foreground mt-1 text-xs leading-5">
             {measures === 0
               ? "Start the groove immediately."
               : `${measures * timeSignature.numerator} synthesized clicks in ${timeSignature.numerator}/${timeSignature.denominator}.`}
@@ -53,7 +53,7 @@ export function CountInControl({
               type="radio"
               value={choice.value}
             />
-            <span className="border-border text-muted-strong peer-checked:border-secondary-accent/60 peer-checked:bg-secondary-accent/10 peer-checked:text-accent-strong peer-focus-visible:outline-accent flex min-h-11 cursor-pointer items-center justify-center rounded-lg border text-xs font-extrabold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
+            <span className="border-border text-muted-strong peer-checked:border-secondary-accent/60 peer-checked:bg-secondary-accent/10 peer-checked:text-accent-strong peer-focus-visible:outline-primary flex min-h-11 cursor-pointer items-center justify-center rounded-lg border text-xs font-extrabold peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
               {choice.label}
             </span>
           </label>

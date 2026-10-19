@@ -32,7 +32,7 @@ const difficulties: PatternDifficulty[] = [
   "advanced",
 ];
 const inputClass =
-  "border-border bg-background text-foreground focus:border-accent min-h-11 w-full rounded-xl border px-3 text-sm font-bold outline-none disabled:opacity-50";
+  "border-border bg-background text-foreground focus:border-primary min-h-11 w-full rounded-xl border px-3 text-sm font-bold outline-none disabled:opacity-50";
 
 function titleCase(value: string): string {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;

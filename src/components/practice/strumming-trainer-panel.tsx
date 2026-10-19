@@ -1,4 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import { AlertTriangle, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type MouseEvent, type Ref } from "react";
@@ -126,7 +128,7 @@ export function StrummingTrainerPanel({
       className="border-border bg-surface rounded-2xl border p-4 sm:p-5"
     >
       <div className="mb-4">
-        <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+        <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
           Right-hand rhythm
         </p>
         <h3
@@ -155,7 +157,7 @@ export function StrummingTrainerPanel({
       />
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <button
+        <Button variant="outline"
           className={buttonClass}
           disabled={controlsDisabled}
           onClick={(event) => openEditor("new", event)}
@@ -163,10 +165,10 @@ export function StrummingTrainerPanel({
         >
           <Plus aria-hidden="true" className="size-4" />
           New
-        </button>
+        </Button>
         {selectedCustom ? (
           <>
-            <button
+            <Button variant="outline"
               className={buttonClass}
               disabled={controlsDisabled}
               onClick={(event) => openEditor(selectedCustom, event)}
@@ -174,8 +176,8 @@ export function StrummingTrainerPanel({
             >
               <Pencil aria-hidden="true" className="size-4" />
               Edit
-            </button>
-            <button
+            </Button>
+            <Button variant="destructive"
               className={`${buttonClass} border-danger/30 text-danger`}
               disabled={controlsDisabled}
               onClick={() => setConfirmingDelete(true)}
@@ -184,7 +186,7 @@ export function StrummingTrainerPanel({
             >
               <Trash2 aria-hidden="true" className="size-4" />
               Delete
-            </button>
+            </Button>
           </>
         ) : null}
       </div>
@@ -214,7 +216,7 @@ export function StrummingTrainerPanel({
               <p className="text-foreground text-sm font-extrabold">
                 {availableSelected.name}
               </p>
-              <p className="text-muted mt-1 text-xs">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {availableSelected.subdivision}th-note grid - every action shown
               </p>
             </div>
@@ -319,10 +321,10 @@ function StrummingPatternSelect({
   return (
     <label className="text-muted-strong text-xs font-bold">
       Pattern for {timeSignature.numerator}/{timeSignature.denominator}
-      <select
+      <NativeSelect
         aria-describedby={warningId}
         aria-invalid={!availableSelected || !isCompatible}
-        className="border-border bg-surface-elevated text-foreground focus:border-accent mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
+        className="border-border bg-surface-elevated text-foreground focus:border-primary mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
         disabled={
           disabled || compatibleBuiltIns.length + compatibleCustom.length === 0
         }
@@ -357,7 +359,7 @@ function StrummingPatternSelect({
             ))}
           </optgroup>
         ) : null}
-      </select>
+      </NativeSelect>
     </label>
   );
 }

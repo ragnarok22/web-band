@@ -1,4 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 import { Copy, Heart, Pencil, Play, Square, Target } from "lucide-react";
 import Link from "next/link";
@@ -36,9 +38,9 @@ export function PatternCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.12em] uppercase">
-            <span className="border-primary/25 bg-primary/10 text-primary rounded-md border px-2 py-1">
+            <Badge variant="outline" className="border-primary/25 bg-primary/10 text-primary">
               {formatPatternCategory(pattern.category)}
-            </span>
+            </Badge>
             <span className="text-muted-foreground">{pattern.difficulty}</span>
             {!pattern.isBuiltIn ? (
               <span className="border-success/30 bg-success/10 text-success rounded-md border px-2 py-1">
@@ -54,7 +56,7 @@ export function PatternCard({
           {isCustomDrumPattern(pattern) ? (
             <PatternExportButton pattern={pattern} />
           ) : null}
-          <button
+          <Button variant="ghost" size="icon"
             aria-label={`${pattern.name} favorite`}
             aria-pressed={isFavorite}
             className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait disabled:opacity-50 ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
@@ -66,7 +68,7 @@ export function PatternCard({
               aria-hidden="true"
               className={`size-5 ${isFavorite ? "fill-current" : ""}`}
             />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -127,7 +129,7 @@ export function PatternCard({
           )}
           {pattern.isBuiltIn ? "Duplicate" : "Edit"}
         </Link>
-        <button
+        <Button variant="outline"
           aria-label={`${pattern.name} preview`}
           aria-pressed={isPreviewing}
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-extrabold transition-colors"
@@ -140,15 +142,15 @@ export function PatternCard({
             <Play aria-hidden="true" className="size-4 fill-current" />
           )}
           {isPreviewing ? "Stop" : "Preview"}
-        </button>
-        <button
+        </Button>
+        <Button
           className="bg-primary text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-extrabold transition-colors sm:col-span-1"
           onClick={onOpen}
           type="button"
         >
           <Target aria-hidden="true" className="size-4" />
           Practice
-        </button>
+        </Button>
       </div>
     </article>
   );

@@ -1,4 +1,5 @@
 import { Clock3, Gauge, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import type { PracticeSession } from "@/types/persistence";
 
@@ -74,14 +75,14 @@ export function HistorySessionCard({
             {bpm}
           </span>
         </div>
-        <button
+        <Button variant="ghost" size="icon"
           aria-label={`Delete ${session.patternName} session`}
           className="border-border text-muted-foreground hover:border-danger/40 hover:bg-danger/10 hover:text-danger flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors"
           onClick={() => onDelete(session)}
           type="button"
         >
           <Trash2 aria-hidden="true" className="size-4" />
-        </button>
+        </Button>
       </div>
     </article>
   );

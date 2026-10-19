@@ -1,4 +1,7 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { Copy, Heart, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type MouseEvent, type RefObject } from "react";
@@ -222,7 +225,7 @@ function ChordTrainerHeader({
   return (
     <div className="mb-4 flex items-start justify-between gap-3">
       <div>
-        <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+        <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
           Changes on cue
         </p>
         <h3
@@ -232,7 +235,7 @@ function ChordTrainerHeader({
           Chord trainer
         </h3>
       </div>
-      <button
+      <Button variant="ghost" size="icon"
         aria-label={`${progressionName} favorite`}
         aria-pressed={isFavorite}
         className={`${buttonClass} min-w-11 px-0`}
@@ -242,9 +245,9 @@ function ChordTrainerHeader({
       >
         <Heart
           aria-hidden="true"
-          className={`size-4 ${isFavorite ? "fill-accent text-accent" : ""}`}
+          className={`size-4 ${isFavorite ? "fill-primary text-primary" : ""}`}
         />
-      </button>
+      </Button>
     </div>
   );
 }
@@ -267,8 +270,8 @@ function ProgressionSelect({
   return (
     <label className="text-muted-strong text-xs font-bold">
       Progression
-      <select
-        className="border-border bg-surface-elevated text-foreground focus:border-accent mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
+      <NativeSelect
+        className="border-border bg-surface-elevated text-foreground focus:border-primary mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
         disabled={disabled}
         onChange={(event) => {
           const progression = [
@@ -301,7 +304,7 @@ function ProgressionSelect({
             ))}
           </optgroup>
         ) : null}
-      </select>
+      </NativeSelect>
     </label>
   );
 }
@@ -328,7 +331,7 @@ function ProgressionActions({
 }: ProgressionActionsProps) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      <button
+      <Button variant="outline"
         className={buttonClass}
         disabled={disabled}
         onClick={(event) => onOpenEditor("new", event)}
@@ -336,9 +339,9 @@ function ProgressionActions({
       >
         <Plus aria-hidden="true" className="size-4" />
         New
-      </button>
+      </Button>
       {availableSelected?.isBuiltIn ? (
-        <button
+        <Button variant="outline"
           className={buttonClass}
           disabled={disabled}
           onClick={onCopy}
@@ -346,10 +349,10 @@ function ProgressionActions({
         >
           <Copy aria-hidden="true" className="size-4" />
           Copy built-in
-        </button>
+        </Button>
       ) : availableSelected ? (
         <>
-          <button
+          <Button variant="outline"
             className={buttonClass}
             disabled={disabled}
             onClick={(event) => onOpenEditor(availableSelected, event)}
@@ -357,8 +360,8 @@ function ProgressionActions({
           >
             <Pencil aria-hidden="true" className="size-4" />
             Edit
-          </button>
-          <button
+          </Button>
+          <Button variant="destructive"
             className={`${buttonClass} border-danger/30 text-danger`}
             disabled={disabled}
             onClick={onRequestDelete}
@@ -367,7 +370,7 @@ function ProgressionActions({
           >
             <Trash2 aria-hidden="true" className="size-4" />
             Delete
-          </button>
+          </Button>
         </>
       ) : null}
     </div>
@@ -384,7 +387,7 @@ function ChordTrainerOptions({
       <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
         <input
           checked={configuration.repeat}
-          className="accent-accent size-5"
+          className="accent-primary size-5"
           disabled={disabled}
           onChange={(event) =>
             onChange({ ...configuration, repeat: event.target.checked })
@@ -396,7 +399,7 @@ function ChordTrainerOptions({
       <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
         <input
           checked={configuration.showCountdown}
-          className="accent-accent size-5"
+          className="accent-primary size-5"
           disabled={disabled}
           onChange={(event) =>
             onChange({
@@ -425,7 +428,7 @@ function ChordSequence({ progression }: ChordSequenceProps) {
           key={step.id}
         >
           {step.chord}
-          <span className="text-muted ml-2 text-[0.65rem] font-bold">
+          <span className="text-muted-foreground ml-2 text-[0.65rem] font-bold">
             {step.duration} {step.durationUnit}
           </span>
         </span>

@@ -52,13 +52,13 @@ export function BackupPreviewDialog({
       onClose={onClose}
     >
       <div className="p-5 sm:p-7">
-        <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+        <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
           Import preview
         </p>
         <h2 className="mt-2 text-2xl font-black" id={headingId}>
           Review backup
         </h2>
-        <p className="text-muted mt-3 text-sm leading-6">
+        <p className="text-muted-foreground mt-3 text-sm leading-6">
           Created{" "}
           <time dateTime={preview.exportedAt}>
             {backupTimestampFormatter.format(new Date(preview.exportedAt))} UTC
@@ -69,14 +69,16 @@ export function BackupPreviewDialog({
         <dl className="border-border bg-background/45 mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border sm:grid-cols-3">
           {Object.entries(countLabels).map(([key, label]) => (
             <div className="bg-surface-elevated/45 p-3" key={key}>
-              <dt className="text-muted text-xs leading-4">{label}</dt>
+              <dt className="text-muted-foreground text-xs leading-4">
+                {label}
+              </dt>
               <dd className="mt-1 font-mono text-lg font-bold tabular-nums">
                 {preview.counts[key as keyof typeof preview.counts]}
               </dd>
             </div>
           ))}
         </dl>
-        <p className="border-border bg-background/45 text-muted mt-3 rounded-xl border px-3 py-2 text-xs leading-5">
+        <p className="border-border bg-background/45 text-muted-foreground mt-3 rounded-xl border px-3 py-2 text-xs leading-5">
           {preview.sourceVersion >= 3
             ? "This backup also includes practice settings, appearance, recent patterns, and onboarding state. Imported settings and preferences replace the current values in both modes."
             : "This legacy backup includes practice settings but not appearance, recents, or onboarding state. Merge keeps your current app preferences; replace uses historical defaults."}
@@ -85,10 +87,10 @@ export function BackupPreviewDialog({
         <fieldset className="mt-6">
           <legend className="text-sm font-extrabold">Import behavior</legend>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <label className="border-border has-checked:border-accent has-checked:bg-accent/8 flex min-h-14 items-start gap-3 rounded-xl border p-3">
+            <label className="border-border has-checked:border-primary has-checked:bg-primary/8 flex min-h-14 items-start gap-3 rounded-xl border p-3">
               <input
                 checked={mode === "merge"}
-                className="mt-1 size-5 accent-[var(--accent)]"
+                className="mt-1 size-5 accent-[var(--primary)]"
                 disabled={isPending}
                 name="import-mode"
                 onChange={() => {
@@ -101,7 +103,7 @@ export function BackupPreviewDialog({
                 <strong className="block text-sm">
                   Merge with current data
                 </strong>
-                <span className="text-muted mt-1 block text-xs leading-4">
+                <span className="text-muted-foreground mt-1 block text-xs leading-4">
                   Matching IDs use the imported version.
                 </span>
               </span>
@@ -117,7 +119,7 @@ export function BackupPreviewDialog({
               />
               <span>
                 <strong className="block text-sm">Replace current data</strong>
-                <span className="text-muted mt-1 block text-xs leading-4">
+                <span className="text-muted-foreground mt-1 block text-xs leading-4">
                   A safety backup download is started before replacement.
                 </span>
               </span>

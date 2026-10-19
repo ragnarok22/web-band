@@ -1,4 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 import { Check, Copy, Heart, Pencil, Play, Trash2, X } from "lucide-react";
 import {
@@ -84,9 +86,9 @@ export function PracticePresetCard({
               <label className="sr-only" htmlFor={`rename-${preset.id}`}>
                 Rename {preset.name}
               </label>
-              <input
+              <Input
                 autoFocus
-                className="border-accent bg-background text-foreground min-h-11 w-full rounded-xl border px-3 text-base font-black outline-none"
+                className="border-primary bg-background text-foreground min-h-11 w-full rounded-xl border px-3 text-base font-black outline-none"
                 id={`rename-${preset.id}`}
                 maxLength={100}
                 onChange={(event) => {
@@ -102,7 +104,7 @@ export function PracticePresetCard({
                 </p>
               ) : null}
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <Button variant="ghost" size="icon"
                   className="border-border text-muted-strong hover:bg-surface-hover flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-extrabold"
                   disabled={isPending}
                   onClick={() => {
@@ -114,15 +116,15 @@ export function PracticePresetCard({
                 >
                   <X aria-hidden="true" className="size-4" />
                   Cancel
-                </button>
-                <button
-                  className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
+                </Button>
+                <Button variant="ghost" size="icon"
+                  className="bg-primary text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
                   disabled={isPending}
                   type="submit"
                 >
                   <Check aria-hidden="true" className="size-4" />
                   {pendingAction === "rename" ? "Saving…" : "Save name"}
-                </button>
+                </Button>
               </div>
             </form>
           ) : (
@@ -131,10 +133,10 @@ export function PracticePresetCard({
             </h3>
           )}
         </div>
-        <button
+        <Button variant="ghost" size="icon"
           aria-label={`${preset.name} favorite`}
           aria-pressed={preset.isFavorite}
-          className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${preset.isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
+          className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors ${preset.isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
           disabled={isPending}
           onClick={() => void runAction("favorite", onFavorite)}
           type="button"
@@ -143,12 +145,12 @@ export function PracticePresetCard({
             aria-hidden="true"
             className={`size-5 ${preset.isFavorite ? "fill-current" : ""}`}
           />
-        </button>
+        </Button>
       </div>
 
       <dl className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 text-sm">
         <div>
-          <dt className="text-muted text-[0.62rem] font-extrabold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-extrabold tracking-wider uppercase">
             Mode
           </dt>
           <dd className="text-muted-strong mt-1 font-bold">
@@ -156,7 +158,7 @@ export function PracticePresetCard({
           </dd>
         </div>
         <div>
-          <dt className="text-muted text-[0.62rem] font-extrabold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-extrabold tracking-wider uppercase">
             Tempo
           </dt>
           <dd className="text-foreground mt-1 font-black tabular-nums">
@@ -164,7 +166,7 @@ export function PracticePresetCard({
           </dd>
         </div>
         <div className="col-span-2 mt-2">
-          <dt className="text-muted text-[0.62rem] font-extrabold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-extrabold tracking-wider uppercase">
             Pattern
           </dt>
           <dd className="text-muted-strong mt-1 truncate font-bold">
@@ -184,7 +186,7 @@ export function PracticePresetCard({
             </p>
           ) : null}
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
+            <Button variant="outline"
               autoFocus
               className="border-border text-muted-strong hover:bg-surface-hover min-h-11 rounded-xl border px-3 text-sm font-extrabold"
               disabled={isPending}
@@ -195,8 +197,8 @@ export function PracticePresetCard({
               type="button"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button variant="destructive"
               aria-label={`Delete ${preset.name} permanently`}
               className="bg-danger text-background min-h-11 rounded-xl px-3 text-sm font-black"
               disabled={isPending}
@@ -217,21 +219,21 @@ export function PracticePresetCard({
               type="button"
             >
               {pendingAction === "delete" ? "Deleting…" : "Delete preset"}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <div className="mt-4 grid grid-cols-5 gap-2">
-          <button
+          <Button
             aria-label={`Load ${preset.name}`}
-            className="bg-accent text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
+            className="bg-primary text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
             disabled={isPending}
             onClick={() => void runAction("load", onLoad)}
             type="button"
           >
             <Play aria-hidden="true" className="size-4 fill-current" />
             {pendingAction === "load" ? "Loading…" : "Load"}
-          </button>
+          </Button>
           <CardAction
             disabled={isPending}
             label={`Rename ${preset.name}`}
@@ -283,15 +285,15 @@ function CardAction({
   onClick,
 }: CardActionProps) {
   return (
-    <button
+    <Button variant="outline"
       aria-label={label}
-      className="border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center rounded-xl border"
+      className="border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center rounded-xl border"
       disabled={disabled}
       onClick={onClick}
       ref={buttonRef}
       type="button"
     >
       {children}
-    </button>
+    </Button>
   );
 }

@@ -93,8 +93,8 @@ async function findUndersizedTargets(page: Page) {
       "#main-content button",
       "#main-content a[href]",
       "#main-content select",
-      '#main-content label:has(input[type="checkbox"])',
-      '#main-content label:has(input[type="radio"])',
+      '#main-content label:has([role="checkbox"], input[type="checkbox"])',
+      '#main-content label:has([role="radio"], input[type="radio"])',
     ].join(", "),
   );
 
@@ -201,7 +201,7 @@ test("skip navigation and primary navigation work from the keyboard", async ({
   await expect(page).toHaveURL(/\/patterns$/);
 });
 
-test("native dialog has a name, traps focus, and restores its trigger", async ({
+test("dialog has a name, traps focus, and restores its trigger", async ({
   page,
 }) => {
   await page.goto("/settings");
@@ -216,7 +216,7 @@ test("native dialog has a name, traps focus, and restores its trigger", async ({
   ).toBeDisabled();
 
   const results = await new AxeBuilder({ page })
-    .include("dialog[open]")
+    .include('[role="dialog"][data-open]')
     .analyze();
   expect(results.violations).toEqual([]);
 

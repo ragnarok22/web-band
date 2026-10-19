@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { Flag, Minimize2, Play, Square } from "lucide-react";
 import { m } from "framer-motion";
@@ -95,7 +96,7 @@ export function FocusMode({
     >
       <header className="mx-auto flex w-full max-w-5xl items-start justify-between gap-4">
         <div>
-          <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
+          <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
             Focus session
           </p>
           <h1
@@ -106,29 +107,29 @@ export function FocusMode({
             {pattern.name}
           </h1>
         </div>
-        <button
+        <Button variant="outline"
           className="border-border bg-surface text-muted-strong hover:text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
           onClick={onExit}
           type="button"
         >
           <Minimize2 aria-hidden="true" className="size-4" />
           Exit focus
-        </button>
+        </Button>
       </header>
 
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-6 py-8">
         <div className="grid grid-cols-2 gap-3">
           <div className="border-border bg-surface rounded-2xl border p-5 text-center">
-            <p className="text-muted text-xs font-extrabold tracking-[0.16em] uppercase">
+            <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
               Tempo
             </p>
             <p className="text-foreground mt-2 text-6xl font-black tracking-[-0.06em] tabular-nums sm:text-8xl">
               {displayedBpm}
             </p>
-            <p className="text-muted text-xs font-bold">BPM</p>
+            <p className="text-muted-foreground text-xs font-bold">BPM</p>
           </div>
           <div className="border-border bg-surface rounded-2xl border p-5 text-center">
-            <p className="text-muted text-xs font-extrabold tracking-[0.16em] uppercase">
+            <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
               Time
             </p>
             <p className="text-foreground mt-5 text-4xl font-black tabular-nums sm:text-6xl">
@@ -168,7 +169,7 @@ export function FocusMode({
           reducedMotion={reducedMotion}
           status={status}
         />
-        <button
+        <Button variant="outline"
           className="border-border bg-surface text-muted-strong hover:text-foreground mx-auto flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 text-sm font-extrabold disabled:opacity-35"
           disabled={!canStop}
           onClick={onStop}
@@ -176,7 +177,7 @@ export function FocusMode({
         >
           <Square aria-hidden="true" className="size-4 fill-current" />
           Stop now
-        </button>
+        </Button>
       </div>
     </m.main>
   );
@@ -203,8 +204,8 @@ function FocusPlayControl({
   }
 
   return (
-    <button
-      className="bg-accent text-accent-ink mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] disabled:opacity-50"
+    <Button
+      className="bg-primary text-accent-ink mx-auto flex min-h-20 w-full max-w-sm items-center justify-center gap-3 rounded-2xl text-xl font-black shadow-[0_18px_55px_var(--shadow)] disabled:opacity-50"
       disabled={
         (!isReady && !canResume) ||
         status === "initializing" ||
@@ -228,6 +229,6 @@ function FocusPlayControl({
         )}
         {transportLabel}
       </m.span>
-    </button>
+    </Button>
   );
 }

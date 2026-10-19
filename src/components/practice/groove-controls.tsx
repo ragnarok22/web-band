@@ -50,7 +50,7 @@ export function GrooveControls({
       className="border-border bg-surface grid gap-4 rounded-2xl border p-4 sm:p-5"
     >
       <div className="flex items-center gap-3">
-        <span className="bg-surface-elevated text-accent flex size-10 items-center justify-center rounded-lg">
+        <span className="bg-surface-elevated text-primary flex size-10 items-center justify-center rounded-lg">
           <SlidersHorizontal aria-hidden="true" className="size-5" />
         </span>
         <div>
@@ -60,7 +60,9 @@ export function GrooveControls({
           >
             Groove feel
           </h2>
-          <p className="text-muted text-xs">Shape the pocket, not the clock</p>
+          <p className="text-muted-foreground text-xs">
+            Shape the pocket, not the clock
+          </p>
         </div>
       </div>
 

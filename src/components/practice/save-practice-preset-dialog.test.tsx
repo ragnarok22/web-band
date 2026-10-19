@@ -1,8 +1,25 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState, type ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { SavePracticePresetDialog } from "@/components/practice/save-practice-preset-dialog";
+
+function ControlledDialog(
+  props: Omit<ComponentProps<typeof SavePracticePresetDialog>, "open">,
+) {
+  const [open, setOpen] = useState(true);
+  return (
+    <SavePracticePresetDialog
+      {...props}
+      open={open}
+      onClose={() => {
+        setOpen(false);
+        props.onClose();
+      }}
+    />
+  );
+}
 
 describe("save practice preset dialog", () => {
   it.each([
@@ -24,11 +41,10 @@ describe("save practice preset dialog", () => {
         .mockRejectedValueOnce(error)
         .mockResolvedValueOnce(true);
       render(
-        <SavePracticePresetDialog
+        <ControlledDialog
           errorMessage={null}
           onClose={onClose}
           onSave={onSave}
-          open
         />,
       );
       const dialog = screen.getByRole("dialog", {
@@ -43,17 +59,18 @@ describe("save practice preset dialog", () => {
       expect(save).toHaveTextContent("Save preset");
       expect(screen.getByRole("button", { name: "Cancel" })).toBeEnabled();
       expect(screen.getByRole("alert")).toHaveTextContent(message);
-      expect(dialog).toHaveAttribute("open");
+      expect(dialog).toBeVisible();
       expect(name).toHaveValue("  Warm-up  ");
       expect(onClose).not.toHaveBeenCalled();
       expect(onSave).toHaveBeenCalledWith("Warm-up");
 
       await user.click(save);
 
-      await waitFor(() => expect(dialog).not.toHaveAttribute("open"));
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+      );
       expect(onSave).toHaveBeenCalledTimes(2);
       expect(onClose).toHaveBeenCalledOnce();
-      expect(save).toBeEnabled();
     },
   );
 
@@ -70,11 +87,10 @@ describe("save practice preset dialog", () => {
       );
       const onClose = vi.fn();
       render(
-        <SavePracticePresetDialog
+        <ControlledDialog
           errorMessage={null}
           onClose={onClose}
           onSave={onSave}
-          open
         />,
       );
       const dialog = screen.getByRole("dialog", {
@@ -94,9 +110,15 @@ describe("save practice preset dialog", () => {
 
       await act(async () => finishSave(saved));
 
-      expect(save).toBeEnabled();
-      expect(save).toHaveTextContent("Save preset");
-      expect(dialog).toHaveProperty("open", !saved);
+      if (saved) {
+        await waitFor(() =>
+          expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+        );
+      } else {
+        expect(dialog).toBeVisible();
+        expect(save).toBeEnabled();
+        expect(save).toHaveTextContent("Save preset");
+      }
       expect(onClose).toHaveBeenCalledTimes(saved ? 1 : 0);
     },
   );

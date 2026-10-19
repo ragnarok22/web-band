@@ -91,10 +91,10 @@ describe("settings screen", () => {
 
     expect(
       screen.getByRole("checkbox", { name: "Reduce motion" }),
-    ).toBeDisabled();
+    ).toHaveAttribute("aria-disabled", "true");
     expect(
       screen.getByRole("checkbox", { name: "Save practice history" }),
-    ).toBeDisabled();
+    ).toHaveAttribute("aria-disabled", "true");
     expect(
       screen.getByRole("spinbutton", { name: "Minimum session duration" }),
     ).toBeDisabled();

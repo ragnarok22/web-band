@@ -8,7 +8,7 @@ const SettingsScreen = dynamic(
   () => import("./settings-screen").then((module) => module.SettingsScreen),
   {
     loading: () => (
-      <main className="text-muted flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
+      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
         Opening settings
       </main>
     ),

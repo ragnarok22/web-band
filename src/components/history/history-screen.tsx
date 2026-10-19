@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { ArrowRight, BookOpen, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -76,14 +77,14 @@ export function HistoryScreen() {
             </p>
           </div>
           {sessions.length > 0 ? (
-            <button
+            <Button variant="destructive"
               className="border-border text-muted-strong hover:border-danger/40 hover:text-danger flex min-h-11 items-center justify-center gap-2 self-start rounded-xl border px-4 text-sm font-extrabold transition-colors sm:self-auto"
               onClick={() => openConfirmation("all")}
               type="button"
             >
               <Trash2 aria-hidden="true" className="size-4" />
               Clear all history
-            </button>
+            </Button>
           ) : null}
         </div>
       </header>

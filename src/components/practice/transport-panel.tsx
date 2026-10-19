@@ -35,7 +35,7 @@ export function TransportPanel({
         status={status}
       />
       <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
-        <CircleDot aria-hidden="true" className="text-accent size-3" />
+        <CircleDot aria-hidden="true" className="text-primary size-3" />
         <span data-testid="transport-status">
           {isReady
             ? audioStatusCopy[status]

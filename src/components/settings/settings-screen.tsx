@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { RotateCcw, Settings2, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -77,14 +78,14 @@ export function SettingsScreen({
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-7 sm:py-12 lg:px-10 lg:py-16">
       <header className="border-border border-b pb-8 sm:pb-10">
-        <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.18em] uppercase">
+        <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.18em] uppercase">
           <Settings2 aria-hidden="true" className="size-4" />
           Device preferences
         </p>
         <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
           Settings, kept simple.
         </h1>
-        <p className="text-muted mt-4 max-w-2xl leading-7">
+        <p className="text-muted-foreground mt-4 max-w-2xl leading-7">
           Manage appearance, practice history, and data saved in this browser.
         </p>
       </header>
@@ -109,18 +110,18 @@ export function SettingsScreen({
           <h2 className="text-2xl font-black" id="reset-settings-heading">
             Reset settings
           </h2>
-          <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
+          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
             Return app preferences to their defaults without removing patterns,
             presets, favorites, or practice history.
           </p>
-          <button
+          <Button variant="outline"
             className="border-border text-foreground hover:bg-surface-hover mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
             onClick={resetSettings}
             type="button"
           >
             <RotateCcw aria-hidden="true" className="size-4" />
             Reset settings to defaults
-          </button>
+          </Button>
         </section>
 
         <section
@@ -130,12 +131,12 @@ export function SettingsScreen({
           <h2 className="text-2xl font-black" id="danger-heading">
             Delete local data
           </h2>
-          <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
+          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
             Remove only Web Band data and settings from this browser. Other site
             storage is left alone, and a backup download is started before
             deletion.
           </p>
-          <button
+          <Button variant="destructive"
             className="border-danger/45 text-danger mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
             onClick={() => {
               setDeleteError(null);
@@ -146,7 +147,7 @@ export function SettingsScreen({
           >
             <Trash2 aria-hidden="true" className="size-4" />
             Delete all local data
-          </button>
+          </Button>
         </section>
       </div>
 

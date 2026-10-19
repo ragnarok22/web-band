@@ -28,7 +28,7 @@ interface StrummingPatternEditorDialogProps {
 
 const actions: StrumAction[] = ["down", "up", "mute", "rest", "hold"];
 const inputClass =
-  "border-border bg-background text-foreground focus:border-accent min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45";
+  "border-border bg-background text-foreground focus:border-primary min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45";
 
 export function StrummingPatternEditorDialog({
   disabled = false,
@@ -79,7 +79,7 @@ export function StrummingPatternEditorDialog({
       <form onSubmit={(event) => void save(event)}>
         <header className="border-border bg-surface sticky top-0 z-10 flex items-center justify-between border-b p-4 sm:p-5">
           <div>
-            <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+            <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
               Right-hand pattern editor
             </p>
             <h2
@@ -94,7 +94,7 @@ export function StrummingPatternEditorDialog({
             size="icon"
             disabled={isSaving}
             aria-label="Close strumming pattern editor"
-            className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg"
+            className="text-muted-foreground hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg"
             onClick={closeDialog}
             type="button"
           >
@@ -165,7 +165,7 @@ export function StrummingPatternEditorDialog({
                   className="border-border bg-surface-elevated rounded-xl border p-3"
                   key={`${draft.subdivision}-${index}`}
                 >
-                  <p className="text-accent mb-2 text-sm font-black tabular-nums">
+                  <p className="text-primary mb-2 text-sm font-black tabular-nums">
                     {label}
                   </p>
                   <label className="text-muted-strong text-xs font-bold">
@@ -235,7 +235,7 @@ export function StrummingPatternEditorDialog({
               Cancel
             </Button>
             <Button
-              className="bg-accent text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
+              className="bg-primary text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
               type="submit"
             >
               {isSaving ? "Saving…" : "Save strumming pattern"}

@@ -35,7 +35,7 @@ export function PatternSummary({
     <section className="border-border bg-surface relative overflow-hidden rounded-2xl border p-5">
       <div
         aria-hidden="true"
-        className="bg-accent/8 absolute -top-20 -right-20 size-48 rounded-full blur-3xl"
+        className="bg-primary/8 absolute -top-20 -right-20 size-48 rounded-full blur-3xl"
       />
       <div className="relative">
         <m.div
@@ -47,12 +47,15 @@ export function PatternSummary({
           transition={motionTransition(reducedMotion, 0.12)}
         >
           <div className="mb-6 flex items-center justify-between">
-            <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
+            <span className="border-primary/25 bg-primary/10 text-primary rounded-md border px-2.5 py-1 text-xs font-extrabold tracking-[0.12em] uppercase">
               {formatPatternCategory(pattern.category)}
             </span>
-            <AudioLines aria-hidden="true" className="text-muted size-5" />
+            <AudioLines
+              aria-hidden="true"
+              className="text-muted-foreground size-5"
+            />
           </div>
-          <p className="text-muted text-xs font-bold tracking-[0.16em] uppercase">
+          <p className="text-muted-foreground text-xs font-bold tracking-[0.16em] uppercase">
             Current pattern
           </p>
           <h1 className="text-foreground mt-2 text-3xl font-black tracking-[-0.045em]">
@@ -60,7 +63,7 @@ export function PatternSummary({
           </h1>
         </m.div>
         <label className="mt-4 block">
-          <span className="text-muted mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
+          <span className="text-muted-foreground mb-1 block text-[0.65rem] font-extrabold tracking-wider uppercase">
             Quick select
           </span>
           <select
@@ -85,7 +88,7 @@ export function PatternSummary({
         <label className="text-muted-strong mt-3 flex min-h-11 cursor-pointer items-center gap-2 text-xs leading-5 font-bold">
           <input
             checked={immediatePatternSwitch}
-            className="accent-accent mt-1 size-4 shrink-0"
+            className="accent-primary mt-1 size-4 shrink-0"
             onChange={(event) =>
               onImmediatePatternSwitchChange(event.target.checked)
             }
@@ -93,12 +96,12 @@ export function PatternSummary({
           />
           <span>Switch same-meter patterns immediately</span>
         </label>
-        <p className="text-muted mt-3 text-sm leading-6">
+        <p className="text-muted-foreground mt-3 text-sm leading-6">
           {pattern.description}
         </p>
         <dl className="border-border mt-6 grid grid-cols-2 gap-3 border-t pt-4">
           <div>
-            <dt className="text-muted text-[0.68rem] font-bold tracking-wider uppercase">
+            <dt className="text-muted-foreground text-[0.68rem] font-bold tracking-wider uppercase">
               Meter
             </dt>
             <dd className="text-foreground mt-1 font-extrabold tabular-nums">
@@ -107,7 +110,7 @@ export function PatternSummary({
             </dd>
           </div>
           <div>
-            <dt className="text-muted text-[0.68rem] font-bold tracking-wider uppercase">
+            <dt className="text-muted-foreground text-[0.68rem] font-bold tracking-wider uppercase">
               Feel
             </dt>
             <dd className="text-foreground mt-1 font-extrabold">

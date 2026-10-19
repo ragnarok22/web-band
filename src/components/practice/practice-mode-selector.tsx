@@ -59,7 +59,7 @@ export function PracticeModeSelector({
               type="radio"
               value={choice.value}
             />
-            <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-accent/60 peer-checked:bg-accent/10 peer-checked:text-accent peer-focus-visible:outline-accent flex h-full min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
+            <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-primary/60 peer-checked:bg-primary/10 peer-checked:text-primary peer-focus-visible:outline-primary flex h-full min-h-16 w-full cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
               <span
                 aria-hidden="true"
                 className="border-border bg-background flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-black tabular-nums"
@@ -70,7 +70,7 @@ export function PracticeModeSelector({
                 <span className="block text-sm font-extrabold">
                   {choice.label}
                 </span>
-                <span className="text-muted mt-0.5 hidden text-[0.68rem] leading-4 xl:block">
+                <span className="text-muted-foreground mt-0.5 hidden text-[0.68rem] leading-4 xl:block">
                   {choice.description}
                 </span>
               </span>
@@ -79,7 +79,10 @@ export function PracticeModeSelector({
         ))}
       </div>
       {disabled ? (
-        <p className="text-muted mt-2 text-xs" id="practice-mode-disabled">
+        <p
+          className="text-muted-foreground mt-2 text-xs"
+          id="practice-mode-disabled"
+        >
           Stop the current session to change practice mode.
         </p>
       ) : null}

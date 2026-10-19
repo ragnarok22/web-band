@@ -30,15 +30,15 @@ export function StrummingSequence({
             aria-label={`Step ${index + 1}, position ${label}: ${details.label}${step.accent ? ", accent" : ""}`}
             className={`flex min-h-20 min-w-0 flex-col items-center justify-center rounded-lg border px-1 py-2 transition-[background-color,border-color,box-shadow,color] ${
               isActive
-                ? "border-accent bg-accent/15 text-accent shadow-[0_0_0_2px_color-mix(in_srgb,var(--accent)_25%,transparent)]"
+                ? "border-primary bg-primary/15 text-primary shadow-[0_0_0_2px_color-mix(in_srgb,var(--primary)_25%,transparent)]"
                 : step.accent
-                  ? "border-accent/60 bg-surface-elevated text-accent"
+                  ? "border-primary/60 bg-surface-elevated text-primary"
                   : "border-border bg-surface-elevated text-foreground"
             }`}
             data-position={label}
             key={step.id}
           >
-            <span className="text-muted text-[0.62rem] leading-none font-black tabular-nums">
+            <span className="text-muted-foreground text-[0.62rem] leading-none font-black tabular-nums">
               {label}
             </span>
             <span

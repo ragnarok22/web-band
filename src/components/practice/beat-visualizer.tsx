@@ -207,7 +207,7 @@ export function BeatVisualizer({
         aria-hidden="true"
         className="via-accent/45 absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent"
       />
-      <div className="text-muted mb-5 flex items-center justify-between text-xs font-bold tracking-[0.16em] uppercase">
+      <div className="text-muted-foreground mb-5 flex items-center justify-between text-xs font-bold tracking-[0.16em] uppercase">
         <span>Follow the pulse</span>
         <span className="tabular-nums">
           Measure <span ref={measureRef}>1</span>

@@ -20,7 +20,7 @@ interface InvalidDraft {
 }
 
 const inputClass =
-  "border-border bg-surface-elevated text-foreground focus:border-accent min-h-11 w-full rounded-lg border px-3 text-sm font-bold tabular-nums outline-none disabled:cursor-not-allowed disabled:opacity-45";
+  "border-border bg-surface-elevated text-foreground focus:border-primary min-h-11 w-full rounded-lg border px-3 text-sm font-bold tabular-nums outline-none disabled:cursor-not-allowed disabled:opacity-45";
 
 export function TempoTrainerPanel({
   configuration,
@@ -87,7 +87,7 @@ export function TempoTrainerPanel({
       className="border-border bg-surface rounded-2xl border p-4 sm:p-5"
     >
       <div className="mb-4">
-        <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+        <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
           Gradual pace
         </p>
         <h3
@@ -178,7 +178,7 @@ export function TempoTrainerPanel({
                 }}
                 type="radio"
               />
-              <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-accent/60 peer-checked:text-accent peer-focus-visible:outline-accent flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 text-sm font-extrabold capitalize peer-focus-visible:outline-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
+              <span className="border-border bg-surface-elevated text-muted-strong peer-checked:border-primary/60 peer-checked:text-primary peer-focus-visible:outline-primary flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 text-sm font-extrabold capitalize peer-focus-visible:outline-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-45">
                 {type}
               </span>
             </label>
@@ -222,7 +222,7 @@ export function TempoTrainerPanel({
         <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
           <input
             checked={configuration.stopAtTarget}
-            className="accent-accent size-5"
+            className="accent-primary size-5"
             disabled={disabled}
             onChange={(event) =>
               onChange({ ...configuration, stopAtTarget: event.target.checked })
@@ -234,7 +234,7 @@ export function TempoTrainerPanel({
         <label className="text-muted-strong flex min-h-11 items-center gap-3 text-sm font-bold">
           <input
             checked={configuration.resetToStartingBpmOnStop}
-            className="accent-accent size-5"
+            className="accent-primary size-5"
             disabled={disabled}
             onChange={(event) =>
               onChange({

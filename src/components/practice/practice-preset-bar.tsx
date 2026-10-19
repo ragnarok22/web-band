@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { FolderOpen, Save } from "lucide-react";
 import { useState } from "react";
@@ -77,7 +78,7 @@ export function PracticePresetBar({
       className="border-border bg-surface flex flex-col gap-3 rounded-2xl border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
     >
       <div className="min-w-0">
-        <p className="text-accent text-[0.65rem] font-extrabold tracking-[0.14em] uppercase">
+        <p className="text-primary text-[0.65rem] font-extrabold tracking-[0.14em] uppercase">
           {loadedPresetName ? `Loaded: ${loadedPresetName}` : "Current setup"}
         </p>
         <p className="text-muted-strong mt-1 truncate text-sm font-bold">
@@ -85,7 +86,7 @@ export function PracticePresetBar({
         </p>
       </div>
       <div className="grid shrink-0 grid-cols-2 gap-2">
-        <button
+        <Button variant="outline"
           aria-label="Save current setup"
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-extrabold"
           onClick={() => {
@@ -96,10 +97,10 @@ export function PracticePresetBar({
         >
           <Save aria-hidden="true" className="size-4" />
           Save current setup
-        </button>
-        <button
+        </Button>
+        <Button
           aria-label="Open presets"
-          className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
+          className="bg-primary text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
           onClick={() => {
             setErrorMessage(null);
             setPresetsOpen(true);
@@ -108,7 +109,7 @@ export function PracticePresetBar({
         >
           <FolderOpen aria-hidden="true" className="size-4" />
           Presets
-        </button>
+        </Button>
       </div>
 
       <SavePracticePresetDialog

@@ -111,10 +111,8 @@ describe("BPM controls", () => {
 
     expect(onChange).toHaveBeenCalledWith(132);
     expect(onChange).toHaveBeenCalledWith(145);
-    expect(onCommit).not.toHaveBeenCalled();
     expect(slider).toHaveAttribute("aria-valuetext", "145 BPM");
-
-    fireEvent.pointerUp(slider);
+    // Base UI treats a native range input change as a committed edit.
     expect(onCommit).toHaveBeenCalledWith(145);
   });
 

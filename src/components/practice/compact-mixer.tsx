@@ -48,14 +48,14 @@ export function CompactMixer({
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="bg-surface-elevated text-accent flex size-10 items-center justify-center rounded-lg">
+          <span className="bg-surface-elevated text-primary flex size-10 items-center justify-center rounded-lg">
             <SlidersVertical aria-hidden="true" className="size-5" />
           </span>
           <div>
             <h2 className="text-foreground font-bold" id="mixer-heading">
               Kit mixer
             </h2>
-            <p className="text-muted text-xs">Six musical groups</p>
+            <p className="text-muted-foreground text-xs">Six musical groups</p>
           </div>
         </div>
         <button
@@ -74,7 +74,7 @@ export function CompactMixer({
         <button
           aria-label="Master mute"
           aria-pressed={masterMuted}
-          className={`flex size-11 items-center justify-center rounded-lg disabled:cursor-not-allowed disabled:opacity-45 ${masterMuted ? "bg-danger/15 text-danger" : "bg-surface-elevated text-accent"}`}
+          className={`flex size-11 items-center justify-center rounded-lg disabled:cursor-not-allowed disabled:opacity-45 ${masterMuted ? "bg-danger/15 text-danger" : "bg-surface-elevated text-primary"}`}
           disabled={disabled}
           onClick={onMasterMuteToggle}
           type="button"
@@ -106,7 +106,7 @@ export function CompactMixer({
           />
         </label>
         <output
-          className="text-muted w-10 text-right text-xs font-extrabold tabular-nums"
+          className="text-muted-foreground w-10 text-right text-xs font-extrabold tabular-nums"
           htmlFor="mixer-master"
         >
           {masterPercent}%
@@ -146,7 +146,7 @@ export function CompactMixer({
               <button
                 aria-label={`Mute ${groupLabels[group]}`}
                 aria-pressed={channel.muted}
-                className={`size-11 rounded-md text-xs font-black ${channel.muted ? "bg-danger/15 text-danger" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}
+                className={`size-11 rounded-md text-xs font-black ${channel.muted ? "bg-danger/15 text-danger" : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"}`}
                 disabled={disabled}
                 onClick={() => onMutedChange(group, !channel.muted)}
                 type="button"
@@ -156,7 +156,7 @@ export function CompactMixer({
               <button
                 aria-label={`Solo ${groupLabels[group]}`}
                 aria-pressed={channel.solo}
-                className={`size-11 rounded-md text-xs font-black ${channel.solo ? "bg-accent/15 text-accent" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}
+                className={`size-11 rounded-md text-xs font-black ${channel.solo ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-surface-hover hover:text-foreground"}`}
                 disabled={disabled}
                 onClick={() => onSoloChange(group, !channel.solo)}
                 type="button"

@@ -218,9 +218,9 @@ export function DrumPatternGrid({
                   role="columnheader"
                 >
                   {stepInBar === 0 ? (
-                    <span className="text-accent">M{measure + 1}</span>
+                    <span className="text-primary">M{measure + 1}</span>
                   ) : null}
-                  <span className="text-muted">
+                  <span className="text-muted-foreground">
                     {beatLabels[stepInBar] || "."}
                   </span>
                 </div>
@@ -245,7 +245,7 @@ export function DrumPatternGrid({
                 </span>
                 <button
                   aria-label={`Clear ${instrumentLabels[instrument]} row`}
-                  className="text-muted hover:bg-danger/10 hover:text-danger flex size-11 shrink-0 items-center justify-center"
+                  className="text-muted-foreground hover:bg-danger/10 hover:text-danger flex size-11 shrink-0 items-center justify-center"
                   disabled={disabled}
                   onClick={() => {
                     onChange(clearPatternRow(pattern, instrument));
@@ -286,9 +286,9 @@ export function DrumPatternGrid({
                       aria-pressed={Boolean(hit)}
                       className={`group flex size-full items-center justify-center border-r border-b transition-colors ${boundaryClass(step, stepsPerBar, stepsPerBeat)} ${
                         activeStep === step
-                          ? "bg-accent/20"
+                          ? "bg-primary/20"
                           : "hover:bg-surface-hover"
-                      } ${isSelected ? "ring-accent ring-2 ring-inset" : ""}`}
+                      } ${isSelected ? "ring-primary ring-2 ring-inset" : ""}`}
                       disabled={disabled}
                       id={cellId({ instrument, step })}
                       onClick={() => selectAndCycle(instrument, step)}
@@ -369,18 +369,18 @@ function GridToolbar({
   return (
     <header className="border-border flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
       <div>
-        <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+        <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
           Step sequencer
         </p>
         <h2 className="mt-1 text-xl font-black" id="pattern-grid-heading">
           Build the pocket
         </h2>
-        <p className="text-muted mt-1 text-xs">
+        <p className="text-muted-foreground mt-1 text-xs">
           Tap a cell to cycle 70, 85, and 100 percent velocity.
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-muted text-[0.62rem] font-extrabold tracking-wider uppercase">
+        <label className="text-muted-foreground text-[0.62rem] font-extrabold tracking-wider uppercase">
           Target measure
           <select
             aria-label="Target measure"
@@ -494,7 +494,7 @@ function HitMark({ hit }: { hit: DrumHit }) {
   return (
     <span
       aria-hidden="true"
-      className={`bg-accent text-accent-ink flex size-8 items-center justify-center text-[0.58rem] font-black tabular-nums shadow-[0_0_12px_rgba(231,169,75,0.18)] ${
+      className={`bg-primary text-accent-ink flex size-8 items-center justify-center text-[0.58rem] font-black tabular-nums shadow-[0_0_12px_rgba(231,169,75,0.18)] ${
         hit.flam ? "rotate-45 rounded-md" : "rounded-full"
       }`}
       style={{ opacity: 0.35 + hit.velocity * 0.65 }}

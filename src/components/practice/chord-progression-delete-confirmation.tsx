@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 interface ChordProgressionDeleteConfirmationProps {
   name: string;
   onCancel: () => void;
@@ -15,21 +17,21 @@ export function ChordProgressionDeleteConfirmation({
         Delete {name} permanently?
       </p>
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <button
+        <Button variant="outline"
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground min-h-11 rounded-lg border px-3 text-sm font-extrabold"
           onClick={onCancel}
           type="button"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button variant="destructive"
           aria-label={`Delete ${name} permanently`}
           className="bg-danger text-background min-h-11 rounded-lg px-3 text-sm font-black"
           onClick={onConfirm}
           type="button"
         >
           Delete progression
-        </button>
+        </Button>
       </div>
     </div>
   );

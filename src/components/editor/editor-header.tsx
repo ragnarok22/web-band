@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { ArrowLeft, Play, Save, Square } from "lucide-react";
 import Link from "next/link";
@@ -16,7 +17,7 @@ interface EditorHeaderProps {
 
 export function EditorHeader({ onPlay, onSave, status }: EditorHeaderProps) {
   return (
-    <header className="relative mb-5 overflow-hidden rounded-3xl border border-[color:color-mix(in_srgb,var(--accent)_20%,transparent)] bg-[radial-gradient(circle_at_85%_0%,rgba(231,169,75,0.14),transparent_38%),var(--surface)] p-5 sm:p-7">
+    <header className="relative mb-5 overflow-hidden rounded-3xl border border-[color:color-mix(in_srgb,var(--primary)_20%,transparent)] bg-[radial-gradient(circle_at_85%_0%,rgba(231,169,75,0.14),transparent_38%),var(--surface)] p-5 sm:p-7">
       <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <Link
@@ -26,13 +27,13 @@ export function EditorHeader({ onPlay, onSave, status }: EditorHeaderProps) {
             <ArrowLeft aria-hidden="true" className="size-4" />
             Back to patterns
           </Link>
-          <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
+          <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
             Pattern workshop
           </p>
           <h1 className="mt-2 text-4xl font-black tracking-[-0.05em] sm:text-5xl">
             Shape your groove
           </h1>
-          <p className="text-muted mt-3 max-w-2xl leading-7">
+          <p className="text-muted-foreground mt-3 max-w-2xl leading-7">
             Set the feel, place each drum hit, then hear the loop exactly as it
             will play in practice.
           </p>
@@ -41,13 +42,13 @@ export function EditorHeader({ onPlay, onSave, status }: EditorHeaderProps) {
           <span
             className={`flex min-h-11 items-center rounded-xl border px-3 text-xs font-extrabold ${
               status.dirty
-                ? "border-accent/30 bg-accent/10 text-accent"
+                ? "border-primary/30 bg-primary/10 text-primary"
                 : "border-success/30 bg-success/10 text-success"
             }`}
           >
             {status.dirty ? "Unsaved changes" : "Saved locally"}
           </span>
-          <button
+          <Button variant="outline"
             aria-label="Draft preview"
             aria-pressed={status.playing}
             className="border-border bg-surface-elevated text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold disabled:opacity-40"
@@ -61,16 +62,16 @@ export function EditorHeader({ onPlay, onSave, status }: EditorHeaderProps) {
               <Play aria-hidden="true" className="size-4 fill-current" />
             )}
             {status.playing ? "Stop" : "Play draft"}
-          </button>
-          <button
-            className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-11 items-center gap-2 rounded-xl px-5 text-sm font-extrabold disabled:opacity-45"
+          </Button>
+          <Button
+            className="bg-primary text-accent-ink hover:bg-accent-strong flex min-h-11 items-center gap-2 rounded-xl px-5 text-sm font-extrabold disabled:opacity-45"
             disabled={status.saving}
             onClick={onSave}
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />
             {status.saving ? "Saving…" : "Save pattern"}
-          </button>
+          </Button>
         </div>
       </div>
     </header>

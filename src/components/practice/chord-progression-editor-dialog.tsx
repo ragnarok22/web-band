@@ -22,7 +22,7 @@ interface ChordProgressionEditorDialogProps {
 }
 
 const inputClass =
-  "border-border bg-background text-foreground focus:border-accent min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45";
+  "border-border bg-background text-foreground focus:border-primary min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45";
 
 export function ChordProgressionEditorDialog({
   disabled = false,
@@ -106,7 +106,7 @@ export function ChordProgressionEditorDialog({
       <form onSubmit={(event) => void save(event)}>
         <header className="border-border bg-surface sticky top-0 z-10 flex items-center justify-between border-b p-4 sm:p-5">
           <div>
-            <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+            <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
               Progression editor
             </p>
             <h2
@@ -121,7 +121,7 @@ export function ChordProgressionEditorDialog({
             size="icon"
             disabled={isSaving}
             aria-label="Close progression editor"
-            className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg"
+            className="text-muted-foreground hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg"
             onClick={closeDialog}
             type="button"
           >
@@ -154,7 +154,7 @@ export function ChordProgressionEditorDialog({
                   key={step.id}
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="text-muted text-xs font-extrabold tracking-wider uppercase">
+                    <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
                       Step {index + 1}
                     </span>
                     <div className="flex gap-1">
@@ -283,7 +283,7 @@ export function ChordProgressionEditorDialog({
               Cancel
             </Button>
             <Button
-              className="bg-accent text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
+              className="bg-primary text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
               type="submit"
             >
               {isSaving ? "Saving…" : "Save progression"}

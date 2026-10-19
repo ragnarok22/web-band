@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { LibraryBig, Trash2, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -244,28 +245,28 @@ function PatternEditorSession({
                   ? "Ready for your next edit."
                   : "Pattern saved locally.")}
             </p>
-            <p className="text-muted mt-1 text-xs">
+            <p className="text-muted-foreground mt-1 text-xs">
               Patterns stay in this browser and appear in your groove library.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button variant="outline"
               className="border-border text-muted-strong hover:text-foreground flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
               onClick={() => setConfirmation("clear")}
               type="button"
             >
               <XCircle aria-hidden="true" className="size-4" />
               Clear pattern
-            </button>
+            </Button>
             {sourcePatternId ? (
-              <button
+              <Button variant="destructive"
                 className="border-danger/35 text-danger hover:bg-danger/10 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
                 onClick={() => setConfirmation("delete")}
                 type="button"
               >
                 <Trash2 aria-hidden="true" className="size-4" />
                 Delete pattern
-              </button>
+              </Button>
             ) : null}
           </div>
         </section>
@@ -307,7 +308,7 @@ function PatternEditorSession({
 
 function EditorLoading() {
   return (
-    <main className="text-muted flex min-h-screen items-center justify-center text-sm font-extrabold tracking-wider uppercase">
+    <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-extrabold tracking-wider uppercase">
       Setting up the pattern workshop
     </main>
   );
@@ -317,9 +318,12 @@ function EditorMissing({ error }: { error: LoadError }) {
   return (
     <main className="mx-auto flex min-h-[80dvh] max-w-2xl items-center px-5">
       <section className="border-border bg-surface w-full rounded-3xl border p-7 text-center sm:p-10">
-        <LibraryBig aria-hidden="true" className="text-accent mx-auto size-9" />
+        <LibraryBig
+          aria-hidden="true"
+          className="text-primary mx-auto size-9"
+        />
         <h1 className="mt-4 text-3xl font-black">{error.title}</h1>
-        <p className="text-muted mx-auto mt-3 max-w-lg leading-7">
+        <p className="text-muted-foreground mx-auto mt-3 max-w-lg leading-7">
           {error.description}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -331,7 +335,7 @@ function EditorMissing({ error }: { error: LoadError }) {
           </Link>
           {error.duplicateId ? (
             <Link
-              className="bg-accent text-accent-ink flex min-h-11 items-center rounded-xl px-4 text-sm font-extrabold"
+              className="bg-primary text-accent-ink flex min-h-11 items-center rounded-xl px-4 text-sm font-extrabold"
               href={`/editor?duplicate=${encodeURIComponent(error.duplicateId)}`}
             >
               Duplicate instead

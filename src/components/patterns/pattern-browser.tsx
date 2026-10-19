@@ -1,4 +1,7 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import {
   FilterX,
@@ -305,7 +308,7 @@ function PatternFiltersPanel({
         <label className="border-border bg-surface-elevated focus-within:border-primary flex min-h-12 items-center gap-2 rounded-xl border px-3">
           <Search aria-hidden="true" className="text-muted-foreground size-4" />
           <span className="sr-only">Search patterns</span>
-          <input
+          <Input
             className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
             onChange={(event) => onFilterChange("search", event.target.value)}
             placeholder="Search patterns"
@@ -313,7 +316,7 @@ function PatternFiltersPanel({
             value={filters.search}
           />
         </label>
-        <button
+        <Button variant="outline"
           aria-expanded={isOpen}
           className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
           onClick={onToggle}
@@ -321,7 +324,7 @@ function PatternFiltersPanel({
         >
           <SlidersHorizontal aria-hidden="true" className="size-4" />
           {isOpen ? "Hide filters" : "Show filters"}
-        </button>
+        </Button>
       </div>
 
       <div
@@ -394,14 +397,14 @@ function PatternFiltersPanel({
         />
       </div>
       <div className={isOpen ? "block" : "hidden sm:block"}>
-        <button
+        <Button variant="ghost"
           className="text-muted-strong hover:text-foreground mt-3 flex min-h-11 items-center gap-2 text-xs font-extrabold transition-colors"
           onClick={onClear}
           type="button"
         >
           <FilterX aria-hidden="true" className="size-4" />
           Clear filters
-        </button>
+        </Button>
       </div>
     </section>
   );
@@ -480,7 +483,7 @@ function FilterSelect({ label, onChange, options, value }: FilterSelectProps) {
       <span className="text-muted-foreground px-1 text-[0.62rem] font-extrabold tracking-wider uppercase">
         {label}
       </span>
-      <select
+      <NativeSelect
         aria-label={label}
         className="border-border bg-surface-elevated text-foreground min-h-11 rounded-xl border px-3 text-sm font-bold"
         onChange={(event) => onChange(event.target.value)}
@@ -491,7 +494,7 @@ function FilterSelect({ label, onChange, options, value }: FilterSelectProps) {
             {option.label}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </label>
   );
 }

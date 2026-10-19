@@ -73,12 +73,12 @@ function StrumCue({ action, label }: { action: StrumAction; label: string }) {
   const details = strumActionDetails[action];
   return (
     <div className="border-border bg-background rounded-xl border p-3 text-center">
-      <p className="text-muted text-[0.65rem] font-extrabold tracking-wider uppercase">
+      <p className="text-muted-foreground text-[0.65rem] font-extrabold tracking-wider uppercase">
         {label}
       </p>
       <span
         aria-hidden="true"
-        className="text-accent mt-1 block text-4xl font-black"
+        className="text-primary mt-1 block text-4xl font-black"
       >
         {details.symbol}
       </span>
@@ -123,7 +123,7 @@ function DrumGuidance({ snapshot }: { snapshot: GuidanceFrame | null }) {
       aria-labelledby="guided-display-heading"
       className="border-border bg-surface rounded-2xl border p-4 text-center sm:p-6"
     >
-      <p className="text-muted text-xs font-extrabold tracking-[0.16em] uppercase">
+      <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
         Measure {measure}
       </p>
       <h2
@@ -132,7 +132,7 @@ function DrumGuidance({ snapshot }: { snapshot: GuidanceFrame | null }) {
       >
         Follow the groove
       </h2>
-      <p className="text-muted mt-2 text-sm">
+      <p className="text-muted-foreground mt-2 text-sm">
         Drum mode has no added trainer cues.
       </p>
     </section>
@@ -163,12 +163,12 @@ function TempoGuidance({
       className="border-border bg-surface rounded-2xl border p-4 sm:p-6"
     >
       <div className="grid grid-cols-2 gap-3">
-        <div className="border-accent/40 bg-accent/8 rounded-xl border p-3 text-center">
-          <p className="text-muted text-xs font-extrabold uppercase">
+        <div className="border-primary/40 bg-primary/8 rounded-xl border p-3 text-center">
+          <p className="text-muted-foreground text-xs font-extrabold uppercase">
             Current tempo
           </p>
           <p
-            className="text-accent mt-1 text-4xl font-black tabular-nums"
+            className="text-primary mt-1 text-4xl font-black tabular-nums"
             data-testid="trainer-current-bpm"
           >
             {position.currentBpm}
@@ -176,7 +176,7 @@ function TempoGuidance({
           </p>
         </div>
         <div className="border-border bg-background rounded-xl border p-3 text-center">
-          <p className="text-muted text-xs font-extrabold uppercase">
+          <p className="text-muted-foreground text-xs font-extrabold uppercase">
             Next tempo
           </p>
           <p className="text-foreground mt-1 text-4xl font-black tabular-nums">
@@ -188,13 +188,13 @@ function TempoGuidance({
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between gap-3 text-xs font-bold">
-        <span className="text-muted">{changeText}</span>
+        <span className="text-muted-foreground">{changeText}</span>
         <span className="text-muted-strong tabular-nums">{percent}%</span>
       </div>
       <progress
         aria-label="Overall tempo progress"
         aria-valuetext={`${percent} percent toward target tempo`}
-        className="accent-accent mt-2 h-2 w-full"
+        className="accent-primary mt-2 h-2 w-full"
         max={100}
         value={percent}
       />
@@ -228,16 +228,16 @@ function ChordGuidance({
         aria-live="polite"
         className="grid grid-cols-2 gap-3"
       >
-        <div className="border-accent/40 bg-accent/8 rounded-xl border p-3 text-center">
-          <p className="text-muted text-xs font-extrabold uppercase">
+        <div className="border-primary/40 bg-primary/8 rounded-xl border p-3 text-center">
+          <p className="text-muted-foreground text-xs font-extrabold uppercase">
             Current chord
           </p>
-          <p className="text-accent mt-1 truncate text-4xl font-black">
+          <p className="text-primary mt-1 truncate text-4xl font-black">
             {position.currentChord ?? "Complete"}
           </p>
         </div>
         <div className="border-border bg-background rounded-xl border p-3 text-center">
-          <p className="text-muted text-xs font-extrabold uppercase">
+          <p className="text-muted-foreground text-xs font-extrabold uppercase">
             Next chord
           </p>
           <p className="text-foreground mt-1 truncate text-4xl font-black">
@@ -245,7 +245,7 @@ function ChordGuidance({
           </p>
         </div>
       </div>
-      <p className="text-muted mt-3 text-center text-sm font-bold">
+      <p className="text-muted-foreground mt-3 text-center text-sm font-bold">
         {position.countdown === null
           ? `Measure ${measure}`
           : `Change in ${position.countdown} ${position.countdown === 1 ? "beat" : "beats"}`}
@@ -278,7 +278,7 @@ function StrummingGuidance({
             <StrumCue action={position.nextAction} label="Next strum" />
           </>
         ) : (
-          <p className="text-muted col-span-2 text-center">
+          <p className="text-muted-foreground col-span-2 text-center">
             No strum actions available.
           </p>
         )}
@@ -288,7 +288,7 @@ function StrummingGuidance({
         className="mt-4"
         pattern={configuration.strummingPattern}
       />
-      <p className="text-muted mt-3 text-center text-sm font-bold">
+      <p className="text-muted-foreground mt-3 text-center text-sm font-bold">
         Step {(position?.stepIndex ?? 0) + 1} of{" "}
         {configuration.strummingPattern.steps.length}
         {position?.accent ? " - Accent" : ""}

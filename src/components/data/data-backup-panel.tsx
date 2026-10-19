@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { Download, FileUp, ShieldCheck } from "lucide-react";
 import { useId, useRef, useState } from "react";
@@ -104,7 +105,7 @@ export function DataBackupPanel({
       }
     >
       <div className={compact ? "max-w-xl" : "max-w-2xl"}>
-        <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+        <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
           <ShieldCheck aria-hidden="true" className="size-4" />
           Local archive
         </p>
@@ -116,7 +117,7 @@ export function DataBackupPanel({
         >
           {compact ? "Journal backup" : "Backup and restore"}
         </h2>
-        <p className="text-muted mt-2 text-sm leading-6">
+        <p className="text-muted-foreground mt-2 text-sm leading-6">
           {compact
             ? "Keep a portable copy of this journal, practice setup, and app preferences."
             : "Download a portable JSON copy of patterns, presets, sessions, favorites, settings, appearance, recents, and onboarding state stored on this device."}
@@ -130,7 +131,7 @@ export function DataBackupPanel({
             : "mt-6 flex flex-col gap-2 sm:flex-row"
         }
       >
-        <button
+        <Button variant="outline"
           className="border-border bg-surface-elevated text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold disabled:opacity-45"
           disabled={isPending}
           onClick={() => void exportData()}
@@ -138,9 +139,9 @@ export function DataBackupPanel({
         >
           <Download aria-hidden="true" className="size-4" />
           {isPending ? "Working…" : "Export data"}
-        </button>
-        <button
-          className="bg-accent text-accent-ink flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold disabled:opacity-45"
+        </Button>
+        <Button
+          className="bg-primary text-accent-ink flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold disabled:opacity-45"
           disabled={isPending}
           onClick={() => fileInputRef.current?.click()}
           ref={uploadButtonRef}
@@ -148,7 +149,7 @@ export function DataBackupPanel({
         >
           <FileUp aria-hidden="true" className="size-4" />
           Import backup
-        </button>
+        </Button>
         <input
           accept="application/json,.json"
           aria-label="Choose backup file"

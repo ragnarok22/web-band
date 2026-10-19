@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { ChevronDown } from "lucide-react";
 import { m } from "framer-motion";
@@ -49,7 +50,7 @@ export function GuidedPracticePanel({
     <section aria-labelledby="guided-practice-heading" className="grid gap-3">
       <div className="flex items-end justify-between gap-3 px-1">
         <div>
-          <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
+          <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
             Practice path
           </p>
           <h2
@@ -59,12 +60,12 @@ export function GuidedPracticePanel({
             Guided practice
           </h2>
         </div>
-        <p className="text-muted hidden max-w-xs text-right text-xs sm:block">
+        <p className="text-muted-foreground hidden max-w-xs text-right text-xs sm:block">
           Cues follow the active drum groove without changing its feel.
         </p>
       </div>
 
-      <button
+      <Button variant="outline"
         aria-controls="guided-practice-settings"
         aria-expanded={settingsOpen}
         className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
@@ -78,7 +79,7 @@ export function GuidedPracticePanel({
           aria-hidden="true"
           className={`size-5 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
         />
-      </button>
+      </Button>
 
       <div
         className={`${settingsOpen ? "grid" : "hidden"} gap-3 sm:grid`}
@@ -101,7 +102,7 @@ export function GuidedPracticePanel({
           {mode === "drums" ? (
             <div className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
               <p className="text-foreground font-extrabold">Groove only</p>
-              <p className="text-muted mt-1 text-sm leading-6">
+              <p className="text-muted-foreground mt-1 text-sm leading-6">
                 Practice the selected drum pattern without tempo, chord, or
                 strum cues.
               </p>

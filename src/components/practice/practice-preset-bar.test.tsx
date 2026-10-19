@@ -1,10 +1,4 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -311,7 +305,7 @@ describe("practice preset bar", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
   });
 
-  it("keeps persistence errors nonblocking and closes on native cancel", async () => {
+  it("keeps persistence errors nonblocking and closes on Escape", async () => {
     const user = userEvent.setup();
     const createSnapshot = vi
       .fn()
@@ -337,9 +331,13 @@ describe("practice preset bar", () => {
       "Preset could not be saved locally.",
     );
     const dialog = screen.getByRole("dialog", { name: "Save practice preset" });
-    expect(dialog).toHaveAttribute("open");
-    fireEvent(dialog, new Event("cancel", { bubbles: true, cancelable: true }));
-    await waitFor(() => expect(dialog).not.toHaveAttribute("open"));
+    expect(dialog).toBeVisible();
+    await user.keyboard("{Escape}");
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Save practice preset" }),
+      ).not.toBeInTheDocument(),
+    );
   });
 
   it("shows inline validation for a whitespace-only preset name", async () => {

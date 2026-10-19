@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "@/components/ui/button";
 
 import { Download, FileUp } from "lucide-react";
 import { useRef, useState } from "react";
@@ -85,7 +86,7 @@ export function PatternSharingControl() {
     <div>
       <div className="flex flex-wrap gap-2">
         {customPatterns.length > 0 ? (
-          <button
+          <Button variant="outline"
             className="border-border bg-surface text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
             disabled={isPending}
             onClick={exportPatterns}
@@ -93,9 +94,9 @@ export function PatternSharingControl() {
           >
             <Download aria-hidden="true" className="size-4" />
             Export my patterns
-          </button>
+          </Button>
         ) : null}
-        <button
+        <Button variant="outline"
           className="border-border bg-surface text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
           disabled={isPending}
           onClick={() => fileInputRef.current?.click()}
@@ -104,7 +105,7 @@ export function PatternSharingControl() {
         >
           <FileUp aria-hidden="true" className="size-4" />
           Import patterns
-        </button>
+        </Button>
         <input
           accept="application/json,.json"
           aria-label="Choose shared pattern file"
