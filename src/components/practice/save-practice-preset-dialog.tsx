@@ -1,9 +1,11 @@
 "use client";
 
 import { SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useId, useRef, useState, type FormEvent } from "react";
 
-import { usePracticeModal } from "@/hooks/use-practice-modal";
+import { Modal } from "@/components/shared/modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface SavePracticePresetDialogProps {
   errorMessage: string | null;
@@ -18,7 +20,6 @@ export function SavePracticePresetDialog({
   onSave,
   open,
 }: SavePracticePresetDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const headingId = useId();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,20 +28,10 @@ export function SavePracticePresetDialog({
   const [validationMessage, setValidationMessage] = useState<string | null>(
     null,
   );
-  usePracticeModal(open);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-      inputRef.current?.focus();
-    }
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
-
   function closeDialog(): void {
-    dialogRef.current?.close();
+    setName("");
+    setValidationMessage(null);
+    onClose();
   }
 
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -67,24 +58,18 @@ export function SavePracticePresetDialog({
   }
 
   return (
-    <dialog
+    <Modal
       aria-labelledby={headingId}
-      className="border-border bg-surface text-foreground fixed inset-0 m-auto w-[min(92vw,28rem)] rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop:bg-black/75"
-      onCancel={(event) => {
-        event.preventDefault();
-        closeDialog();
-      }}
-      onClose={() => {
-        setName("");
-        setValidationMessage(null);
-        onClose();
-      }}
-      ref={dialogRef}
+      className="p-0 sm:max-w-md"
+      open={open}
+      busy={isSaving}
+      onClose={closeDialog}
+      initialFocus={inputRef}
     >
       <form className="p-4 sm:p-5" onSubmit={submit}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-accent flex items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.15em] uppercase">
+            <p className="text-primary flex items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.15em] uppercase">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               Keep this groove
             </p>
@@ -95,14 +80,17 @@ export function SavePracticePresetDialog({
               Save practice preset
             </h2>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isSaving}
             aria-label="Close save practice preset"
-            className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 shrink-0 items-center justify-center rounded-xl"
+            className="size-11"
             onClick={closeDialog}
             type="button"
           >
             <X aria-hidden="true" className="size-5" />
-          </button>
+          </Button>
         </div>
 
         <label
@@ -111,9 +99,9 @@ export function SavePracticePresetDialog({
         >
           Preset name
         </label>
-        <input
+        <Input
           autoFocus
-          className="border-border bg-surface-elevated text-foreground placeholder:text-muted focus:border-accent mt-2 min-h-12 w-full rounded-xl border px-3 outline-none"
+          className="mt-2 min-h-12"
           id={inputId}
           maxLength={100}
           onChange={(event) => {
@@ -136,23 +124,20 @@ export function SavePracticePresetDialog({
         ) : null}
 
         <div className="mt-5 grid grid-cols-2 gap-2">
-          <button
-            className="border-border text-muted-strong hover:bg-surface-hover min-h-11 rounded-xl border px-3 text-sm font-extrabold"
+          <Button
+            variant="outline"
+            className="min-h-11"
             disabled={isSaving}
             onClick={closeDialog}
             type="button"
           >
             Cancel
-          </button>
-          <button
-            className="bg-accent text-accent-ink hover:bg-accent-strong min-h-11 rounded-xl px-3 text-sm font-extrabold"
-            disabled={isSaving}
-            type="submit"
-          >
+          </Button>
+          <Button className="min-h-11" disabled={isSaving} type="submit">
             {isSaving ? "Saving…" : "Save preset"}
-          </button>
+          </Button>
         </div>
       </form>
-    </dialog>
+    </Modal>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
 import { SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 
 import { PracticePresetCard } from "@/components/practice/practice-preset-card";
-import { usePracticeModal } from "@/hooks/use-practice-modal";
+import { Modal } from "@/components/shared/modal";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { PracticePreset } from "@/types/persistence";
 
 type PresetFilter = "recent" | "favorites" | "all";
@@ -43,17 +45,8 @@ export function PracticePresetDialog({
   presets,
   recentPresetIds,
 }: PracticePresetDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const headingId = useId();
   const [filter, setFilter] = useState<PresetFilter>("recent");
-  usePracticeModal(open);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
 
   const presetById = new Map(presets.map((preset) => [preset.id, preset]));
   const visiblePresets =
@@ -73,27 +66,21 @@ export function PracticePresetDialog({
         : "No presets saved yet. Save the current setup to make your first one.";
 
   function closeDialog(): void {
-    dialogRef.current?.close();
+    setFilter("recent");
+    onClose();
   }
 
   return (
-    <dialog
+    <Modal
       aria-labelledby={headingId}
-      className="border-border bg-surface text-foreground fixed inset-0 m-auto max-h-[90vh] w-[min(94vw,46rem)] rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop:bg-black/75"
-      onCancel={(event) => {
-        event.preventDefault();
-        closeDialog();
-      }}
-      onClose={() => {
-        setFilter("recent");
-        onClose();
-      }}
-      ref={dialogRef}
+      className="p-0 sm:max-w-3xl"
+      open={open}
+      onClose={closeDialog}
     >
       <div className="flex max-h-[90vh] flex-col">
         <header className="border-border flex items-start justify-between gap-3 border-b p-4 sm:p-5">
           <div>
-            <p className="text-accent flex items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.15em] uppercase">
+            <p className="text-primary flex items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.15em] uppercase">
               <SlidersHorizontal aria-hidden="true" className="size-4" />
               Saved setups
             </p>
@@ -104,77 +91,86 @@ export function PracticePresetDialog({
               Practice presets
             </h2>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             aria-label="Close practice presets"
-            className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 shrink-0 items-center justify-center rounded-xl"
+            className="size-11"
             onClick={closeDialog}
             type="button"
           >
             <X aria-hidden="true" className="size-5" />
-          </button>
+          </Button>
         </header>
 
-        <div
-          className="border-border grid grid-cols-3 border-b p-3 sm:px-5"
-          role="tablist"
+        <Tabs
+          value={filter}
+          onValueChange={(value) => setFilter(value as PresetFilter)}
+          className="min-h-0 gap-0"
         >
-          {filters.map((value) => (
-            <button
-              aria-selected={filter === value}
-              className={`min-h-11 rounded-xl px-2 text-sm font-extrabold transition-colors ${filter === value ? "bg-accent text-accent-ink" : "text-muted-strong hover:bg-surface-hover hover:text-foreground"}`}
-              key={value}
-              onClick={() => setFilter(value)}
-              role="tab"
-              type="button"
-            >
-              {filterLabels[value]}
-            </button>
-          ))}
-        </div>
+          <TabsList
+            aria-label="Preset filters"
+            className="m-3 grid min-h-12 w-auto grid-cols-3 sm:mx-5"
+          >
+            {filters.map((value) => (
+              <TabsTrigger
+                value={value}
+                className="data-active:bg-primary data-active:text-primary-foreground min-h-11"
+                key={value}
+                type="button"
+              >
+                {filterLabels[value]}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <div className="min-h-0 overflow-y-auto p-3 sm:p-5">
-          {errorMessage ? (
-            <p
-              className="border-danger/30 bg-danger/10 text-foreground mb-3 rounded-xl border p-3 text-sm"
-              role="alert"
-            >
-              {errorMessage}
-            </p>
-          ) : null}
-
-          {!isHydrated ? (
-            <p className="text-muted py-12 text-center text-sm font-bold">
-              Loading presets…
-            </p>
-          ) : visiblePresets.length > 0 ? (
-            <ul
-              aria-label={`${filterLabels[filter]} presets`}
-              className="grid list-none gap-3 p-0 sm:grid-cols-2"
-              role="list"
-            >
-              {visiblePresets.map((preset) => (
-                <li key={preset.id}>
-                  <PracticePresetCard
-                    onDelete={() => onDelete(preset)}
-                    onDuplicate={() => onDuplicate(preset)}
-                    onFavorite={() => onFavorite(preset)}
-                    onLoad={() => onLoad(preset)}
-                    onRename={(name) => onRename(preset, name)}
-                    preset={preset}
-                  />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="border-border rounded-2xl border border-dashed px-4 py-12 text-center">
-              <p className="text-foreground font-black">Nothing here yet</p>
-              <p className="text-muted mx-auto mt-2 max-w-sm text-sm leading-6">
-                {emptyMessage}
+          <TabsContent
+            value={filter}
+            className="min-h-0 overflow-y-auto p-3 sm:p-5"
+          >
+            {errorMessage ? (
+              <p
+                className="border-danger/30 bg-danger/10 text-foreground mb-3 rounded-xl border p-3 text-sm"
+                role="alert"
+              >
+                {errorMessage}
               </p>
-            </div>
-          )}
-        </div>
+            ) : null}
+
+            {!isHydrated ? (
+              <p className="text-muted-foreground py-12 text-center text-sm font-bold">
+                Loading presets…
+              </p>
+            ) : visiblePresets.length > 0 ? (
+              <ul
+                aria-label={`${filterLabels[filter]} presets`}
+                className="grid list-none gap-3 p-0 sm:grid-cols-2"
+                role="list"
+              >
+                {visiblePresets.map((preset) => (
+                  <li key={preset.id}>
+                    <PracticePresetCard
+                      onDelete={() => onDelete(preset)}
+                      onDuplicate={() => onDuplicate(preset)}
+                      onFavorite={() => onFavorite(preset)}
+                      onLoad={() => onLoad(preset)}
+                      onRename={(name) => onRename(preset, name)}
+                      preset={preset}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="border-border rounded-2xl border border-dashed px-4 py-12 text-center">
+                <p className="text-foreground font-black">Nothing here yet</p>
+                <p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm leading-6">
+                  {emptyMessage}
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
-    </dialog>
+    </Modal>
   );
 }

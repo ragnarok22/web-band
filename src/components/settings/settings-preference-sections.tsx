@@ -1,8 +1,14 @@
 "use client";
 
 import { Database, Music2, Palette, SlidersHorizontal } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Slider } from "@/components/ui/slider";
 import {
   MAX_HISTORY_MINIMUM_DURATION_SECONDS,
   MIN_HISTORY_MINIMUM_DURATION_SECONDS,
@@ -18,8 +24,102 @@ import type {
   VisualSubdivisionDetail,
 } from "@/types/persistence";
 
-const sectionClass =
-  "border-border bg-surface/70 rounded-3xl border p-5 sm:p-7";
+function PreferenceCard({
+  id,
+  icon,
+  eyebrow,
+  title,
+  children,
+}: {
+  id: string;
+  icon?: ReactNode;
+  eyebrow?: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section aria-labelledby={id}>
+      <Card className="py-5 sm:py-7">
+        <CardHeader className="px-5 sm:px-7">
+          {eyebrow ? (
+            <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+              {icon}
+              {eyebrow}
+            </p>
+          ) : null}
+          <h2 className="mt-2 text-2xl font-black" id={id}>
+            {title}
+          </h2>
+        </CardHeader>
+        <CardContent className="px-5 sm:px-7">{children}</CardContent>
+      </Card>
+    </section>
+  );
+}
+
+function Choice<T extends string | number>({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+}: {
+  id: string;
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <Field>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <NativeSelect
+        id={id}
+        disabled={disabled}
+        value={value}
+        onChange={(event) => {
+          const option = options.find(
+            ([candidate]) => String(candidate) === event.currentTarget.value,
+          );
+          if (option) onChange(option[0]);
+        }}
+      >
+        {options.map(([option, text]) => (
+          <option key={option} value={option}>
+            {text}
+          </option>
+        ))}
+      </NativeSelect>
+    </Field>
+  );
+}
+
+function PreferenceCheck({
+  label,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-bold">
+      {label}
+      <Checkbox
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={onChange}
+      />
+    </label>
+  );
+}
+
+const gridClass = "border-border grid gap-5 border-t pt-5 sm:grid-cols-2";
 
 export function AppearanceSettingsSection() {
   const hydrated = useAppearanceStore((state) => state.hasHydrated);
@@ -41,83 +141,55 @@ export function AppearanceSettingsSection() {
   const setVisualSubdivisionDetail = useAppearanceStore(
     (state) => state.setVisualSubdivisionDetail,
   );
-
   return (
-    <section
-      aria-labelledby="appearance-settings-heading"
-      className={sectionClass}
+    <PreferenceCard
+      id="appearance-settings-heading"
+      icon={<Palette aria-hidden="true" className="size-4" />}
+      eyebrow="Appearance"
+      title="Tune the interface"
     >
-      <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-        <Palette aria-hidden="true" className="size-4" />
-        Appearance
-      </p>
-      <h2 className="mt-2 text-2xl font-black" id="appearance-settings-heading">
-        Tune the interface
-      </h2>
-      <div className="border-border mt-5 grid gap-5 border-t pt-5 sm:grid-cols-2">
-        <label className="text-sm font-extrabold" htmlFor="color-theme">
-          Color theme
-          <select
-            autoComplete="off"
-            className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-            id="color-theme"
-            name="color-theme"
-            onChange={(event) =>
-              setTheme(event.currentTarget.value as ColorTheme)
-            }
-            value={theme}
-          >
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-            <option value="system">Use device setting</option>
-          </select>
-        </label>
-        <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold sm:self-end">
-          Reduce motion
-          <input
-            checked={reducedMotion}
-            className="size-6 accent-[var(--accent)]"
-            disabled={!hydrated}
-            onChange={(event) => setReducedMotion(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
-        <label className="text-sm font-extrabold" htmlFor="visual-detail">
-          Visual subdivision detail
-          <select
-            className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-            id="visual-detail"
-            onChange={(event) =>
-              setVisualSubdivisionDetail(
-                event.currentTarget.value as VisualSubdivisionDetail,
-              )
-            }
-            value={visualSubdivisionDetail}
-          >
-            <option value="beats">Beats only</option>
-            <option value="pattern">Match pattern</option>
-            <option value="sixteenths">All sixteenths</option>
-          </select>
-        </label>
-        <label className="text-sm font-extrabold" htmlFor="beat-intensity">
-          Beat flash intensity
-          <select
-            className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-            id="beat-intensity"
-            onChange={(event) =>
-              setBeatFlashIntensity(
-                event.currentTarget.value as BeatFlashIntensity,
-              )
-            }
-            value={beatFlashIntensity}
-          >
-            <option value="minimal">Minimal</option>
-            <option value="standard">Standard</option>
-            <option value="strong">Strong</option>
-          </select>
-        </label>
+      <div className={gridClass}>
+        <Choice<ColorTheme>
+          id="color-theme"
+          label="Color theme"
+          value={theme}
+          onChange={setTheme}
+          options={[
+            ["dark", "Dark"],
+            ["light", "Light"],
+            ["system", "Use device setting"],
+          ]}
+        />
+        <PreferenceCheck
+          label="Reduce motion"
+          checked={reducedMotion}
+          disabled={!hydrated}
+          onChange={setReducedMotion}
+        />
+        <Choice<VisualSubdivisionDetail>
+          id="visual-detail"
+          label="Visual subdivision detail"
+          value={visualSubdivisionDetail}
+          onChange={setVisualSubdivisionDetail}
+          options={[
+            ["beats", "Beats only"],
+            ["pattern", "Match pattern"],
+            ["sixteenths", "All sixteenths"],
+          ]}
+        />
+        <Choice<BeatFlashIntensity>
+          id="beat-intensity"
+          label="Beat flash intensity"
+          value={beatFlashIntensity}
+          onChange={setBeatFlashIntensity}
+          options={[
+            ["minimal", "Minimal"],
+            ["standard", "Standard"],
+            ["strong", "Strong"],
+          ]}
+        />
       </div>
-    </section>
+    </PreferenceCard>
   );
 }
 
@@ -145,103 +217,77 @@ export function PracticeDefaultsSettingsSection() {
   const setWakeLockEnabled = usePracticeStore(
     (state) => state.setWakeLockEnabled,
   );
-
   return (
-    <section
-      aria-labelledby="practice-defaults-heading"
-      className={sectionClass}
+    <PreferenceCard
+      id="practice-defaults-heading"
+      icon={<SlidersHorizontal aria-hidden="true" className="size-4" />}
+      eyebrow="Practice defaults"
+      title="Start your way"
     >
-      <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-        <SlidersHorizontal aria-hidden="true" className="size-4" />
-        Practice defaults
-      </p>
-      <h2 className="mt-2 text-2xl font-black" id="practice-defaults-heading">
-        Start your way
-      </h2>
-      <div className="border-border mt-5 grid gap-5 border-t pt-5 sm:grid-cols-2">
-        <label className="text-sm font-extrabold" htmlFor="default-count-in">
-          Count-in
-          <select
-            className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-            disabled={!hydrated}
-            id="default-count-in"
-            onChange={(event) =>
-              setCountInMeasures(
-                Number(event.currentTarget.value) as CountInMeasures,
-              )
-            }
-            value={countInMeasures}
+      <div className={gridClass}>
+        <Choice<CountInMeasures>
+          id="default-count-in"
+          label="Count-in"
+          value={countInMeasures}
+          disabled={!hydrated}
+          onChange={setCountInMeasures}
+          options={[
+            [0, "Off"],
+            [1, "1 measure"],
+            [2, "2 measures"],
+            [4, "4 measures"],
+          ]}
+        />
+        <Choice<BpmAdjustmentStep>
+          id="bpm-step"
+          label="Default BPM adjustment"
+          value={bpmAdjustmentStep}
+          disabled={!hydrated}
+          onChange={setBpmAdjustmentStep}
+          options={[
+            [1, "1 BPM"],
+            [5, "5 BPM"],
+          ]}
+        />
+        <Field className="sm:col-span-2">
+          <FieldLabel
+            htmlFor="master-volume"
+            className="flex w-full justify-between"
           >
-            <option value={0}>Off</option>
-            <option value={1}>1 measure</option>
-            <option value={2}>2 measures</option>
-            <option value={4}>4 measures</option>
-          </select>
-        </label>
-        <label className="text-sm font-extrabold" htmlFor="bpm-step">
-          Default BPM adjustment
-          <select
-            className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-            disabled={!hydrated}
-            id="bpm-step"
-            onChange={(event) =>
-              setBpmAdjustmentStep(
-                Number(event.currentTarget.value) as BpmAdjustmentStep,
-              )
-            }
-            value={bpmAdjustmentStep}
-          >
-            <option value={1}>1 BPM</option>
-            <option value={5}>5 BPM</option>
-          </select>
-        </label>
-        <label
-          className="text-sm font-extrabold sm:col-span-2"
-          htmlFor="master-volume"
-        >
-          <span className="flex items-center justify-between gap-4">
             Master volume
-            <span aria-hidden="true" className="text-muted tabular-nums">
+            <span
+              aria-hidden="true"
+              className="text-muted-foreground tabular-nums"
+            >
               {Math.round(masterVolume * 100)}%
             </span>
-          </span>
-          <input
+          </FieldLabel>
+          <Slider
+            aria-label="Master volume"
             aria-valuetext={`${Math.round(masterVolume * 100)} percent`}
-            className="mt-3 w-full accent-[var(--accent)]"
-            disabled={!hydrated}
             id="master-volume"
+            disabled={!hydrated}
             max={1}
             min={0}
-            onChange={(event) =>
-              setMasterVolume(event.currentTarget.valueAsNumber)
-            }
             step={0.01}
-            type="range"
             value={masterVolume}
+            onValueChange={(value) => setMasterVolume(Number(value))}
           />
-        </label>
-        <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold">
-          Keep screen awake while playing
-          <input
-            checked={wakeLockEnabled}
-            className="size-6 accent-[var(--accent)]"
-            disabled={!hydrated}
-            onChange={(event) => setWakeLockEnabled(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
-        <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold">
-          Restore last practice setup
-          <input
-            checked={restoreLastPractice}
-            className="size-6 accent-[var(--accent)]"
-            disabled={!hydrated}
-            onChange={(event) => setRestoreLastPractice(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
+        </Field>
+        <PreferenceCheck
+          label="Keep screen awake while playing"
+          checked={wakeLockEnabled}
+          disabled={!hydrated}
+          onChange={setWakeLockEnabled}
+        />
+        <PreferenceCheck
+          label="Restore last practice setup"
+          checked={restoreLastPractice}
+          disabled={!hydrated}
+          onChange={setRestoreLastPractice}
+        />
       </div>
-    </section>
+    </PreferenceCard>
   );
 }
 
@@ -251,40 +297,32 @@ export function SoundSettingsSection() {
   const setSoundCharacter = usePracticeStore(
     (state) => state.setSoundCharacter,
   );
-
   return (
-    <section aria-labelledby="sound-settings-heading" className={sectionClass}>
-      <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-        <Music2 aria-hidden="true" className="size-4" />
-        Sound
-      </p>
-      <h2 className="mt-2 text-2xl font-black" id="sound-settings-heading">
-        Shape the kit
-      </h2>
-      <p className="text-muted mt-2 max-w-2xl text-sm leading-6">
+    <PreferenceCard
+      id="sound-settings-heading"
+      icon={<Music2 aria-hidden="true" className="size-4" />}
+      eyebrow="Sound"
+      title="Shape the kit"
+    >
+      <p className="text-muted-foreground mb-5 max-w-2xl text-sm leading-6">
         Choose a synthesized drum character for practice, previews, and the
         pattern editor. Balanced preserves the original Web Band kit.
       </p>
-      <label
-        className="border-border mt-5 block max-w-sm border-t pt-5 text-sm font-extrabold"
-        htmlFor="sound-character"
-      >
-        Sound character
-        <select
-          className="border-border bg-background text-foreground mt-2 min-h-11 w-full rounded-xl border px-3"
-          disabled={!hydrated}
+      <div className="max-w-sm">
+        <Choice<SoundCharacter>
           id="sound-character"
-          onChange={(event) =>
-            setSoundCharacter(event.currentTarget.value as SoundCharacter)
-          }
+          label="Sound character"
           value={soundCharacter}
-        >
-          <option value="soft">Soft</option>
-          <option value="balanced">Balanced</option>
-          <option value="punchy">Punchy</option>
-        </select>
-      </label>
-    </section>
+          disabled={!hydrated}
+          onChange={setSoundCharacter}
+          options={[
+            ["soft", "Soft"],
+            ["balanced", "Balanced"],
+            ["punchy", "Punchy"],
+          ]}
+        />
+      </div>
+    </PreferenceCard>
   );
 }
 
@@ -301,82 +339,73 @@ export function HistorySettingsSection() {
   const [minimumDurationInput, setMinimumDurationInput] = useState<
     string | null
   >(null);
-
   return (
-    <section
-      aria-labelledby="history-settings-heading"
-      className={sectionClass}
-    >
-      <h2 className="text-2xl font-black" id="history-settings-heading">
-        Practice history
-      </h2>
-      <p className="text-muted mt-2 text-sm leading-6">
+    <PreferenceCard id="history-settings-heading" title="Practice history">
+      <p className="text-muted-foreground mb-5 text-sm leading-6">
         Choose whether completed practice sessions become journal entries.
       </p>
-      <div className="border-border mt-5 grid gap-5 border-t pt-5 sm:grid-cols-2">
-        <label className="flex min-h-11 items-center justify-between gap-4 text-sm font-extrabold">
-          Save practice history
-          <input
-            checked={enabled}
-            className="size-6 accent-[var(--accent)]"
-            disabled={!hydrated}
-            onChange={(event) => setEnabled(event.target.checked)}
-            type="checkbox"
-          />
-        </label>
-        <div className="text-sm font-extrabold">
-          <label htmlFor="history-minimum-duration">
+      <div className={gridClass}>
+        <PreferenceCheck
+          label="Save practice history"
+          checked={enabled}
+          disabled={!hydrated}
+          onChange={setEnabled}
+        />
+        <Field>
+          <FieldLabel htmlFor="history-minimum-duration">
             Minimum session duration
-          </label>
-          <span className="border-border bg-background mt-2 flex min-h-11 items-center rounded-xl border px-3">
-            <input
-              className="text-foreground min-w-0 flex-1 bg-transparent py-2 outline-none"
+          </FieldLabel>
+          <div className="flex items-center gap-3">
+            <Input
               id="history-minimum-duration"
-              max={MAX_HISTORY_MINIMUM_DURATION_SECONDS}
+              className="min-h-11"
+              aria-describedby="history-duration-help"
+              type="number"
               min={MIN_HISTORY_MINIMUM_DURATION_SECONDS}
+              max={MAX_HISTORY_MINIMUM_DURATION_SECONDS}
+              step={1}
               disabled={!hydrated}
+              value={minimumDurationInput ?? minimumDuration}
               onBlur={() => setMinimumDurationInput(null)}
               onChange={(event) => {
                 setMinimumDurationInput(event.currentTarget.value);
-                if (event.currentTarget.value !== "") {
+                if (event.currentTarget.value !== "")
                   setMinimumDuration(event.currentTarget.valueAsNumber);
-                }
               }}
-              step={1}
-              type="number"
-              value={minimumDurationInput ?? minimumDuration}
             />
-            <span className="text-muted text-xs">seconds</span>
-          </span>
-          <span className="text-muted mt-1 block text-xs font-medium">
+            <span className="text-muted-foreground text-xs">seconds</span>
+          </div>
+          <p
+            id="history-duration-help"
+            className="text-muted-foreground text-xs"
+          >
             {MIN_HISTORY_MINIMUM_DURATION_SECONDS}–
             {MAX_HISTORY_MINIMUM_DURATION_SECONDS} seconds; default 30.
-          </span>
-        </div>
+          </p>
+        </Field>
       </div>
-    </section>
+    </PreferenceCard>
   );
 }
 
 export function StorageStatusSection() {
   const mode = useStorageStore((state) => state.mode);
   const warning = useStorageStore((state) => state.warning);
-
   return (
-    <section aria-labelledby="storage-status-heading" className={sectionClass}>
-      <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-        <Database aria-hidden="true" className="size-4" />
-        Storage status
-      </p>
-      <h2 className="mt-2 text-2xl font-black" id="storage-status-heading">
-        {mode === "indexed-db" ? "Saved on this device" : "Visit-only storage"}
-      </h2>
-      <p className="text-muted mt-2 text-sm leading-6">
+    <PreferenceCard
+      id="storage-status-heading"
+      icon={<Database aria-hidden="true" className="size-4" />}
+      eyebrow="Storage status"
+      title={
+        mode === "indexed-db" ? "Saved on this device" : "Visit-only storage"
+      }
+    >
+      <p className="text-muted-foreground text-sm leading-6">
         {mode === "indexed-db"
           ? "Patterns, presets, favorites, and journal entries stay in this browser. Nothing is uploaded to a server."
           : (warning ??
             "Browser database storage is unavailable, so new data lasts only for this visit.")}
       </p>
-    </section>
+    </PreferenceCard>
   );
 }

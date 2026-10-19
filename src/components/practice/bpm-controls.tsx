@@ -2,6 +2,11 @@
 
 import { Hand, RotateCcw } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import { Kbd } from "@/components/ui/kbd";
+
 import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 import { clampBpm, MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 
@@ -53,7 +58,7 @@ export function BpmControls({
     >
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <p className="text-muted text-xs font-bold tracking-[0.18em] uppercase">
+          <p className="text-muted-foreground text-xs font-bold tracking-[0.18em] uppercase">
             Tempo
           </p>
           <h2
@@ -63,7 +68,9 @@ export function BpmControls({
             Set your pace
           </h2>
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           aria-label={`Reset tempo to ${defaultBpm} BPM`}
           className="border-border text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-lg border transition-colors"
           disabled={disabled}
@@ -72,13 +79,13 @@ export function BpmControls({
           type="button"
         >
           <RotateCcw aria-hidden="true" className="size-4" />
-        </button>
+        </Button>
       </div>
 
       <div className="mb-5 flex items-end justify-center gap-2">
-        <input
+        <Input
           aria-label="Current BPM"
-          className="border-border text-foreground focus:border-accent w-28 border-b bg-transparent text-center text-6xl leading-none font-black tracking-[-0.06em] tabular-nums focus:outline-none"
+          className="h-auto w-32 border-x-0 border-t-0 bg-transparent text-center text-6xl leading-none font-black tracking-[-0.06em] tabular-nums md:text-6xl"
           defaultValue={bpm}
           disabled={disabled}
           inputMode="numeric"
@@ -93,27 +100,24 @@ export function BpmControls({
           }}
           type="number"
         />
-        <span className="text-muted pb-1 text-sm font-extrabold tracking-[0.16em] uppercase">
+        <span className="text-muted-foreground pb-1 text-sm font-extrabold tracking-[0.16em] uppercase">
           BPM
         </span>
       </div>
 
-      <input
+      <Slider
         aria-label="Tempo"
         aria-valuemax={MAX_BPM}
         aria-valuemin={MIN_BPM}
         aria-valuenow={bpm}
         aria-valuetext={`${bpm} BPM`}
-        className="tempo-range mb-5 w-full"
+        className="mb-5"
         disabled={disabled}
         max={MAX_BPM}
         min={MIN_BPM}
-        onChange={(event) => onChange(Number(event.target.value))}
-        onBlur={(event) => onCommit?.(Number(event.currentTarget.value))}
-        onKeyUp={(event) => onCommit?.(Number(event.currentTarget.value))}
-        onPointerUp={(event) => onCommit?.(Number(event.currentTarget.value))}
+        onValueChange={(value) => onChange(Number(value))}
+        onValueCommitted={(value) => onCommit?.(Number(value))}
         step={1}
-        type="range"
         value={bpm}
       />
 
@@ -126,11 +130,12 @@ export function BpmControls({
           const isDefault = Math.abs(adjustment) === adjustmentStep;
 
           return (
-            <button
+            <Button
+              variant={isDefault ? "secondary" : "outline"}
               aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
               className={`hover:bg-surface-hover hover:text-foreground min-h-11 rounded-lg border text-sm font-extrabold tabular-nums transition-colors active:translate-y-px ${
                 isDefault
-                  ? "border-accent/45 bg-accent/10 text-accent hover:border-accent/65"
+                  ? "border-primary/45 bg-primary/10 text-primary hover:border-primary/65"
                   : "border-border bg-surface-elevated text-muted-strong hover:border-border-strong"
               }`}
               data-default-adjustment={isDefault}
@@ -141,22 +146,20 @@ export function BpmControls({
               type="button"
             >
               {adjustment > 0 ? `+${adjustment}` : adjustment}
-            </button>
+            </Button>
           );
         })}
       </div>
-      <button
-        className="border-accent/30 bg-accent/8 text-accent hover:bg-accent/15 mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border text-sm font-extrabold transition-colors"
+      <Button
+        variant="secondary"
+        className="text-primary mt-3 min-h-11 w-full gap-2"
         disabled={disabled}
         onClick={onTap}
         type="button"
       >
         <Hand aria-hidden="true" className="size-4" />
-        Tap tempo{" "}
-        <kbd className="border-accent/25 rounded border px-1.5 py-0.5 text-[0.65rem]">
-          T
-        </kbd>
-      </button>
+        Tap tempo <Kbd>T</Kbd>
+      </Button>
     </section>
   );
 }
