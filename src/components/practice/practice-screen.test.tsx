@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { guidanceTimeline } from "@/audio/guidance-timeline";
@@ -1017,6 +1018,49 @@ describe("practice screen", () => {
       screen.getByText(/Choose a 6\/8 strumming pattern before playing/i),
     ).toBeInTheDocument();
     expect(engine.play).not.toHaveBeenCalled();
+  });
+
+  it("applies master mute once per action under Strict Mode and restores the selected volume", async () => {
+    const user = userEvent.setup();
+    render(
+      <StrictMode>
+        <PracticeScreen />
+      </StrictMode>,
+    );
+    const mute = screen.getByRole("button", { name: "Master mute" });
+
+    expect(engine.setMasterVolume).not.toHaveBeenCalled();
+    await user.click(mute);
+
+    expect(mute).toHaveAttribute("aria-pressed", "true");
+    expect(engine.setMasterVolume.mock.calls).toEqual([[0]]);
+
+    fireEvent.change(screen.getByRole("slider", { name: "Master" }), {
+      target: { value: "0.35" },
+    });
+    expect(usePracticeStore.getState().masterVolume).toBe(0.35);
+    expect(engine.setMasterVolume.mock.calls).toEqual([[0], [0]]);
+
+    await user.click(mute);
+
+    expect(mute).toHaveAttribute("aria-pressed", "false");
+    expect(engine.setMasterVolume.mock.calls).toEqual([[0], [0], [0.35]]);
+  });
+
+  it("preserves consecutive master mute shortcuts before a render", () => {
+    render(<PracticeScreen />);
+    const volume = usePracticeStore.getState().masterVolume;
+
+    act(() => {
+      fireEvent.keyDown(window, { key: "m" });
+      fireEvent.keyDown(window, { key: "m" });
+    });
+
+    expect(screen.getByRole("button", { name: "Master mute" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(engine.setMasterVolume.mock.calls).toEqual([[0], [volume]]);
   });
 
   it("updates groove controls and mixer state", async () => {

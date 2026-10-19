@@ -138,6 +138,7 @@ export function usePracticeController() {
   const [pendingPatternId, setPendingPatternId] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(shouldShowOnboarding);
+  const masterMutedRef = useRef(false);
   const focusButtonRef = useRef<HTMLButtonElement>(null);
   const bpmAnnouncementTimerRef = useRef<number | null>(null);
   const previousTrainerBpmRef = useRef<number | null>(null);
@@ -320,11 +321,10 @@ export function usePracticeController() {
   }
 
   function toggleMasterMute(): void {
-    setMasterMuted((muted) => {
-      const nextMuted = !muted;
-      getAudioEngine().setMasterVolume(nextMuted ? 0 : masterVolume);
-      return nextMuted;
-    });
+    const nextMuted = !masterMutedRef.current;
+    masterMutedRef.current = nextMuted;
+    setMasterMuted(nextMuted);
+    getAudioEngine().setMasterVolume(nextMuted ? 0 : masterVolume);
   }
 
   function dismissOnboarding(): void {
