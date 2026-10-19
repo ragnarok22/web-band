@@ -52,9 +52,18 @@ export function SavePracticePresetDialog({
     }
     setValidationMessage(null);
     setIsSaving(true);
-    const saved = await onSave(trimmedName);
-    setIsSaving(false);
-    if (saved) closeDialog();
+    try {
+      const saved = await onSave(trimmedName);
+      if (saved) closeDialog();
+    } catch (error) {
+      setValidationMessage(
+        error instanceof Error
+          ? error.message
+          : "Practice preset could not be saved.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
