@@ -66,7 +66,7 @@ export function HistorySummary({ sessions }: HistorySummaryProps) {
     <section aria-labelledby="history-summary-heading">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
+          <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
             At a glance
           </p>
           <h2
@@ -76,7 +76,7 @@ export function HistorySummary({ sessions }: HistorySummaryProps) {
             Your local rhythm
           </h2>
         </div>
-        <p className="text-muted hidden max-w-sm text-right text-xs leading-5 sm:block">
+        <p className="text-muted-foreground hidden max-w-sm text-right text-xs leading-5 sm:block">
           These summaries reflect only practice saved on this device. They are a
           personal journal, not professional analytics.
         </p>
@@ -88,8 +88,8 @@ export function HistorySummary({ sessions }: HistorySummaryProps) {
             className={`border-border bg-surface relative overflow-hidden rounded-2xl border p-5 ${index === 0 ? "sm:col-span-2 xl:col-span-1" : ""}`}
             key={label}
           >
-            <dt className="text-muted text-xs font-extrabold tracking-[0.12em] uppercase">
-              <span className="bg-accent/8 text-accent absolute -top-5 -right-5 flex size-20 items-end justify-start rounded-full p-4">
+            <dt className="text-muted-foreground text-xs font-extrabold tracking-[0.12em] uppercase">
+              <span className="bg-primary/8 text-primary absolute -top-5 -right-5 flex size-20 items-end justify-start rounded-full p-4">
                 <Icon aria-hidden="true" className="size-5" />
               </span>
               {label}
@@ -97,11 +97,11 @@ export function HistorySummary({ sessions }: HistorySummaryProps) {
             <dd className="text-foreground mt-6 text-2xl leading-tight font-black tracking-[-0.04em] [overflow-wrap:anywhere] break-words">
               {value}
             </dd>
-            <dd className="text-muted mt-2 text-xs font-semibold">{detail}</dd>
+            <dd className="text-muted-foreground mt-2 text-xs font-semibold">{detail}</dd>
           </dl>
         ))}
       </div>
-      <p className="text-muted mt-4 text-xs leading-5 sm:hidden">
+      <p className="text-muted-foreground mt-4 text-xs leading-5 sm:hidden">
         These summaries reflect only practice saved on this device. They are a
         personal journal, not professional analytics.
       </p>

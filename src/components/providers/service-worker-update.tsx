@@ -293,19 +293,19 @@ export function ServiceWorkerUpdate() {
         ) : notice === "waiting" || notice === "downloading" ? (
           <Download
             aria-hidden="true"
-            className="text-accent mt-0.5 size-5 shrink-0"
+            className="text-primary mt-0.5 size-5 shrink-0"
           />
         ) : (
           <RefreshCw
             aria-hidden="true"
-            className="text-accent mt-0.5 size-5 shrink-0"
+            className="text-primary mt-0.5 size-5 shrink-0"
           />
         )}
         <p className="text-muted-strong text-sm leading-6">{content.message}</p>
       </div>
       {content.action ? (
         <button
-          className="bg-accent text-accent-ink hover:bg-accent-strong min-h-11 shrink-0 rounded-lg px-3 font-bold transition-colors disabled:opacity-50"
+          className="bg-primary text-accent-ink hover:bg-accent-strong min-h-11 shrink-0 rounded-lg px-3 font-bold transition-colors disabled:opacity-50"
           disabled={isPending}
           onClick={() => {
             if (content.action === "apply") {

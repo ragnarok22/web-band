@@ -42,7 +42,7 @@ export function HistoryScreen() {
 
   if (!isHydrated || isLoading) {
     return (
-      <main className="text-muted flex min-h-screen items-center justify-center px-5 text-sm font-bold tracking-wider uppercase">
+      <main className="text-muted-foreground flex min-h-screen items-center justify-center px-5 text-sm font-bold tracking-wider uppercase">
         <p aria-live="polite" role="status">
           Opening your practice journal
         </p>
@@ -55,11 +55,11 @@ export function HistoryScreen() {
       <header className="border-border relative overflow-hidden border-b pb-9 sm:pb-12">
         <span
           aria-hidden="true"
-          className="bg-accent/6 absolute -top-20 right-0 size-64 rounded-full blur-3xl"
+          className="bg-primary/6 absolute -top-20 right-0 size-64 rounded-full blur-3xl"
         />
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.2em] uppercase">
+            <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.2em] uppercase">
               <BookOpen aria-hidden="true" className="size-4" />
               Practice journal
             </p>
@@ -70,7 +70,7 @@ export function HistoryScreen() {
             >
               The work you put in.
             </h1>
-            <p className="text-muted mt-4 max-w-xl text-sm leading-6 sm:text-base">
+            <p className="text-muted-foreground mt-4 max-w-xl text-sm leading-6 sm:text-base">
               A quiet record of the grooves, tempos, and minutes practiced on
               this device.
             </p>
@@ -103,18 +103,18 @@ export function HistoryScreen() {
 
       {sessions.length === 0 ? (
         <section className="border-border bg-surface/60 mx-auto mt-12 max-w-2xl rounded-3xl border px-6 py-14 text-center sm:px-12">
-          <span className="border-accent/20 bg-accent/8 text-accent mx-auto flex size-16 items-center justify-center rounded-2xl border">
+          <span className="border-primary/20 bg-primary/8 text-primary mx-auto flex size-16 items-center justify-center rounded-2xl border">
             <BookOpen aria-hidden="true" className="size-7" />
           </span>
           <h2 className="mt-6 text-3xl font-black tracking-[-0.04em]">
             No sessions yet
           </h2>
-          <p className="text-muted mx-auto mt-3 max-w-md leading-7">
+          <p className="text-muted-foreground mx-auto mt-3 max-w-md leading-7">
             Play a meaningful session in the practice room and it will settle
             here as your first journal entry.
           </p>
           <Link
-            className="bg-accent text-accent-ink mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl px-5 text-sm font-extrabold"
+            className="bg-primary text-accent-ink mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl px-5 text-sm font-extrabold"
             href="/practice"
           >
             Start practicing
@@ -125,7 +125,7 @@ export function HistoryScreen() {
         <div className="space-y-14 pt-10 sm:pt-12">
           <HistorySummary sessions={sessions} />
           <section aria-labelledby="recent-sessions-heading">
-            <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
+            <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
               Journal entries
             </p>
             <h2

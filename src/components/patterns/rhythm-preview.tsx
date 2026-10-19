@@ -22,7 +22,7 @@ export function RhythmPreview({ pattern }: RhythmPreviewProps) {
     >
       {rows.map((row) => (
         <div className="flex items-center gap-2" key={row.label}>
-          <span className="text-muted w-12 text-[0.62rem] font-bold tracking-wide uppercase">
+          <span className="text-muted-foreground w-12 text-[0.62rem] font-bold tracking-wide uppercase">
             {row.label}
           </span>
           <span
@@ -40,7 +40,7 @@ export function RhythmPreview({ pattern }: RhythmPreviewProps) {
               );
               return (
                 <span
-                  className={`h-2 rounded-[0.15rem] ${hit ? (hit.velocity >= 0.8 ? "bg-accent" : "bg-accent/45") : "bg-surface-hover"}`}
+                  className={`h-2 rounded-[0.15rem] ${hit ? (hit.velocity >= 0.8 ? "bg-primary" : "bg-primary/45") : "bg-surface-hover"}`}
                   key={step}
                 />
               );

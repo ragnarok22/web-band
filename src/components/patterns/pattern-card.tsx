@@ -36,10 +36,10 @@ export function PatternCard({
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.12em] uppercase">
-            <span className="border-accent/25 bg-accent/10 text-accent rounded-md border px-2 py-1">
+            <span className="border-primary/25 bg-primary/10 text-primary rounded-md border px-2 py-1">
               {formatPatternCategory(pattern.category)}
             </span>
-            <span className="text-muted">{pattern.difficulty}</span>
+            <span className="text-muted-foreground">{pattern.difficulty}</span>
             {!pattern.isBuiltIn ? (
               <span className="border-success/30 bg-success/10 text-success rounded-md border px-2 py-1">
                 Your pattern
@@ -57,7 +57,7 @@ export function PatternCard({
           <button
             aria-label={`${pattern.name} favorite`}
             aria-pressed={isFavorite}
-            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait disabled:opacity-50 ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
+            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait disabled:opacity-50 ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
             disabled={favoriteDisabled}
             onClick={onFavorite}
             type="button"
@@ -70,13 +70,13 @@ export function PatternCard({
         </div>
       </div>
 
-      <p className="text-muted min-h-12 text-sm leading-6 [overflow-wrap:anywhere] break-words">
+      <p className="text-muted-foreground min-h-12 text-sm leading-6 [overflow-wrap:anywhere] break-words">
         {pattern.description}
       </p>
 
       <dl className="my-4 grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
         <div>
-          <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
             Meter
           </dt>
           <dd className="text-foreground mt-1 font-extrabold tabular-nums">
@@ -84,7 +84,7 @@ export function PatternCard({
           </dd>
         </div>
         <div>
-          <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
             Default
           </dt>
           <dd className="text-foreground mt-1 font-extrabold tabular-nums">
@@ -92,7 +92,7 @@ export function PatternCard({
           </dd>
         </div>
         <div>
-          <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
             Recommended
           </dt>
           <dd className="text-foreground mt-1 font-extrabold tabular-nums">
@@ -101,7 +101,7 @@ export function PatternCard({
           </dd>
         </div>
         <div>
-          <dt className="text-muted text-[0.62rem] font-bold tracking-wider uppercase">
+          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
             Grid
           </dt>
           <dd className="text-foreground mt-1 font-extrabold tabular-nums">
@@ -142,7 +142,7 @@ export function PatternCard({
           {isPreviewing ? "Stop" : "Preview"}
         </button>
         <button
-          className="bg-accent text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-extrabold transition-colors sm:col-span-1"
+          className="bg-primary text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-extrabold transition-colors sm:col-span-1"
           onClick={onOpen}
           type="button"
         >

@@ -8,7 +8,7 @@ const HistoryScreen = dynamic(
   () => import("./history-screen").then((module) => module.HistoryScreen),
   {
     loading: () => (
-      <main className="text-muted flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
+      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
         Opening your practice journal
       </main>
     ),

@@ -72,18 +72,18 @@ export function AboutScreen() {
       <header className="border-border relative isolate overflow-hidden border-b pb-12 sm:pb-16 lg:pb-20">
         <div
           aria-hidden="true"
-          className="bg-accent/8 absolute -top-32 right-[-12rem] -z-10 size-[32rem] rounded-full blur-3xl"
+          className="bg-primary/8 absolute -top-32 right-[-12rem] -z-10 size-[32rem] rounded-full blur-3xl"
         />
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(20rem,0.72fr)] lg:items-end lg:gap-16">
           <div>
-            <p className="text-accent flex items-center gap-2 text-xs font-extrabold tracking-[0.2em] uppercase">
+            <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.2em] uppercase">
               <Drum aria-hidden="true" className="size-4" />
               About Web Band
             </p>
             <h1 className="text-foreground mt-5 max-w-4xl text-5xl leading-[0.94] font-black tracking-[-0.065em] sm:text-7xl lg:text-[6.4rem]">
               A drum room without the room.
             </h1>
-            <p className="text-muted mt-7 max-w-2xl text-base leading-8 sm:text-lg">
+            <p className="text-muted-foreground mt-7 max-w-2xl text-base leading-8 sm:text-lg">
               Web Band is a browser-built rhythm section for guitarists who want
               to press Play, find the pocket, and get back to practicing. No
               setup ritual. No account. No samples.
@@ -93,14 +93,14 @@ export function AboutScreen() {
           <div className="border-border bg-surface/75 relative rounded-[2rem] border p-5 shadow-[0_24px_80px_var(--shadow)] sm:p-7">
             <div className="border-border flex items-center justify-between border-b pb-4">
               <div>
-                <p className="text-accent text-[0.65rem] font-extrabold tracking-[0.18em] uppercase">
+                <p className="text-primary text-[0.65rem] font-extrabold tracking-[0.18em] uppercase">
                   One bar / 4:4
                 </p>
                 <p className="text-foreground mt-1 text-sm font-extrabold">
                   Built in the browser
                 </p>
               </div>
-              <AudioLines aria-hidden="true" className="text-muted size-5" />
+              <AudioLines aria-hidden="true" className="text-muted-foreground size-5" />
             </div>
             <div
               aria-label="A sixteen-step rhythm with accented beats"
@@ -111,18 +111,18 @@ export function AboutScreen() {
                 <span
                   className={`h-14 rounded-md border sm:h-16 ${
                     step === "accent"
-                      ? "border-accent bg-accent shadow-[0_0_24px_rgba(231,169,75,0.3)]"
+                      ? "border-primary bg-primary shadow-[0_0_24px_rgba(231,169,75,0.3)]"
                       : step === "backbeat"
                         ? "border-secondary-accent/60 bg-secondary-accent/75"
                         : step === "kick"
-                          ? "border-accent/40 bg-accent/25"
+                          ? "border-primary/40 bg-primary/25"
                           : "border-border bg-surface-elevated"
                   }`}
                   key={`${step}-${index}`}
                 />
               ))}
             </div>
-            <div className="text-muted mt-5 flex items-center justify-between font-mono text-[0.65rem] font-bold tracking-[0.15em] uppercase">
+            <div className="text-muted-foreground mt-5 flex items-center justify-between font-mono text-[0.65rem] font-bold tracking-[0.15em] uppercase">
               <span>Click</span>
               <span>Count</span>
               <span>Groove</span>
@@ -144,7 +144,7 @@ export function AboutScreen() {
               <dt className="text-foreground font-mono text-2xl font-black tabular-nums sm:text-3xl">
                 {value}
               </dt>
-              <dd className="text-muted mt-1 text-[0.65rem] font-extrabold tracking-[0.14em] uppercase">
+              <dd className="text-muted-foreground mt-1 text-[0.65rem] font-extrabold tracking-[0.14em] uppercase">
                 {label}
               </dd>
             </div>
@@ -155,7 +155,7 @@ export function AboutScreen() {
       <section aria-labelledby="principles-heading" className="py-14 sm:py-20">
         <div className="grid gap-8 lg:grid-cols-[0.58fr_1.42fr] lg:gap-16">
           <div>
-            <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
+            <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
               Three principles
             </p>
             <h2
@@ -164,7 +164,7 @@ export function AboutScreen() {
             >
               Built like an instrument.
             </h2>
-            <p className="text-muted mt-5 max-w-md leading-7">
+            <p className="text-muted-foreground mt-5 max-w-md leading-7">
               The interface is deliberately smaller than a drum machine. The
               engineering underneath it is not.
             </p>
@@ -175,17 +175,17 @@ export function AboutScreen() {
                 className="grid gap-4 py-7 sm:grid-cols-[3rem_1fr] sm:gap-6 sm:py-9"
                 key={eyebrow}
               >
-                <span className="border-accent/25 bg-accent/10 text-accent flex size-11 items-center justify-center rounded-xl border">
+                <span className="border-primary/25 bg-primary/10 text-primary flex size-11 items-center justify-center rounded-xl border">
                   <Icon aria-hidden="true" className="size-5" />
                 </span>
                 <div>
-                  <p className="text-muted text-[0.65rem] font-extrabold tracking-[0.16em] uppercase">
+                  <p className="text-muted-foreground text-[0.65rem] font-extrabold tracking-[0.16em] uppercase">
                     {eyebrow}
                   </p>
                   <h3 className="text-foreground mt-2 text-2xl font-black tracking-[-0.035em]">
                     {title}
                   </h3>
-                  <p className="text-muted mt-2 max-w-2xl leading-7">
+                  <p className="text-muted-foreground mt-2 max-w-2xl leading-7">
                     {description}
                   </p>
                 </div>
@@ -205,7 +205,7 @@ export function AboutScreen() {
         />
         <div className="border-border flex flex-col gap-4 border-b pb-7 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-accent text-xs font-extrabold tracking-[0.18em] uppercase">
+            <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
               Signal path
             </p>
             <h2
@@ -215,7 +215,7 @@ export function AboutScreen() {
               From one tap to the pocket.
             </h2>
           </div>
-          <p className="text-muted max-w-md text-sm leading-6">
+          <p className="text-muted-foreground max-w-md text-sm leading-6">
             The musical clock stays outside React so controls and animation can
             move without moving the beat.
           </p>
@@ -226,13 +226,13 @@ export function AboutScreen() {
               className={`border-border py-6 lg:px-6 lg:py-8 ${index > 0 ? "border-t lg:border-t-0 lg:border-l" : "lg:pl-0"}`}
               key={number}
             >
-              <span className="text-accent font-mono text-xs font-black">
+              <span className="text-primary font-mono text-xs font-black">
                 {number}
               </span>
               <h3 className="text-foreground mt-4 text-lg font-black">
                 {title}
               </h3>
-              <p className="text-muted mt-2 text-sm leading-6">{description}</p>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">{description}</p>
             </li>
           ))}
         </ol>
@@ -240,22 +240,22 @@ export function AboutScreen() {
 
       <section className="grid gap-6 py-14 sm:py-20 lg:grid-cols-[1fr_0.8fr] lg:items-stretch">
         <div className="border-border bg-background/40 rounded-[2rem] border p-6 sm:p-9">
-          <CloudOff aria-hidden="true" className="text-accent size-7" />
+          <CloudOff aria-hidden="true" className="text-primary size-7" />
           <h2 className="text-foreground mt-6 text-3xl font-black tracking-[-0.045em]">
             The room travels with the browser.
           </h2>
-          <p className="text-muted mt-4 max-w-2xl leading-7">
+          <p className="text-muted-foreground mt-4 max-w-2xl leading-7">
             Once installed, the practice room, groove library, editor, history,
             settings, and this page work offline. Your saved work remains on the
             device, with JSON backup when you want to move it.
           </p>
           <div className="text-muted-strong mt-7 flex items-center gap-3 text-sm font-extrabold">
-            <HardDrive aria-hidden="true" className="text-accent size-5" />
+            <HardDrive aria-hidden="true" className="text-primary size-5" />
             IndexedDB for your work. No cloud account required.
           </div>
         </div>
 
-        <div className="bg-accent text-accent-ink flex flex-col justify-between rounded-[2rem] p-6 sm:p-9">
+        <div className="bg-primary text-accent-ink flex flex-col justify-between rounded-[2rem] p-6 sm:p-9">
           <div>
             <p className="text-xs font-extrabold tracking-[0.18em] uppercase">
               Ready when you are
@@ -266,7 +266,7 @@ export function AboutScreen() {
           </div>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
             <Link
-              className="bg-accent-ink text-accent flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-extrabold"
+              className="bg-accent-ink text-primary flex min-h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-extrabold"
               href="/practice"
             >
               Start practicing

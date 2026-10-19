@@ -224,7 +224,7 @@ export function PatternBrowser() {
           <h2 className="text-foreground text-xl font-black">
             No grooves match
           </h2>
-          <p className="text-muted mt-2">
+          <p className="text-muted-foreground mt-2">
             Clear a filter or try a broader search.
           </p>
         </section>
@@ -245,14 +245,14 @@ function PatternBrowserHeader({
   return (
     <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <div className="text-accent mb-3 flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+        <div className="text-primary mb-3 flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
           <LibraryBig aria-hidden="true" className="size-4" />
           Groove library
         </div>
         <h1 className="text-foreground text-4xl font-black tracking-[-0.05em] sm:text-5xl">
           Find your pocket
         </h1>
-        <p className="text-muted mt-3 max-w-2xl leading-7">
+        <p className="text-muted-foreground mt-3 max-w-2xl leading-7">
           Forty-four original practice grooves, from steady foundations to
           syncopated challenges.
         </p>
@@ -260,7 +260,7 @@ function PatternBrowserHeader({
       <div className="flex flex-wrap items-center gap-2">
         <PatternSharingControl />
         <Link
-          className="bg-accent text-accent-ink hover:bg-accent-strong flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition-colors"
+          className="bg-primary text-accent-ink hover:bg-accent-strong flex min-h-12 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition-colors"
           href="/editor"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -302,11 +302,11 @@ function PatternFiltersPanel({
       className="border-border bg-surface mb-6 rounded-2xl border p-4 sm:p-5"
     >
       <div className="grid gap-3 sm:grid-cols-[1.7fr_auto]">
-        <label className="border-border bg-surface-elevated focus-within:border-accent flex min-h-12 items-center gap-2 rounded-xl border px-3">
-          <Search aria-hidden="true" className="text-muted size-4" />
+        <label className="border-border bg-surface-elevated focus-within:border-primary flex min-h-12 items-center gap-2 rounded-xl border px-3">
+          <Search aria-hidden="true" className="text-muted-foreground size-4" />
           <span className="sr-only">Search patterns</span>
           <input
-            className="text-foreground placeholder:text-muted min-w-0 flex-1 bg-transparent text-sm outline-none"
+            className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
             onChange={(event) => onFilterChange("search", event.target.value)}
             placeholder="Search patterns"
             type="search"
@@ -428,8 +428,8 @@ function PatternRail({
 }: PatternRailProps) {
   return (
     <>
-      <p className="text-muted mb-3 flex items-center gap-2 text-xs font-bold md:hidden">
-        <span aria-hidden="true" className="bg-accent h-px w-8" />
+      <p className="text-muted-foreground mb-3 flex items-center gap-2 text-xs font-bold md:hidden">
+        <span aria-hidden="true" className="bg-primary h-px w-8" />
         Swipe the cards to explore more grooves
       </p>
       <section
@@ -459,7 +459,7 @@ function PatternRail({
 
 function PatternBrowserLoading() {
   return (
-    <main className="text-muted flex min-h-screen items-center justify-center px-5 text-center text-sm font-extrabold tracking-wider uppercase">
+    <main className="text-muted-foreground flex min-h-screen items-center justify-center px-5 text-center text-sm font-extrabold tracking-wider uppercase">
       <p aria-live="polite" role="status">
         Loading your groove library
       </p>
@@ -477,7 +477,7 @@ interface FilterSelectProps {
 function FilterSelect({ label, onChange, options, value }: FilterSelectProps) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-muted px-1 text-[0.62rem] font-extrabold tracking-wider uppercase">
+      <span className="text-muted-foreground px-1 text-[0.62rem] font-extrabold tracking-wider uppercase">
         {label}
       </span>
       <select

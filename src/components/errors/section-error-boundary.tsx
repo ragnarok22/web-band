@@ -62,11 +62,11 @@ export class SectionErrorBoundary extends Component<
         >
           {title}
         </Heading>
-        <p className="text-muted mt-2 leading-6">
+        <p className="text-muted-foreground mt-2 leading-6">
           Your saved local work is untouched. Try loading this section again.
         </p>
         <button
-          className="bg-accent text-accent-ink hover:bg-accent-strong mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg px-4 font-extrabold"
+          className="bg-primary text-accent-ink hover:bg-accent-strong mt-6 inline-flex min-h-11 items-center gap-2 rounded-lg px-4 font-extrabold"
           onClick={this.retry}
           type="button"
         >
