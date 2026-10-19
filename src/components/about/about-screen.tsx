@@ -100,7 +100,10 @@ export function AboutScreen() {
                   Built in the browser
                 </p>
               </div>
-              <AudioLines aria-hidden="true" className="text-muted-foreground size-5" />
+              <AudioLines
+                aria-hidden="true"
+                className="text-muted-foreground size-5"
+              />
             </div>
             <div
               aria-label="A sixteen-step rhythm with accented beats"
@@ -232,7 +235,9 @@ export function AboutScreen() {
               <h3 className="text-foreground mt-4 text-lg font-black">
                 {title}
               </h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-6">{description}</p>
+              <p className="text-muted-foreground mt-2 text-sm leading-6">
+                {description}
+              </p>
             </li>
           ))}
         </ol>

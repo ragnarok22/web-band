@@ -60,11 +60,17 @@ export function HistorySessionCard({
       <div className="flex items-center justify-between gap-3 sm:justify-end">
         <div className="text-muted-strong flex flex-wrap items-center gap-3 text-sm font-bold">
           <span className="flex items-center gap-1.5">
-            <Clock3 aria-hidden="true" className="text-muted-foreground size-4" />
+            <Clock3
+              aria-hidden="true"
+              className="text-muted-foreground size-4"
+            />
             {formatSessionDuration(session.durationSeconds)}
           </span>
           <span className="flex items-center gap-1.5">
-            <Gauge aria-hidden="true" className="text-muted-foreground size-4" />
+            <Gauge
+              aria-hidden="true"
+              className="text-muted-foreground size-4"
+            />
             {bpm}
           </span>
         </div>

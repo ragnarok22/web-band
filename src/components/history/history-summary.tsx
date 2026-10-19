@@ -97,7 +97,9 @@ export function HistorySummary({ sessions }: HistorySummaryProps) {
             <dd className="text-foreground mt-6 text-2xl leading-tight font-black tracking-[-0.04em] [overflow-wrap:anywhere] break-words">
               {value}
             </dd>
-            <dd className="text-muted-foreground mt-2 text-xs font-semibold">{detail}</dd>
+            <dd className="text-muted-foreground mt-2 text-xs font-semibold">
+              {detail}
+            </dd>
           </dl>
         ))}
       </div>
