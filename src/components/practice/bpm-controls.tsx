@@ -1,6 +1,7 @@
 "use client";
 
 import { Hand, RotateCcw } from "lucide-react";
+import { cn } from "cn";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,7 +98,7 @@ export function BpmControls({
       <h2 className="sr-only" id={embedded ? "tempo-heading" : undefined}>
         {embedded ? "Set your pace" : null}
       </h2>
-      <div className="mb-3 flex items-center justify-center gap-3">
+      <div className="mb-3 flex items-center justify-center gap-2 sm:gap-3">
         {embedded ? (
           <Button
             variant="outline"
@@ -112,11 +113,12 @@ export function BpmControls({
         ) : null}
         <Input
           aria-label="Current BPM"
-          className={
+          className={cn(
+            "focus-visible:border-primary h-auto shrink-0 [appearance:textfield] rounded-none border-x-0 border-t-0 border-b border-transparent bg-transparent px-1 text-center leading-none tabular-nums focus-visible:ring-0 focus-visible:outline-0 dark:bg-transparent [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none",
             embedded
-              ? "h-auto w-28 border-0 bg-transparent text-center text-5xl leading-none font-extrabold tracking-tight tabular-nums md:text-5xl dark:bg-transparent"
-              : "h-auto w-32 border-x-0 border-t-0 bg-transparent text-center text-6xl leading-none font-black tracking-[-0.06em] tabular-nums md:text-6xl"
-          }
+              ? "w-28 text-5xl font-extrabold tracking-tight md:text-5xl"
+              : "w-32 text-6xl font-black tracking-[-0.06em] md:text-6xl",
+          )}
           defaultValue={bpm}
           disabled={disabled}
           inputMode="numeric"

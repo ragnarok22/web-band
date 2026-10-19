@@ -9,13 +9,19 @@ import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 function ControlledBpmControls({
   adjustmentStep = 1,
   defaultBpm = 90,
+  embedded = false,
+  disabled = false,
   onChange = vi.fn(),
   onCommit = vi.fn(),
+  onTap = vi.fn(),
 }: {
   adjustmentStep?: BpmAdjustmentStep;
   defaultBpm?: number;
+  embedded?: boolean;
+  disabled?: boolean;
   onChange?: (bpm: number) => void;
   onCommit?: (bpm: number) => void;
+  onTap?: () => void;
 }) {
   const [bpm, setBpm] = useState(90);
 
@@ -24,17 +30,134 @@ function ControlledBpmControls({
       adjustmentStep={adjustmentStep}
       bpm={bpm}
       defaultBpm={defaultBpm}
+      disabled={disabled}
+      embedded={embedded}
       onChange={(nextBpm) => {
         setBpm(nextBpm);
         onChange(nextBpm);
       }}
       onCommit={onCommit}
-      onTap={vi.fn()}
+      onTap={onTap}
     />
   );
 }
 
 describe("BPM controls", () => {
+  describe.each([
+    { layout: "standalone", embedded: false },
+    { layout: "embedded", embedded: true },
+  ])("$layout numeric input", ({ embedded }) => {
+    it("retains numeric semantics and commits three-digit edits only on blur", async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      const onCommit = vi.fn();
+      render(
+        <ControlledBpmControls
+          embedded={embedded}
+          onChange={onChange}
+          onCommit={onCommit}
+        />,
+      );
+      const input = screen.getByRole("spinbutton", { name: "Current BPM" });
+
+      expect(input).toHaveAttribute("type", "number");
+      expect(input).toHaveAttribute("inputmode", "numeric");
+      expect(input).toHaveAttribute("min", "40");
+      expect(input).toHaveAttribute("max", "220");
+
+      await user.clear(input);
+      await user.type(input, "189");
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onCommit).not.toHaveBeenCalled();
+
+      await user.tab();
+
+      expect(onChange).toHaveBeenCalledExactlyOnceWith(189);
+      expect(onCommit).toHaveBeenCalledExactlyOnceWith(189);
+      expect(
+        screen.getByRole("spinbutton", { name: "Current BPM" }),
+      ).toHaveValue(189);
+    });
+
+    it("commits once and leaves editing on Enter", async () => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      const onCommit = vi.fn();
+      render(
+        <ControlledBpmControls
+          embedded={embedded}
+          onChange={onChange}
+          onCommit={onCommit}
+        />,
+      );
+      const input = screen.getByRole("spinbutton", { name: "Current BPM" });
+
+      await user.clear(input);
+      await user.type(input, "220{Enter}");
+
+      expect(onChange).toHaveBeenCalledExactlyOnceWith(220);
+      expect(onCommit).toHaveBeenCalledExactlyOnceWith(220);
+      const committedInput = screen.getByRole("spinbutton", {
+        name: "Current BPM",
+      });
+      expect(committedInput).toHaveValue(220);
+      expect(committedInput).not.toHaveFocus();
+    });
+
+    it.each([
+      { draft: "20", expected: 40 },
+      { draft: "999", expected: 220 },
+    ])("clamps $draft to $expected on blur", async ({ draft, expected }) => {
+      const user = userEvent.setup();
+      const onChange = vi.fn();
+      const onCommit = vi.fn();
+      render(
+        <ControlledBpmControls
+          embedded={embedded}
+          onChange={onChange}
+          onCommit={onCommit}
+        />,
+      );
+      const input = screen.getByRole("spinbutton", { name: "Current BPM" });
+
+      await user.clear(input);
+      await user.type(input, draft);
+      await user.tab();
+
+      expect(onChange).toHaveBeenCalledExactlyOnceWith(expected);
+      expect(onCommit).toHaveBeenCalledExactlyOnceWith(expected);
+      expect(
+        screen.getByRole("spinbutton", { name: "Current BPM" }),
+      ).toHaveValue(expected);
+    });
+
+    it("disables numeric editing, slider, adjustments, reset, and tap tempo", () => {
+      const onChange = vi.fn();
+      const onCommit = vi.fn();
+      const onTap = vi.fn();
+      render(
+        <ControlledBpmControls
+          disabled
+          embedded={embedded}
+          onChange={onChange}
+          onCommit={onCommit}
+          onTap={onTap}
+        />,
+      );
+
+      expect(
+        screen.getByRole("spinbutton", { name: "Current BPM" }),
+      ).toBeDisabled();
+      expect(screen.getByRole("slider", { name: "Tempo" })).toBeDisabled();
+      for (const button of screen.getAllByRole("button")) {
+        expect(button).toBeDisabled();
+      }
+      expect(onChange).not.toHaveBeenCalled();
+      expect(onCommit).not.toHaveBeenCalled();
+      expect(onTap).not.toHaveBeenCalled();
+    });
+  });
+
   it("applies sequential one- and five-BPM adjustments to the current value", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
