@@ -16,6 +16,46 @@ async function expectNoOverflow(page: Page) {
   ).toBe(true);
 }
 
+for (const width of [320, 1280]) {
+  test(`advanced tempo options do not resize or displace the transport at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/practice");
+    await expect(
+      page.getByRole("button", { name: "Play", exact: true }),
+    ).toBeEnabled();
+    await page.evaluate(() => document.fonts.ready);
+    const primary = page.locator('[data-slot="transport-primary"]');
+    const before = (await primary.boundingBox())!;
+    const play = page.getByRole("button", { name: "Play", exact: true });
+    const playBefore = await play.evaluate(
+      (element) => element.getBoundingClientRect().y + window.scrollY,
+    );
+    const trigger = page.getByRole("button", { name: "More tempo controls" });
+    await trigger.click();
+    const popover = page.getByRole("dialog", { name: "Tempo options" });
+    await expect(popover).toBeVisible();
+    const popup = (await popover.boundingBox())!;
+    expect(popup.x).toBeGreaterThanOrEqual(0);
+    expect(popup.x + popup.width).toBeLessThanOrEqual(width);
+    expect((await primary.boundingBox())!.height).toBeCloseTo(before.height, 0);
+    expect(
+      await play.evaluate(
+        (element) => element.getBoundingClientRect().y + window.scrollY,
+      ),
+    ).toBeCloseTo(playBefore, 0);
+    await popover.getByRole("button", { name: "Increase BPM by 5" }).click();
+    await expect(
+      page.getByRole("spinbutton", { name: "Current BPM" }),
+    ).toHaveValue("95");
+    await page.keyboard.press("Escape");
+    await expect(popover).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await expectNoOverflow(page);
+  });
+}
+
 test("keeps primary transport controls centered between tempo and playback status", async ({
   page,
 }) => {
@@ -284,7 +324,9 @@ test("wraps every guided mode and advanced tempo controls without overflow at 32
     .click();
   await player.getByRole("button", { name: "More tempo controls" }).click();
   await expect(
-    player.getByRole("slider", { name: "Tempo", exact: true }),
+    page
+      .getByRole("dialog", { name: "Tempo options" })
+      .getByRole("slider", { name: "Tempo", exact: true }),
   ).toBeVisible();
   await expectNoOverflow(page);
   await player.getByRole("button", { name: "More tempo controls" }).click();

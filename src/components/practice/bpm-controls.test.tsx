@@ -43,6 +43,44 @@ function ControlledBpmControls({
 }
 
 describe("BPM controls", () => {
+  it("keeps advanced tempo controls in a named popover and restores focus on Escape", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    render(
+      <ControlledBpmControls
+        embedded
+        defaultBpm={118}
+        onChange={onChange}
+        onCommit={onCommit}
+      />,
+    );
+    const trigger = screen.getByRole("button", { name: "More tempo controls" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("dialog", { name: "Tempo options" })).toBeNull();
+    await user.click(trigger);
+    const popover = within(
+      screen.getByRole("dialog", { name: "Tempo options" }),
+    );
+    await user.click(
+      popover.getByRole("button", { name: "Increase BPM by 5" }),
+    );
+    expect(onChange).toHaveBeenLastCalledWith(95);
+    fireEvent.change(popover.getByRole("slider", { name: "Tempo" }), {
+      target: { value: "129" },
+    });
+    expect(onCommit).toHaveBeenLastCalledWith(129);
+    await user.click(
+      popover.getByRole("button", { name: "Reset tempo to 118 BPM" }),
+    );
+    expect(screen.getByRole("spinbutton", { name: "Current BPM" })).toHaveValue(
+      118,
+    );
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Tempo options" })).toBeNull();
+    expect(trigger).toHaveFocus();
+  });
+
   describe.each([
     { layout: "standalone", embedded: false },
     { layout: "embedded", embedded: true },

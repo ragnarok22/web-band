@@ -123,6 +123,8 @@ describe("PracticePlayer", () => {
     );
     expect(beat).toHaveClass("beat-step--active");
     expect(visualizer).toHaveTextContent("Measure 3");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Tempo options" })).toBeNull();
     expect(engine.stop).not.toHaveBeenCalled();
   });
 

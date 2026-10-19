@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Hand, RotateCcw } from "lucide-react";
+import { Hand, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { cn } from "cn";
 
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 import { clampBpm, MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 
@@ -64,18 +66,12 @@ export function BpmControls({
     : [-adjustmentStep, adjustmentStep, -alternateStep, alternateStep];
 
   const reset = (
-    <Button
-      aria-label={`Reset tempo to ${defaultBpm} BPM`}
-      title="Reset to pattern default"
-      variant="ghost"
-      className="min-h-11 gap-2 px-2"
+    <BpmReset
+      defaultBpm={defaultBpm}
       disabled={disabled}
-      onClick={() => changeAndCommit(defaultBpm)}
-      type="button"
-    >
-      <RotateCcw aria-hidden="true" className="size-4" />
-      {embedded ? "Reset" : null}
-    </Button>
+      embedded={embedded}
+      onChange={changeAndCommit}
+    />
   );
   const secondaryControls = (
     <>
@@ -130,7 +126,7 @@ export function BpmControls({
           {reset}
         </div>
       ) : null}
-      <Collapsible>
+      <Popover modal={false}>
         <div
           className={cn(
             "flex items-center justify-center gap-1",
@@ -174,16 +170,14 @@ export function BpmControls({
                 <TooltipTrigger
                   aria-label="More tempo controls"
                   render={
-                    <CollapsibleTrigger
-                      className="group/tempo text-muted-strong hover:bg-surface-hover flex size-11 shrink-0 items-center justify-center rounded-lg disabled:opacity-50"
+                    <PopoverTrigger
+                      render={<Button variant="ghost" size="icon" />}
+                      className="text-muted-strong aria-expanded:border-primary/35 aria-expanded:bg-primary/10 aria-expanded:text-primary size-11"
                       disabled={disabled}
                     />
                   }
                 >
-                  <ChevronDown
-                    aria-hidden="true"
-                    className="size-4 transition-transform group-aria-expanded/tempo:rotate-180 motion-reduce:transition-none"
-                  />
+                  <SlidersHorizontal aria-hidden="true" className="size-4" />
                 </TooltipTrigger>
                 <TooltipContent>More tempo options</TooltipContent>
               </Tooltip>
@@ -191,13 +185,19 @@ export function BpmControls({
           ) : null}
         </div>
         {embedded ? (
-          <CollapsibleContent className="border-border mt-3 border-t pt-3">
+          <PopoverContent>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <PopoverTitle>Tempo options</PopoverTitle>
+              <PopoverDescription className="tabular-nums">
+                {MIN_BPM}–{MAX_BPM} BPM
+              </PopoverDescription>
+            </div>
             {secondaryControls}
-          </CollapsibleContent>
+          </PopoverContent>
         ) : (
           secondaryControls
         )}
-      </Collapsible>
+      </Popover>
       {showTapTempo ? (
         <Button
           variant="secondary"
@@ -211,6 +211,31 @@ export function BpmControls({
         </Button>
       ) : null}
     </Container>
+  );
+}
+
+function BpmReset({
+  defaultBpm,
+  disabled,
+  embedded,
+  onChange,
+}: Pick<
+  BpmControlsProps,
+  "defaultBpm" | "disabled" | "embedded" | "onChange"
+>) {
+  return (
+    <Button
+      aria-label={`Reset tempo to ${defaultBpm} BPM`}
+      title="Reset to pattern default"
+      variant="ghost"
+      className={cn("min-h-11 gap-2 px-2", embedded && "ml-auto")}
+      disabled={disabled}
+      onClick={() => onChange(defaultBpm)}
+      type="button"
+    >
+      <RotateCcw aria-hidden="true" className="size-4" />
+      {embedded ? "Reset" : null}
+    </Button>
   );
 }
 
