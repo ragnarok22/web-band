@@ -76,7 +76,7 @@ export function SettingsScreen({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-8 sm:px-7 sm:py-12 lg:px-10 lg:py-16">
+    <main className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[100rem] px-3 py-6 sm:px-6 lg:px-8">
       <header className="border-border border-b pb-8 sm:pb-10">
         <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.18em] uppercase">
           <Settings2 aria-hidden="true" className="size-4" />

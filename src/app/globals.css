@@ -144,13 +144,7 @@ body {
   min-height: 100vh;
   margin: 0;
   overflow-x: clip;
-  background:
-    radial-gradient(
-      circle at 50% -15%,
-      rgba(231, 169, 75, 0.09),
-      transparent 36rem
-    ),
-    linear-gradient(180deg, var(--background) 0%, var(--background-deep) 100%);
+  background: var(--background);
   font-family: var(--font-manrope), sans-serif;
 }
 
@@ -214,6 +208,27 @@ h6 {
   font-variant-numeric: tabular-nums;
 }
 
+.practice-layout {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .practice-layout {
+    grid-template-columns: minmax(0, 1fr) 0px;
+    column-gap: 0;
+    transition:
+      grid-template-columns 180ms ease,
+      column-gap 180ms ease;
+  }
+  .practice-layout[data-controls-open="true"] {
+    grid-template-columns: minmax(0, 1fr) 21rem;
+    column-gap: 1.25rem;
+  }
+}
+
 .beat-step {
   display: flex;
   min-width: 0;
@@ -226,7 +241,7 @@ h6 {
 .beat-visualizer__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 3.25rem), 1fr));
-  gap: 0.85rem 0.55rem;
+  gap: 1.25rem 1rem;
   width: 100%;
   min-width: 0;
 }
@@ -236,12 +251,14 @@ h6 {
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
   min-width: 0;
-  gap: 0.2rem;
+  gap: 0.3rem;
+  padding-inline-start: 0.5rem;
+  border-inline-start: 1px solid var(--border-strong);
 }
 
 .beat-step__light {
   width: 100%;
-  height: 0.5rem;
+  height: 0.65rem;
   border: 1px solid var(--border);
   border-radius: 0.2rem;
   background: var(--surface-elevated);
@@ -261,7 +278,7 @@ h6 {
 }
 
 .beat-step--main .beat-step__light {
-  height: 0.85rem;
+  height: 1.3rem;
   opacity: 1;
   transform: scaleY(1);
 }
@@ -279,7 +296,7 @@ h6 {
 .beat-step--active .beat-step__light {
   border: 2px solid var(--primary);
   background: var(--primary);
-  box-shadow: 0 0 22px rgba(231, 169, 75, 0.45);
+  box-shadow: none;
   opacity: 1;
   transform: scaleY(1.2);
 }
@@ -290,7 +307,7 @@ h6 {
 
 .beat-step--accent .beat-step__light {
   background: var(--accent-strong);
-  box-shadow: 0 0 30px rgba(231, 169, 75, 0.66);
+  box-shadow: none;
 }
 
 .beat-visualizer--minimal .beat-step__light {
@@ -323,9 +340,7 @@ h6 {
   border-width: 3px;
   border-color: var(--foreground);
   background: var(--accent-strong);
-  box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent),
-    0 0 34px rgba(231, 169, 75, 0.72);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
   transform: scaleY(1.35);
 }
 

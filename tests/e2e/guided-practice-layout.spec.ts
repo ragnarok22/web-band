@@ -1,152 +1,146 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { closeControls, openControls } from "./practice-helpers";
 
-async function expectReadableCards(panel: Locator) {
-  const cards = panel
-    .locator("label")
-    .filter({ has: panel.page().getByRole("radio") });
-  await expect(cards).toHaveCount(4);
-
-  for (const card of await cards.all()) {
-    const geometry = await card.evaluate((element) => {
-      const bounds = element.getBoundingClientRect();
-      const text = Array.from(element.querySelectorAll("span")).filter(
-        (span) => span.childElementCount === 0 && span.textContent?.trim(),
-      );
-      return {
-        height: bounds.height,
-        textFits: text.every((span) => {
-          const rect = span.getBoundingClientRect();
-          return (
-            rect.width > 0 &&
-            rect.left >= bounds.left &&
-            rect.right <= bounds.right &&
-            rect.bottom <= bounds.bottom &&
-            span.scrollWidth <= span.clientWidth
-          );
-        }),
-        width: bounds.width,
-      };
-    });
-    expect(geometry.textFits).toBe(true);
-    expect(geometry.width).toBeGreaterThanOrEqual(44);
-    expect(geometry.height).toBeGreaterThanOrEqual(44);
-  }
-}
-
-for (const width of [320, 640, 1024, 1280, 1440]) {
-  test(`keeps guided practice readable at ${width}px`, async ({ page }) => {
-    await page.setViewportSize({ height: 900, width });
+for (const width of [320, 390, 640, 1024, 1280, 1440, 1920]) {
+  test(`practice workspace and Controls work at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ height: 1000, width });
     await page.goto("/practice");
-    const panel = page.getByRole("region", {
+    const controls = page.getByRole("button", {
+      name: "Controls",
       exact: true,
-      name: "Guided practice",
     });
-    await expect(panel).toBeVisible();
-    if (width < 640) {
-      await panel
-        .getByRole("button", { name: "Show guided practice settings" })
-        .click();
+    await expect(controls).toHaveAttribute("aria-expanded", "false");
+    const workspace = page.getByRole("region", {
+      name: "Practice session",
+      exact: true,
+    });
+    const visualizer = page.getByRole("region", { name: "Beat visualization" });
+    const originalWidth = (await visualizer.boundingBox())!.width;
+    const modes = page.getByRole("radiogroup", { name: "Practice mode" });
+    await expect(modes.getByRole("radio")).toHaveCount(4);
+    await expect(
+      page.getByRole("button", { name: "Metronome — Coming soon" }),
+    ).toBeDisabled();
+    for (const mode of ["Strumming", "Chords", "Tempo", "Drums"]) {
+      await modes.getByText(mode, { exact: true }).click();
+      await expect(
+        modes.getByRole("radio", { name: mode, exact: true }),
+      ).toBeChecked();
     }
-
-    await expectReadableCards(panel);
-    const heading = panel.getByRole("heading", { name: "Guided practice" });
-    const singleLineHeading = await heading.evaluate((element) => {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      return range.getClientRects().length === 1;
-    });
-    expect(singleLineHeading).toBe(true);
-
-    const heights = await panel
-      .locator("label")
-      .evaluateAll((cards) =>
-        cards.map((card) => card.getBoundingClientRect().height),
-      );
-    expect(heights[0]).toBe(heights[1]);
-    expect(heights[2]).toBe(heights[3]);
-
-    await panel.getByText("Build speed in measured steps.").click();
+    await openControls(page, "Groove Feel");
     await expect(
-      panel.getByRole("radio", { name: "Tempo", exact: true }),
-    ).toBeChecked();
-    await expect(
-      panel.getByRole("heading", { name: "Tempo trainer" }),
+      page.getByRole("slider", { name: "Swing", exact: true }),
     ).toBeVisible();
-
-    const overflow = await panel.evaluate(
-      (element) => element.scrollWidth > element.clientWidth,
-    );
-    expect(overflow).toBe(false);
+    if (width >= 1024) {
+      await expect(
+        page.getByRole("complementary", { name: "Practice controls" }),
+      ).toBeVisible();
+      await expect
+        .poll(async () => (await visualizer.boundingBox())!.width)
+        .toBeLessThan(originalWidth - 300);
+      await expect(
+        page.getByRole("dialog", { name: "Practice controls" }),
+      ).toHaveCount(0);
+    } else {
+      await expect(
+        page.getByRole("dialog", { name: "Practice controls" }),
+      ).toBeVisible();
+    }
+    await closeControls(page);
+    await expect
+      .poll(async () => (await visualizer.boundingBox())!.width)
+      .toBe(originalWidth);
+    await expect(
+      workspace.getByRole("button", { name: "Play", exact: true }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
   });
 }
 
-test("uses a single column when the panel is narrow, even on desktop", async ({
+test("persists desktop visibility but does not auto-open mobile Sheets", async ({
   page,
 }) => {
-  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/practice");
-  const panel = page.getByRole("region", {
-    exact: true,
-    name: "Guided practice",
-  });
-  await expect(panel).toBeVisible();
-  await panel.evaluate((element) => {
-    element.style.maxWidth = "256px";
-  });
+  await openControls(page);
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Controls", exact: true }),
+  ).toHaveAttribute("aria-expanded", "true");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(
+    page.getByRole("button", { name: "Controls", exact: true }),
+  ).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
 
-  const choices = panel.getByRole("radiogroup", { name: "Practice mode" });
-  await expect
-    .poll(() =>
-      choices.evaluate(
-        (element) =>
-          getComputedStyle(element).gridTemplateColumns.split(" ").length,
-      ),
-    )
-    .toBe(1);
-  await expectReadableCards(panel);
+test("mobile Sheets close on Escape without stopping active audio and restore focus", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/practice");
+  await page
+    .getByRole("radio", { name: "Off", exact: true })
+    .locator("..")
+    .click();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
+  const trigger = page.getByRole("button", { name: "Controls", exact: true });
+  await openControls(page);
+  const dialog = page.getByRole("dialog", { name: "Practice controls" });
+  await expect(dialog.locator(":focus")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
+  await expect.poll(() => page.locator(".beat-step--active").count()).toBe(1);
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Open navigation" }),
+  ).toBeFocused();
+  await expect(page.getByTestId("transport-status")).toHaveText(
+    "Groove playing",
+  );
+  await page.getByRole("button", { name: "Stop playback" }).click();
 });
 
 for (const theme of ["dark", "light"]) {
-  test(`expanded guided practice is accessible in ${theme} mode`, async ({
+  test(`expanded Controls are accessible in ${theme} mode`, async ({
     page,
   }) => {
-    await page.addInitScript((selectedTheme) => {
-      localStorage.setItem(
-        "web-band-appearance-v2",
-        JSON.stringify({
-          beatFlashIntensity: "standard",
-          reducedMotion: false,
-          theme: selectedTheme,
-          visualSubdivisionDetail: "pattern",
-        }),
-      );
-    }, theme);
+    await page.addInitScript(
+      (theme) =>
+        localStorage.setItem(
+          "web-band-appearance-v2",
+          JSON.stringify({
+            theme,
+            reducedMotion: true,
+            beatFlashIntensity: "standard",
+            visualSubdivisionDetail: "pattern",
+          }),
+        ),
+      theme,
+    );
     await page.goto("/practice");
-    const panel = page.getByRole("region", {
-      exact: true,
-      name: "Guided practice",
-    });
-    await expect(panel).toBeVisible();
-    if ((page.viewportSize()?.width ?? 1280) < 640) {
-      await panel
-        .getByRole("button", { name: "Show guided practice settings" })
-        .click();
-    }
-    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-    // Audit the settled colors, not a partially transparent entry animation.
-    await expect(page.locator('[data-motion="page"]')).toHaveCSS(
-      "opacity",
-      "1",
-    );
-    await expect(panel.locator('[data-motion="guided-panel"]')).toHaveCSS(
-      "opacity",
-      "1",
-    );
-
+    await openControls(page, "Groove Feel");
+    await openControls(page, "Drum Kit");
+    await openControls(page, "Advanced");
     const results = await new AxeBuilder({ page })
-      .include('[aria-labelledby="guided-practice-heading"]')
-      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
     expect(results.violations).toEqual([]);
   });

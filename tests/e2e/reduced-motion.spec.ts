@@ -47,10 +47,12 @@ test("system reduced motion disables page, panel, and focus transitions", async 
   );
 
   await page.getByRole("radio", { name: /Tempo/ }).locator("..").click();
-  await expect(page.locator('[data-motion="guided-panel"]')).toHaveAttribute(
-    "data-motion-reduced",
-    "true",
-  );
+  await expect(
+    page.getByRole("heading", { name: "Tempo trainer", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Controls", exact: true }).click();
+  await expectNoRunningAnimations(page);
+  await page.getByRole("button", { name: "Hide controls" }).click();
   await page.getByRole("button", { name: "Focus" }).click();
   await expect(page.locator('[data-motion="focus"]')).toHaveAttribute(
     "data-motion-reduced",

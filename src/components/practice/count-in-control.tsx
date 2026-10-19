@@ -7,6 +7,7 @@ import type { CountInMeasures } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
 
 interface CountInControlProps {
+  compact?: boolean;
   disabled: boolean;
   measures: CountInMeasures;
   onChange: (measures: CountInMeasures) => void;
@@ -21,21 +22,42 @@ const choices: Array<{ label: string; value: CountInMeasures }> = [
 ];
 
 export function CountInControl({
+  compact = false,
   disabled,
   measures,
   onChange,
   timeSignature,
 }: CountInControlProps) {
   return (
-    <fieldset className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
+    <fieldset
+      className={
+        compact
+          ? "w-full max-w-sm"
+          : "border-border bg-surface rounded-2xl border p-4 sm:p-5"
+      }
+    >
       <legend className="sr-only">Count-in length</legend>
-      <div className="mb-4 flex items-start gap-3">
-        <span className="bg-secondary-accent/10 text-secondary-accent flex size-10 shrink-0 items-center justify-center rounded-lg">
+      <div
+        className={
+          compact
+            ? "mb-2 flex items-start gap-2"
+            : "mb-4 flex items-start gap-3"
+        }
+      >
+        <span
+          className={`${compact ? "hidden" : "flex"} bg-secondary-accent/10 text-secondary-accent size-10 shrink-0 items-center justify-center rounded-lg`}
+        >
           <Clock3 aria-hidden="true" className="size-5" />
         </span>
         <div>
           <p className="text-foreground font-bold">Count-in</p>
-          <p className="text-muted-foreground mt-1 text-xs leading-5">
+          <p
+            className={
+              compact
+                ? "sr-only"
+                : "text-muted-foreground mt-1 text-xs leading-5"
+            }
+          >
             {measures === 0
               ? "Start the groove immediately."
               : `${measures * timeSignature.numerator} synthesized clicks in ${timeSignature.numerator}/${timeSignature.denominator}.`}

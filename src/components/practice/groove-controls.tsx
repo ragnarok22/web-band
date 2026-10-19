@@ -10,6 +10,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import type { FillFrequency } from "@/types/audio";
 
 interface GrooveControlsProps {
+  embedded?: boolean;
   disabled?: boolean;
   fillFrequency: FillFrequency;
   humanization: number;
@@ -36,6 +37,7 @@ function parseFillFrequency(value: string): FillFrequency {
 }
 
 export function GrooveControls({
+  embedded = false,
   disabled = false,
   fillFrequency,
   humanization,
@@ -52,9 +54,13 @@ export function GrooveControls({
     <Card
       role="region"
       aria-labelledby="groove-controls-heading"
-      className="gap-4 p-4 sm:p-5"
+      className={
+        embedded
+          ? "gap-4 rounded-none border-0 bg-transparent p-0 shadow-none ring-0"
+          : "gap-4 p-4 sm:p-5"
+      }
     >
-      <div className="flex items-center gap-3">
+      <div className={embedded ? "sr-only" : "flex items-center gap-3"}>
         <span className="bg-surface-elevated text-primary flex size-10 items-center justify-center rounded-lg">
           <SlidersHorizontal aria-hidden="true" className="size-5" />
         </span>
@@ -71,23 +77,25 @@ export function GrooveControls({
         </div>
       </div>
 
-      <Button
-        variant="outline"
-        aria-controls="groove-settings"
-        aria-expanded={settingsOpen}
-        className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
-        onClick={() => setSettingsOpen((open) => !open)}
-        type="button"
-      >
-        {settingsOpen ? "Hide groove settings" : "Show groove settings"}
-        <ChevronDown
-          aria-hidden="true"
-          className={`size-5 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
-        />
-      </Button>
+      {!embedded && (
+        <Button
+          variant="outline"
+          aria-controls="groove-settings"
+          aria-expanded={settingsOpen}
+          className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
+          onClick={() => setSettingsOpen((open) => !open)}
+          type="button"
+        >
+          {settingsOpen ? "Hide groove settings" : "Show groove settings"}
+          <ChevronDown
+            aria-hidden="true"
+            className={`size-5 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
+          />
+        </Button>
+      )}
 
       <div
-        className={`${settingsOpen ? "block" : "hidden"} sm:block`}
+        className={`${embedded || settingsOpen ? "block" : "hidden"} sm:block`}
         id="groove-settings"
       >
         <div className="mb-4 block">

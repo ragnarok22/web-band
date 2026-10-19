@@ -7,7 +7,8 @@ import { builtInPatterns } from "@/data/patterns";
 import { renderWithMotion as render } from "@/test/render-with-motion";
 
 describe("pattern summary", () => {
-  it("animates committed pattern content without replacing the focused selector", () => {
+  it("updates committed pattern content without replacing the focused picker", async () => {
+    const user = userEvent.setup();
     const first = builtInPatterns[0]!;
     const second = builtInPatterns[1]!;
     const props = {
@@ -20,6 +21,7 @@ describe("pattern summary", () => {
     const { rerender } = render(
       <PatternSummary {...props} pattern={first} pendingPatternId={null} />,
     );
+    await user.click(screen.getByRole("button", { name: "Change Pattern" }));
     const selector = screen.getByRole("combobox", { name: "Current pattern" });
     selector.focus();
 
@@ -30,7 +32,7 @@ describe("pattern summary", () => {
         pendingPatternId={second.id}
       />,
     );
-    expect(screen.getByRole("heading", { name: first.name })).toBeVisible();
+    expect(screen.getByText(first.name, { selector: "h2" })).toBeVisible();
     expect(selector).toHaveValue(
       `${second.name} - ${second.timeSignature.numerator}/${second.timeSignature.denominator}`,
     );
@@ -38,7 +40,7 @@ describe("pattern summary", () => {
     rerender(
       <PatternSummary {...props} pattern={second} pendingPatternId={null} />,
     );
-    expect(screen.getByRole("heading", { name: second.name })).toBeVisible();
+    expect(screen.getByText(second.name, { selector: "h2" })).toBeVisible();
     expect(screen.getByRole("combobox", { name: "Current pattern" })).toBe(
       selector,
     );
@@ -60,6 +62,7 @@ describe("pattern summary", () => {
         swing={0}
       />,
     );
+    await user.click(screen.getByRole("button", { name: "Change Pattern" }));
     const input = screen.getByRole("combobox", { name: "Current pattern" });
     await user.clear(input);
     await user.type(input, "One Drop");
@@ -90,6 +93,7 @@ describe("pattern summary", () => {
         swing={0}
       />,
     );
+    await user.click(screen.getByRole("button", { name: "Change Pattern" }));
     const input = screen.getByRole("combobox", { name: "Current pattern" });
     await user.clear(input);
     await user.type(input, "no-such-pattern-xyz");

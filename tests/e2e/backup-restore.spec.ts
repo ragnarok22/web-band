@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
+import { navigate } from "./practice-helpers";
 
 function trackBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -30,11 +31,11 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await page.getByRole("button", { name: "Save pattern" }).click();
   await expect(page.getByText("Pattern saved locally.")).toBeVisible();
 
-  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await page.getByRole("button", { name: "Practice" }).click();
   await page.getByRole("button", { name: "Dismiss audio tip" }).click();
-  await page.getByRole("link", { name: "Settings" }).click();
+  await navigate(page, "Settings");
   await expect(
     page.getByRole("heading", { name: "Settings, kept simple." }),
   ).toBeVisible();
@@ -118,10 +119,10 @@ test("exports, clears, and restores a custom pattern backup", async ({
       /patterns, presets, favorites, and practice history were preserved/i,
     ),
   ).toBeVisible();
-  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
-  await page.getByRole("link", { name: "Settings" }).click();
+  await navigate(page, "Settings");
 
   const invalidWorkerPromise = page.waitForEvent("worker");
   await page.getByLabel("Choose backup file").setInputFiles({
@@ -132,14 +133,14 @@ test("exports, clears, and restores a custom pattern backup", async ({
   const invalidWorker = await invalidWorkerPromise;
   expect(new URL(invalidWorker.url()).origin).toBe(new URL(page.url()).origin);
   await expect(page.getByText("This file is not valid JSON.")).toBeVisible();
-  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
   await page.reload();
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
 
-  await page.getByRole("link", { name: "Settings" }).click();
+  await navigate(page, "Settings");
   await page.evaluate(() => {
     window.localStorage.setItem("web-band-practice-settings-v3", "legacy");
     window.localStorage.setItem("web-band-practice-settings-v2", "legacy");
@@ -191,18 +192,17 @@ test("exports, clears, and restores a custom pattern backup", async ({
     "false",
   );
 
-  await page.getByRole("link", { name: "Practice" }).focus();
-  await page.keyboard.press("Enter");
+  await navigate(page, "Practice");
   await expect(page.getByRole("note")).toContainText(
     "Sound begins after you press Play",
   );
-  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await expect(
     page.getByRole("heading", { name: "No grooves match" }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Settings" }).click();
+  await navigate(page, "Settings");
   await page
     .getByLabel("Choose backup file")
     .setInputFiles(exportedBackupPath as string);
@@ -228,7 +228,7 @@ test("exports, clears, and restores a custom pattern backup", async ({
     page.getByRole("checkbox", { name: "Restore last practice setup" }),
   ).not.toBeChecked();
 
-  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
   expect(
@@ -241,8 +241,7 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await page.reload();
   await page.getByRole("searchbox").fill(patternName);
   await expect(page.getByRole("heading", { name: patternName })).toBeVisible();
-  await page.getByRole("link", { name: "Practice" }).focus();
-  await page.keyboard.press("Enter");
+  await navigate(page, "Practice");
   await expect(page.getByRole("note")).toHaveCount(0);
   expect(browserErrors).toEqual([]);
 });

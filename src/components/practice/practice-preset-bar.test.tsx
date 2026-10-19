@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PracticePresetBar } from "@/components/practice/practice-preset-bar";
+import { openPresetMenu } from "@/test/open-preset-menu";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import type {
   PracticePreset,
@@ -100,7 +101,8 @@ describe("practice preset bar", () => {
     );
 
     expect(onLoad).not.toHaveBeenCalled();
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     expect(onLoad).not.toHaveBeenCalled();
     await user.click(
       screen.getByRole("button", { name: "Load Morning Pocket" }),
@@ -132,7 +134,8 @@ describe("practice preset bar", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", {
         name: "Morning Pocket favorite",
@@ -165,7 +168,8 @@ describe("practice preset bar", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: "Rename Morning Pocket" }),
     );
@@ -193,7 +197,8 @@ describe("practice preset bar", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: "Rename Morning Pocket" }),
     );
@@ -221,7 +226,8 @@ describe("practice preset bar", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: "Duplicate Morning Pocket" }),
     );
@@ -240,7 +246,8 @@ describe("practice preset bar", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     const deleteTrigger = screen.getByRole("button", {
       name: "Delete Morning Pocket",
     });
@@ -285,7 +292,8 @@ describe("practice preset bar", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     const list = screen.getByRole("list", { name: "Recent presets" });
     expect(
       within(list)

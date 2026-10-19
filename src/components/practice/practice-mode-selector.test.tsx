@@ -69,7 +69,7 @@ describe("practice mode selector", () => {
     const user = userEvent.setup();
     render(<SelectorHarness />);
 
-    await user.click(screen.getByText("Practice a complete strum pattern."));
+    await user.click(screen.getByText("Strumming", { exact: true }));
     expect(screen.getByRole("radio", { name: "Strumming" })).toBeChecked();
   });
 
@@ -80,8 +80,27 @@ describe("practice mode selector", () => {
     await user.tab();
     expect(screen.getByRole("radio", { name: "Drums" })).toHaveFocus();
     await user.keyboard("{ArrowRight}");
-    expect(screen.getByRole("radio", { name: "Tempo" })).toHaveFocus();
-    expect(screen.getByRole("radio", { name: "Tempo" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Strumming" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Strumming" })).toBeChecked();
+  });
+
+  it("reserves a disabled, UI-only Metronome without changing modes", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <PracticeModeSelector
+        disabled={false}
+        mode="drums"
+        onChange={onChange}
+      />,
+    );
+    const metronome = screen.getByRole("button", {
+      name: "Metronome — Coming soon",
+    });
+    expect(metronome).toBeDisabled();
+    await user.click(metronome);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("radio", { name: "Drums" })).toBeChecked();
   });
 
   it("keeps description references unique across selectors", () => {

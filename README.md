@@ -19,6 +19,10 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 - Configurable 0-, 1-, 2-, or 4-measure count-in with meter-aware clicks and accented downbeats.
 - Audio-synchronized beat and subdivision visualization.
 - Practice timer, distraction-free focus mode, and tap tempo.
+- A single top navigation bar with an accessible mobile navigation Sheet.
+- A full-width practice workspace with compact mode selection, Current Groove details, and centered tempo/playback controls.
+- An optional right Controls panel for sound, groove feel, kit character, and advanced settings; the workspace expands when it closes.
+- A disabled, UI-only Metronome entry reserves a future practice experience without changing the current audio engine or saved modes.
 - Live swing and subtle timing and velocity humanization.
 - A validated category- and meter-aware fill library used every 4, 8, or 16 measures, at controlled random intervals, and for transitions.
 - Compact six-group mixer with volume, mute, solo, reset, and perceptual master-volume control.
@@ -197,6 +201,8 @@ The versioned key `web-band-practice-settings-v4` stores:
 
 The repository reads the legacy `web-band-practice-settings-v1` through `v3` shapes and supplies safe defaults, including Balanced sound character. The separate `web-band-guided-practice-v1` key stores the active mode and validated tempo, chord, and strumming trainer settings. `web-band-history-settings-v1` stores whether session recording is enabled and its meaningful-duration threshold. The supported range is 1–3600 seconds with a 30-second default; historical zero values migrate to one second. `web-band-recent-patterns-v1` stores up to 20 recently used pattern IDs for browser sorting. `web-band-appearance-v2` stores the device-only theme, reduced-motion preference, visual subdivision detail, and beat-flash intensity while migrating the v1 shape. Favorites, custom patterns, chord progressions, presets, and history remain in IndexedDB.
 
+`web-band-practice-layout-v1` stores only the desktop Controls panel's visibility, collapsed by default. Below 1024px, Controls open in a right-side Sheet that starts dismissed and does not overwrite the desktop preference. This device-specific layout preference is not part of musical settings, presets, or portable backups; reset settings and delete-all both reset it. Closing Controls never changes playback or mixer parameters. Kit character keeps its existing start/resume application behavior.
+
 When restore-last-practice is disabled, startup resets BPM, selected pattern, fill frequency, humanization, and swing to defaults while retaining mixer, count-in, sound character, Wake Lock, and adjustment-step preferences. Onboarding completion also uses an app-owned local setting and is included in complete backup/reset handling.
 
 Practice history checkpoints active sessions when the page becomes hidden or receives `pagehide`, and normal navigation/finalization upserts the same session ID with its longer final duration. These asynchronous IndexedDB writes are best effort: browser process termination, power loss, or immediate mobile suspension can still prevent the final checkpoint from becoming durable.
@@ -301,7 +307,7 @@ Playwright runs the real browser audio engine and verifies:
 - JSON backup download, validation, merge, clear, restore, and reload persistence.
 - Custom strumming-pattern creation, editing, deletion, backup restore, and reload persistence.
 - Reload persistence across Chromium, Firefox, WebKit, and mobile Chromium profiles.
-- Core practice and pattern-library behavior at 320px, plus a two-column practice layout at 1024px.
+- Core practice and pattern-library behavior at 320px, expanding practice layouts through 1920px, and desktop panel/mobile Sheet behavior.
 - Focused axe scans, skip navigation, dialog and editor keyboard behavior, focus restoration, and reduced-motion preferences.
 - Production service-worker control and offline loading for every local-first route.
 

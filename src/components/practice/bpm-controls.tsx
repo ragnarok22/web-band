@@ -12,6 +12,7 @@ import type { BpmAdjustmentStep } from "@/hooks/use-practice-shortcuts";
 import { clampBpm, MAX_BPM, MIN_BPM } from "@/lib/musical-time";
 
 interface BpmControlsProps {
+  embedded?: boolean;
   adjustmentStep?: BpmAdjustmentStep;
   bpm: number;
   defaultBpm: number;
@@ -22,6 +23,7 @@ interface BpmControlsProps {
 }
 
 export function BpmControls({
+  embedded = false,
   adjustmentStep = 1,
   bpm,
   defaultBpm,
@@ -56,38 +58,65 @@ export function BpmControls({
     <Card
       role="region"
       aria-labelledby="tempo-heading"
-      className="gap-0 p-4 sm:p-5"
+      className={
+        embedded
+          ? "w-full max-w-md gap-0 rounded-none border-0 bg-transparent p-0 shadow-none ring-0"
+          : "gap-0 p-4 sm:p-5"
+      }
     >
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-muted-foreground text-xs font-bold tracking-[0.18em] uppercase">
-            Tempo
-          </p>
-          <h2
-            className="text-foreground mt-1 text-lg font-bold"
-            id="tempo-heading"
+      {!embedded && (
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-muted-foreground text-xs font-bold tracking-[0.18em] uppercase">
+              Tempo
+            </p>
+            <h2
+              className={
+                embedded ? "sr-only" : "text-foreground mt-1 text-lg font-bold"
+              }
+              id="tempo-heading"
+            >
+              Set your pace
+            </h2>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={`Reset tempo to ${defaultBpm} BPM`}
+            className="border-border text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-lg border transition-colors"
+            disabled={disabled}
+            onClick={() => changeAndCommit(defaultBpm)}
+            title="Reset to pattern default"
+            type="button"
           >
-            Set your pace
-          </h2>
+            <RotateCcw aria-hidden="true" className="size-4" />
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={`Reset tempo to ${defaultBpm} BPM`}
-          className="border-border text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 min-w-11 items-center justify-center rounded-lg border transition-colors"
-          disabled={disabled}
-          onClick={() => changeAndCommit(defaultBpm)}
-          title="Reset to pattern default"
-          type="button"
-        >
-          <RotateCcw aria-hidden="true" className="size-4" />
-        </Button>
-      </div>
+      )}
 
-      <div className="mb-5 flex items-end justify-center gap-2">
+      <h2 className="sr-only" id={embedded ? "tempo-heading" : undefined}>
+        {embedded ? "Set your pace" : null}
+      </h2>
+      <div className="mb-3 flex items-center justify-center gap-3">
+        {embedded ? (
+          <Button
+            variant="outline"
+            className="size-11"
+            aria-label={`Decrease BPM by ${adjustmentStep}`}
+            data-default-adjustment
+            onClick={() => changeAndCommit(bpm - adjustmentStep)}
+            disabled={disabled}
+          >
+            −
+          </Button>
+        ) : null}
         <Input
           aria-label="Current BPM"
-          className="h-auto w-32 border-x-0 border-t-0 bg-transparent text-center text-6xl leading-none font-black tracking-[-0.06em] tabular-nums md:text-6xl"
+          className={
+            embedded
+              ? "h-auto w-28 border-0 bg-transparent text-center text-5xl leading-none font-extrabold tracking-tight tabular-nums md:text-5xl dark:bg-transparent"
+              : "h-auto w-32 border-x-0 border-t-0 bg-transparent text-center text-6xl leading-none font-black tracking-[-0.06em] tabular-nums md:text-6xl"
+          }
           defaultValue={bpm}
           disabled={disabled}
           inputMode="numeric"
@@ -105,12 +134,24 @@ export function BpmControls({
         <span className="text-muted-foreground pb-1 text-sm font-extrabold tracking-[0.16em] uppercase">
           BPM
         </span>
+        {embedded ? (
+          <Button
+            variant="outline"
+            className="size-11"
+            aria-label={`Increase BPM by ${adjustmentStep}`}
+            data-default-adjustment
+            onClick={() => changeAndCommit(bpm + adjustmentStep)}
+            disabled={disabled}
+          >
+            +
+          </Button>
+        ) : null}
       </div>
 
       <Slider
         aria-label="Tempo"
         aria-valuetext={`${bpm} BPM`}
-        className="mb-5"
+        className={embedded ? "mb-2" : "mb-5"}
         disabled={disabled}
         max={MAX_BPM}
         min={MIN_BPM}
@@ -122,32 +163,53 @@ export function BpmControls({
 
       <div
         aria-label="BPM adjustments"
-        className="grid grid-cols-4 gap-2"
+        className={
+          embedded
+            ? "flex items-center justify-center gap-2"
+            : "grid grid-cols-4 gap-2"
+        }
         role="group"
       >
-        {adjustments.map((adjustment) => {
-          const isDefault = Math.abs(adjustment) === adjustmentStep;
+        {adjustments
+          .filter(
+            (adjustment) =>
+              !embedded || Math.abs(adjustment) !== adjustmentStep,
+          )
+          .map((adjustment) => {
+            const isDefault = Math.abs(adjustment) === adjustmentStep;
 
-          return (
-            <Button
-              variant={isDefault ? "secondary" : "outline"}
-              aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
-              className={`hover:bg-surface-hover hover:text-foreground min-h-11 rounded-lg border text-sm font-extrabold tabular-nums transition-colors active:translate-y-px ${
-                isDefault
-                  ? "border-primary/45 bg-primary/10 text-primary hover:border-primary/65"
-                  : "border-border bg-surface-elevated text-muted-strong hover:border-border-strong"
-              }`}
-              data-default-adjustment={isDefault}
-              disabled={disabled}
-              key={adjustment}
-              onClick={() => changeAndCommit(bpm + adjustment)}
-              title={isDefault ? "Default BPM adjustment" : undefined}
-              type="button"
-            >
-              {adjustment > 0 ? `+${adjustment}` : adjustment}
-            </Button>
-          );
-        })}
+            return (
+              <Button
+                variant={isDefault ? "secondary" : "outline"}
+                aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
+                className={`hover:bg-surface-hover hover:text-foreground min-h-11 min-w-11 rounded-lg border text-sm font-extrabold tabular-nums transition-colors active:translate-y-px ${
+                  isDefault
+                    ? "border-primary/45 bg-primary/10 text-primary hover:border-primary/65"
+                    : "border-border bg-surface-elevated text-muted-strong hover:border-border-strong"
+                }`}
+                data-default-adjustment={isDefault}
+                disabled={disabled}
+                key={adjustment}
+                onClick={() => changeAndCommit(bpm + adjustment)}
+                title={isDefault ? "Default BPM adjustment" : undefined}
+                type="button"
+              >
+                {adjustment > 0 ? `+${adjustment}` : adjustment}
+              </Button>
+            );
+          })}
+        {embedded ? (
+          <Button
+            aria-label={`Reset tempo to ${defaultBpm} BPM`}
+            title="Reset to pattern default"
+            variant="ghost"
+            className="size-11"
+            disabled={disabled}
+            onClick={() => changeAndCommit(defaultBpm)}
+          >
+            <RotateCcw aria-hidden="true" className="size-4" />
+          </Button>
+        ) : null}
       </div>
       <Button
         variant="secondary"

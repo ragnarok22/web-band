@@ -203,7 +203,7 @@ function PatternEditorSession({
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[100rem] overflow-x-clip px-3 pt-5 pb-28 sm:px-6 lg:px-8 lg:pt-8 lg:pb-12">
+    <main className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[100rem] px-3 py-6 sm:px-6 lg:px-8">
       <EditorHeader
         onPlay={() =>
           void playback

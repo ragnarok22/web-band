@@ -68,7 +68,7 @@ export default function RootLayout({
               <SiteNavigation />
             </SectionErrorBoundary>
             <div
-              className="pt-[env(safe-area-inset-top)] pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pt-[env(safe-area-inset-top)] lg:pr-[env(safe-area-inset-right)] lg:pb-0 lg:pl-[calc(5rem+env(safe-area-inset-left))]"
+              className="pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)]"
               id="main-content"
               tabIndex={-1}
             >

@@ -4,7 +4,9 @@ import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { guidanceTimeline } from "@/audio/guidance-timeline";
+import { disposeAudioEngine } from "@/audio/audio-engine";
 import { PracticeScreen } from "@/components/practice/practice-screen";
+import { openPresetMenu } from "@/test/open-preset-menu";
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { builtInPatterns } from "@/data/patterns";
 import { quarterDownstrokesPattern } from "@/data/strumming-patterns";
@@ -34,6 +36,7 @@ async function selectQuickPattern(
   id: string,
 ) {
   const pattern = builtInPatterns.find((item) => item.id === id)!;
+  await user.click(screen.getByRole("button", { name: "Change Pattern" }));
   const input = screen.getByRole("combobox", { name: "Current pattern" });
   await user.clear(input);
   await user.type(input, pattern.name);
@@ -109,6 +112,7 @@ function createPreset(
 describe("practice screen", () => {
   afterEach(() => {
     Reflect.deleteProperty(navigator, "wakeLock");
+    vi.unstubAllGlobals();
   });
 
   beforeEach(() => {
@@ -149,34 +153,102 @@ describe("practice screen", () => {
     });
   });
 
-  it("provides disclosure controls for advanced mobile settings", async () => {
+  it("starts with Controls collapsed and preserves playback and settings through toggles", async () => {
     const user = userEvent.setup();
+    useAudioStore.setState({ status: "playing" });
+    usePracticeStore.setState({ swing: 0.25, masterVolume: 0.42 });
     render(<PracticeScreen />);
-
-    const guidedPractice = screen.getByRole("button", {
-      name: "Show guided practice settings",
+    const controls = screen.getByRole("button", {
+      name: "Controls",
     });
-    const groove = screen.getByRole("button", {
-      name: "Show groove settings",
+    expect(controls).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("complementary", { name: "Practice controls" }),
+    ).toBeNull();
+    const visualizer = screen.getByRole("region", {
+      name: "Beat visualization",
     });
-    expect(guidedPractice).toHaveAttribute("aria-expanded", "false");
-    expect(groove).toHaveAttribute("aria-expanded", "false");
-
-    await user.click(guidedPractice);
-    await user.click(groove);
-
-    expect(
-      screen.getByRole("button", { name: "Hide guided practice settings" }),
-    ).toHaveAttribute("aria-expanded", "true");
-    expect(
-      screen.getByRole("button", { name: "Hide groove settings" }),
-    ).toHaveAttribute("aria-expanded", "true");
+    await user.click(controls);
+    expect(controls).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("slider", { name: "Master" })).toHaveValue("0.42");
+    await user.click(screen.getByRole("button", { name: "Hide controls" }));
+    expect(screen.getByRole("region", { name: "Beat visualization" })).toBe(
+      visualizer,
+    );
+    expect(usePracticeStore.getState()).toMatchObject({
+      swing: 0.25,
+      masterVolume: 0.42,
+    });
+    expect(useAudioStore.getState().status).toBe("playing");
+    expect(engine.stop).not.toHaveBeenCalled();
+    expect(engine.play).not.toHaveBeenCalled();
+    expect(disposeAudioEngine).not.toHaveBeenCalled();
   });
 
-  it("disables persisted toggles until practice stores hydrate", () => {
+  it("dismisses the mobile Controls Sheet without stopping audio or resetting mixer settings", async () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    const user = userEvent.setup();
+    useAudioStore.setState({ status: "playing" });
+    render(<PracticeScreen />);
+    const trigger = screen.getByRole("button", { name: "Controls" });
+    await user.click(trigger);
+    expect(
+      screen.getByRole("dialog", { name: "Practice controls" }),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Mute Kick" }));
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(trigger).toHaveFocus();
+    expect(engine.stop).not.toHaveBeenCalled();
+    expect(disposeAudioEngine).not.toHaveBeenCalled();
+    await user.click(trigger);
+    expect(screen.getByRole("button", { name: "Mute Kick" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(useAudioStore.getState().status).toBe("playing");
+    await user.click(screen.getByRole("button", { name: "Close" }));
+  });
+
+  it("keeps kit character and Keep Awake in the existing settings store", async () => {
+    const user = userEvent.setup();
+    render(<PracticeScreen />);
+    await user.click(screen.getByRole("button", { name: "Controls" }));
+    await user.click(screen.getByRole("button", { name: "Drum Kit" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Sound character" }),
+      "punchy",
+    );
+    await user.click(screen.getByRole("button", { name: "Advanced" }));
+    await user.click(
+      screen.getByRole("button", { name: "Keep awake while playing" }),
+    );
+    expect(usePracticeStore.getState()).toMatchObject({
+      soundCharacter: "punchy",
+      wakeLockEnabled: false,
+    });
+    await user.click(screen.getByRole("button", { name: "Hide controls" }));
+    await user.click(screen.getByRole("button", { name: "Play" }));
+    expect(engine.play).toHaveBeenCalledWith(
+      expect.objectContaining({ soundCharacter: "punchy" }),
+    );
+  });
+
+  it("disables persisted toggles until practice stores hydrate", async () => {
+    const user = userEvent.setup();
     usePracticeStore.setState({ hasHydrated: false });
     useGuidedPracticeStore.setState({ isHydrated: false });
     render(<PracticeScreen />);
+
+    await user.click(screen.getByRole("button", { name: "Controls" }));
+    await user.click(screen.getByRole("button", { name: "Advanced" }));
 
     expect(
       screen.getByRole("button", {
@@ -209,6 +281,7 @@ describe("practice screen", () => {
     await selectQuickPattern(user, "shuffle-blues");
 
     expect(usePracticeStore.getState().swing).toBe(0.34);
+    await user.click(screen.getByRole("button", { name: "Pattern Details" }));
     expect(screen.getByText("Swing 8ths")).toBeInTheDocument();
   });
 
@@ -235,6 +308,7 @@ describe("practice screen", () => {
     useAudioStore.setState({ status: "playing" });
     usePracticeStore.setState({ swing: 0.34 });
     render(<PracticeScreen />);
+    await user.click(screen.getByRole("button", { name: "Pattern Details" }));
     const immediateSwitch = screen.getByRole("checkbox", {
       name: "Switch same-meter patterns immediately",
     });
@@ -264,6 +338,7 @@ describe("practice screen", () => {
     engine.changePattern.mockReturnValueOnce(true);
     render(<PracticeScreen />);
 
+    await user.click(screen.getByRole("button", { name: "Pattern Details" }));
     await user.click(
       screen.getByRole("checkbox", {
         name: "Switch same-meter patterns immediately",
@@ -421,7 +496,8 @@ describe("practice screen", () => {
     });
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -465,7 +541,8 @@ describe("practice screen", () => {
     });
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -507,7 +584,8 @@ describe("practice screen", () => {
     });
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -544,7 +622,8 @@ describe("practice screen", () => {
     });
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -576,7 +655,8 @@ describe("practice screen", () => {
     });
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -642,7 +722,8 @@ describe("practice screen", () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     fireEvent.keyDown(window, { code: "Space", key: " " });
     expect(engine.play).not.toHaveBeenCalled();
     await user.click(
@@ -742,10 +823,10 @@ describe("practice screen", () => {
       code: "Space",
       key: " ",
     });
-    fireEvent.keyDown(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      { code: "Space", key: " " },
-    );
+    fireEvent.keyDown(screen.getByRole("button", { name: "Change Pattern" }), {
+      code: "Space",
+      key: " ",
+    });
 
     expect(engine.play).not.toHaveBeenCalled();
   });
@@ -892,6 +973,8 @@ describe("practice screen", () => {
       await screen.findByText(/The screen could not be kept awake/),
     ).toBeVisible();
     expect(request).toHaveBeenCalledWith("screen");
+    await user.click(screen.getByRole("button", { name: "Controls" }));
+    await user.click(screen.getByRole("button", { name: "Advanced" }));
     expect(
       screen.getByRole("button", {
         name: "Keep awake while playing",
@@ -957,7 +1040,8 @@ describe("practice screen", () => {
     });
     render(<PracticeScreen />);
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -966,7 +1050,8 @@ describe("practice screen", () => {
     await user.click(screen.getByRole("button", { name: "Increase BPM by 1" }));
     expect(screen.queryByText(`Loaded: ${preset.name}`)).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "Open presets" }));
+    await openPresetMenu(user);
+    await user.click(screen.getByRole("menuitem", { name: "Manage presets" }));
     await user.click(
       screen.getByRole("button", { name: `Load ${preset.name}` }),
     );
@@ -976,12 +1061,19 @@ describe("practice screen", () => {
     expect(screen.queryByText(`Loaded: ${preset.name}`)).toBeNull();
   });
 
-  it("defers the three-column workspace until the xl breakpoint", () => {
+  it("uses one expanding workspace rather than a permanent three-column layout", () => {
     render(<PracticeScreen />);
 
-    const workspace = screen.getByRole("main").querySelector(".grid.flex-1");
-    expect(workspace?.className).toContain("xl:grid-cols-");
-    expect(workspace?.className).not.toContain("lg:grid-cols-");
+    const workspace = screen
+      .getByRole("main")
+      .querySelector(".practice-layout");
+    expect(workspace).toHaveAttribute("data-controls-open", "false");
+    expect(
+      screen.getByRole("radiogroup", { name: "Practice mode" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Metronome — Coming soon" }),
+    ).toBeDisabled();
   });
 
   it("rejects an incompatible active guided pattern change", async () => {
@@ -994,9 +1086,7 @@ describe("practice screen", () => {
     await selectQuickPattern(user, "simple-six-eight");
 
     expect(usePracticeStore.getState().selectedPatternId).toBe("basic-rock");
-    expect(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-    ).toHaveValue("Basic Rock - 4/4");
+    expect(screen.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
     expect(
       screen.getByText(/Stop the active guided session before changing meter/i),
     ).toBeInTheDocument();
@@ -1026,6 +1116,7 @@ describe("practice screen", () => {
         <PracticeScreen />
       </StrictMode>,
     );
+    await user.click(screen.getByRole("button", { name: "Controls" }));
     const mute = screen.getByRole("button", { name: "Master mute" });
 
     expect(engine.setMasterVolume).not.toHaveBeenCalled();
@@ -1046,7 +1137,8 @@ describe("practice screen", () => {
     expect(engine.setMasterVolume.mock.calls).toEqual([[0], [0], [0.35]]);
   });
 
-  it("preserves consecutive master mute shortcuts before a render", () => {
+  it("preserves consecutive master mute shortcuts before a render", async () => {
+    const user = userEvent.setup();
     render(<PracticeScreen />);
     const volume = usePracticeStore.getState().masterVolume;
 
@@ -1055,6 +1147,7 @@ describe("practice screen", () => {
       fireEvent.keyDown(window, { key: "m" });
     });
 
+    await user.click(screen.getByRole("button", { name: "Controls" }));
     expect(screen.getByRole("button", { name: "Master mute" })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -1065,6 +1158,8 @@ describe("practice screen", () => {
   it("updates groove controls and mixer state", async () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);
+    await user.click(screen.getByRole("button", { name: "Controls" }));
+    await user.click(screen.getByRole("button", { name: "Groove Feel" }));
 
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Phrase fills" }),

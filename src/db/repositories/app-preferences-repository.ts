@@ -10,6 +10,7 @@ import {
 } from "@/stores/appearance-store";
 import { GUIDED_PRACTICE_STORAGE_KEY } from "@/stores/guided-practice-store";
 import { HISTORY_SETTINGS_KEY } from "@/db/repositories/history-settings-repository";
+import { PRACTICE_LAYOUT_KEY } from "@/db/repositories/practice-layout-repository";
 
 export const webBandPreferenceKeys = [
   SETTINGS_KEY,
@@ -20,6 +21,7 @@ export const webBandPreferenceKeys = [
   appearanceStorageKey,
   ...legacyAppearanceStorageKeys,
   ONBOARDING_STORAGE_KEY,
+  PRACTICE_LAYOUT_KEY,
 ] as const;
 
 export function clearAllAppPreferenceKeys(): boolean {

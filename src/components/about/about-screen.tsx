@@ -68,7 +68,7 @@ const signalPath = [
 
 export function AboutScreen() {
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[88rem] overflow-x-clip px-4 py-8 sm:px-7 sm:py-12 lg:px-10 lg:py-16">
+    <main className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[100rem] px-3 py-6 sm:px-6 lg:px-8">
       <header className="border-border relative isolate overflow-hidden border-b pb-12 sm:pb-16 lg:pb-20">
         <div
           aria-hidden="true"

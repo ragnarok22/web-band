@@ -1,139 +1,62 @@
 "use client";
-import { Button } from "@/components/ui/button";
 
-import { ChevronDown } from "lucide-react";
-import { m } from "framer-motion";
-import { useState } from "react";
-
-import { PracticeModeSelector } from "@/components/practice/practice-mode-selector";
 import { ChordTrainerPanel } from "@/components/practice/chord-trainer-panel";
 import { StrummingTrainerPanel } from "@/components/practice/strumming-trainer-panel";
 import { TempoTrainerPanel } from "@/components/practice/tempo-trainer-panel";
-import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
-import {
-  motionTransition,
-  panelEntry,
-  settled,
-} from "@/components/motion/motion-presets";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
 import type { TimeSignature } from "@/types/pattern";
-
-interface GuidedPracticePanelProps {
-  activeTimeSignature: TimeSignature;
-  sessionDisabled: boolean;
-}
 
 export function GuidedPracticePanel({
   activeTimeSignature,
   sessionDisabled,
-}: GuidedPracticePanelProps) {
-  const reducedMotion = useAppReducedMotion();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+}: {
+  activeTimeSignature: TimeSignature;
+  sessionDisabled: boolean;
+}) {
   const mode = useGuidedPracticeStore((state) => state.mode);
   const tempoTrainer = useGuidedPracticeStore((state) => state.tempoTrainer);
   const chordTrainer = useGuidedPracticeStore((state) => state.chordTrainer);
   const strummingPattern = useGuidedPracticeStore(
     (state) => state.strummingPattern,
   );
-  const setMode = useGuidedPracticeStore((state) => state.setMode);
-  const setTempoTrainerConfiguration = useGuidedPracticeStore(
+  const setTempoTrainer = useGuidedPracticeStore(
     (state) => state.setTempoTrainerConfiguration,
   );
-  const setChordTrainerConfiguration = useGuidedPracticeStore(
+  const setChordTrainer = useGuidedPracticeStore(
     (state) => state.setChordTrainerConfiguration,
   );
   const setStrummingPattern = useGuidedPracticeStore(
     (state) => state.setStrummingPattern,
   );
 
-  return (
-    <section
-      aria-labelledby="guided-practice-heading"
-      className="grid min-w-0 gap-4"
-    >
-      <div className="min-w-0 px-1">
-        <p className="text-primary text-[0.65rem] leading-4 font-extrabold tracking-[0.18em] uppercase">
-          Practice path
-        </p>
-        <h2
-          className="text-foreground mt-1 text-xl leading-7 font-black tracking-tight"
-          id="guided-practice-heading"
-        >
-          Guided practice
-        </h2>
-        <p className="text-muted-foreground mt-2 max-w-sm text-xs leading-5">
-          Cues follow the active drum groove without changing its feel.
-        </p>
-      </div>
-
-      <Button
-        variant="outline"
-        aria-controls="guided-practice-settings"
-        aria-expanded={settingsOpen}
-        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
-        onClick={() => setSettingsOpen((open) => !open)}
-        type="button"
-      >
-        {settingsOpen
-          ? "Hide guided practice settings"
-          : "Show guided practice settings"}
-        <ChevronDown
-          aria-hidden="true"
-          className={`size-5 shrink-0 transition-transform ${settingsOpen ? "rotate-180" : ""}`}
-        />
-      </Button>
-
-      <div
-        className={`${settingsOpen ? "grid" : "hidden"} gap-3 sm:grid`}
-        id="guided-practice-settings"
-      >
-        <PracticeModeSelector
+  // Essential trainer setup stays in the workspace, not behind Controls.
+  switch (mode) {
+    case "drums":
+      return null;
+    case "tempoTrainer":
+      return (
+        <TempoTrainerPanel
+          configuration={tempoTrainer}
           disabled={sessionDisabled}
-          mode={mode}
-          onChange={setMode}
+          onChange={setTempoTrainer}
         />
-
-        <m.div
-          animate={settled}
-          data-motion="guided-panel"
-          data-motion-reduced={reducedMotion}
-          initial={reducedMotion ? false : panelEntry}
-          key={mode}
-          transition={motionTransition(reducedMotion, 0.12)}
-        >
-          {mode === "drums" ? (
-            <div className="border-border bg-surface rounded-2xl border p-4 sm:p-5">
-              <p className="text-foreground font-extrabold">Groove only</p>
-              <p className="text-muted-foreground mt-1 text-sm leading-6">
-                Practice the selected drum pattern without tempo, chord, or
-                strum cues.
-              </p>
-            </div>
-          ) : null}
-          {mode === "tempoTrainer" ? (
-            <TempoTrainerPanel
-              configuration={tempoTrainer}
-              disabled={sessionDisabled}
-              onChange={setTempoTrainerConfiguration}
-            />
-          ) : null}
-          {mode === "chords" ? (
-            <ChordTrainerPanel
-              configuration={chordTrainer}
-              disabled={sessionDisabled}
-              onChange={setChordTrainerConfiguration}
-            />
-          ) : null}
-          {mode === "strumming" ? (
-            <StrummingTrainerPanel
-              disabled={sessionDisabled}
-              onChange={setStrummingPattern}
-              pattern={strummingPattern}
-              timeSignature={activeTimeSignature}
-            />
-          ) : null}
-        </m.div>
-      </div>
-    </section>
-  );
+      );
+    case "chords":
+      return (
+        <ChordTrainerPanel
+          configuration={chordTrainer}
+          disabled={sessionDisabled}
+          onChange={setChordTrainer}
+        />
+      );
+    case "strumming":
+      return (
+        <StrummingTrainerPanel
+          disabled={sessionDisabled}
+          onChange={setStrummingPattern}
+          pattern={strummingPattern}
+          timeSignature={activeTimeSignature}
+        />
+      );
+  }
 }

@@ -198,15 +198,11 @@ export function BeatVisualizer({
   return (
     <section
       aria-label="Beat visualization"
-      className={`beat-visualizer beat-visualizer--${intensity} border-border bg-surface relative overflow-hidden rounded-2xl border px-4 py-5 shadow-[0_20px_50px_var(--shadow)] sm:px-6 sm:py-6`}
+      className={`beat-visualizer beat-visualizer--${intensity} border-border bg-surface relative min-w-0 overflow-hidden rounded-2xl border px-4 py-5 sm:px-6 sm:py-6`}
       data-detail={detail}
       data-intensity={intensity}
       data-motion-reduced={reducedMotion}
     >
-      <div
-        aria-hidden="true"
-        className="via-accent/45 absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent"
-      />
       <div className="text-muted-foreground mb-5 flex items-center justify-between text-xs font-bold tracking-[0.16em] uppercase">
         <span>Follow the pulse</span>
         <span className="tabular-nums">

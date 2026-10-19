@@ -65,7 +65,7 @@ export function TransportControls({
 
       <Button
         aria-label={playLabel}
-        className="play-control bg-primary text-accent-ink hover:bg-accent-strong flex size-24 items-center justify-center rounded-[1.75rem] shadow-[0_14px_45px_rgba(231,169,75,0.24)] transition-[background-color,transform] active:scale-[0.96] disabled:opacity-50 motion-reduce:transform-none sm:size-28"
+        className="play-control bg-primary text-accent-ink hover:bg-accent-strong flex size-24 items-center justify-center rounded-full transition-[background-color,transform] active:scale-[0.98] disabled:opacity-50 motion-reduce:transform-none"
         disabled={playDisabled || isBusy || (isRunning && isFinishing)}
         onClick={isRunning ? onFinish : onPlay}
         type="button"

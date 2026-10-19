@@ -38,9 +38,11 @@ test("loads saved custom data and preferences while offline", async ({
   await expect(
     page.getByRole("heading", { name: offlinePattern.name }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Change Pattern" }).click();
   await expect(
     page.getByRole("combobox", { name: "Current pattern" }),
   ).toHaveValue(`${offlinePattern.name} - 4/4`);
+  await page.getByRole("button", { name: "Close pattern picker" }).click();
   await expect(
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("132");

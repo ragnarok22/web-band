@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { navigate } from "./practice-helpers";
 
 function trackBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -29,8 +30,7 @@ test("records, persists, and deletes a real practice session", async ({
   await expect(
     page.getByRole("spinbutton", { name: "Minimum session duration" }),
   ).toHaveValue("1");
-  await page.getByRole("link", { exact: true, name: "Practice" }).focus();
-  await page.keyboard.press("Enter");
+  await navigate(page, "Practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
   await page.getByText("Off", { exact: true }).click();
   await page.getByRole("button", { exact: true, name: "Play" }).click();
@@ -39,7 +39,7 @@ test("records, persists, and deletes a real practice session", async ({
   );
   await page.waitForTimeout(1_500);
 
-  await page.getByRole("link", { name: "History" }).click();
+  await navigate(page, "History");
   await expect(page).toHaveURL(/\/history$/);
   const session = page.getByRole("article").filter({
     has: page.getByRole("heading", { name: "Basic Rock" }),

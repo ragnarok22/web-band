@@ -4,7 +4,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 const auditProjects = new Set(["chromium", "mobile-chromium"]);
 const axeTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 const routes = [
-  { heading: "Basic Rock", path: "/practice" },
+  { heading: "Practice room", path: "/practice" },
   { heading: "Find your pocket", path: "/patterns" },
   { heading: "Shape your groove", path: "/editor" },
   { heading: "The work you put in.", path: "/history" },
@@ -39,7 +39,7 @@ function skipNonAuditBrowser(testInfo: TestInfo): void {
 async function expectNamedRouteControls(page: Page, path: string) {
   if (path === "/practice") {
     await expect(
-      page.getByRole("complementary", { name: "Pattern and mixer" }),
+      page.getByRole("region", { name: "Current groove" }),
     ).toBeVisible();
     await expect(
       page.getByRole("button", { exact: true, name: "Play" }),
@@ -189,6 +189,8 @@ test("skip navigation and primary navigation work from the keyboard", async ({
   await page.keyboard.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();
 
+  if ((page.viewportSize()?.width ?? 1280) < 1024)
+    await page.getByRole("button", { name: "Open navigation" }).click();
   await page.getByRole("link", { exact: true, name: "Practice" }).focus();
   await expect(
     page.getByRole("link", { exact: true, name: "Practice" }),

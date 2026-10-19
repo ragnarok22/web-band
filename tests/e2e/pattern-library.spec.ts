@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { navigate } from "./practice-helpers";
 
 function trackBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -98,27 +99,22 @@ test("navigates patterns by keyboard and commits active changes on a boundary", 
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
-  const patternSelect = page.getByRole("combobox", {
-    name: "Current pattern",
-  });
   const bpmInput = page.getByRole("spinbutton", { name: "Current BPM" });
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("ArrowRight");
-  await expect(patternSelect).toHaveValue("Driving Eighths - 4/4");
   await expect(
     page.getByRole("heading", { name: "Driving Eighths" }),
   ).toBeVisible();
 
   await page.keyboard.press("ArrowLeft");
-  await expect(patternSelect).toHaveValue("Basic Rock - 4/4");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
   await bpmInput.focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowLeft");
   await expect(bpmInput).toBeFocused();
-  await expect(patternSelect).toHaveValue("Basic Rock - 4/4");
+  await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
   await bpmInput.fill("220");
   await page.keyboard.press("Enter");
@@ -131,7 +127,9 @@ test("navigates patterns by keyboard and commits active changes on a boundary", 
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("ArrowRight");
-  await expect(patternSelect).toHaveValue("Driving Eighths - 4/4");
+  await expect(
+    page.getByRole("region", { name: "Current groove" }),
+  ).toContainText("Driving Eighths");
   await expect(
     page.getByText("Queued after a transition fill", { exact: true }),
   ).toBeVisible();
@@ -169,7 +167,7 @@ test("resets playback after navigating from an active practice to another patter
     "Groove playing",
   );
 
-  await page.getByRole("link", { exact: true, name: "Patterns" }).click();
+  await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill("One Drop");
   const card = page
     .getByRole("article")

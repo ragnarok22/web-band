@@ -10,6 +10,7 @@ import { mixerGroups } from "@/lib/mixer";
 import type { MixerGroup, MixerSettings } from "@/types/audio";
 
 interface CompactMixerProps {
+  embedded?: boolean;
   disabled?: boolean;
   masterMuted: boolean;
   masterVolume: number;
@@ -32,6 +33,7 @@ const groupLabels: Record<MixerGroup, string> = {
 };
 
 export function CompactMixer({
+  embedded = false,
   disabled = false,
   masterMuted,
   masterVolume,
@@ -49,18 +51,28 @@ export function CompactMixer({
     <Card
       role="region"
       aria-labelledby="mixer-heading"
-      className="gap-0 p-4 sm:p-5"
+      className={
+        embedded
+          ? "gap-0 rounded-none border-0 bg-transparent p-0 shadow-none ring-0"
+          : "gap-0 p-4 sm:p-5"
+      }
     >
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="bg-surface-elevated text-primary flex size-10 items-center justify-center rounded-lg">
+          <span
+            className={`${embedded ? "hidden" : "flex"} bg-surface-elevated text-primary size-10 items-center justify-center rounded-lg`}
+          >
             <SlidersVertical aria-hidden="true" className="size-5" />
           </span>
           <div>
             <h2 className="text-foreground font-bold" id="mixer-heading">
               Kit mixer
             </h2>
-            <p className="text-muted-foreground text-xs">Six musical groups</p>
+            {embedded ? null : (
+              <p className="text-muted-foreground text-xs">
+                Six musical groups
+              </p>
+            )}
           </div>
         </div>
         <Button

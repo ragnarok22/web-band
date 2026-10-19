@@ -1,13 +1,21 @@
 "use client";
 import { Button } from "@/components/ui/button";
 
-import { FolderOpen, Save } from "lucide-react";
+import { ChevronDown, FolderOpen, Save } from "lucide-react";
 import { useState } from "react";
 
 import { PracticePresetDialog } from "@/components/practice/practice-preset-dialog";
 import { getPracticeSetupSummary } from "@/components/practice/practice-preset-format";
 import { SavePracticePresetDialog } from "@/components/practice/save-practice-preset-dialog";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { usePracticeModal } from "@/hooks/use-practice-modal";
 import type {
   PracticePreset,
   PracticePresetConfiguration,
@@ -42,6 +50,8 @@ export function PracticePresetBar({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [presetsOpen, setPresetsOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  usePracticeModal(menuOpen);
 
   async function runAction(
     action: () => Promise<unknown> | unknown,
@@ -75,17 +85,15 @@ export function PracticePresetBar({
   return (
     <section
       aria-label="Practice preset controls"
-      className="border-border bg-surface flex flex-col gap-3 rounded-2xl border p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
+      className="flex min-w-0 flex-wrap items-center gap-2"
     >
-      <div className="min-w-0">
+      <div className={loadedPresetName ? "order-3 w-full min-w-0" : "sr-only"}>
         <p className="text-primary text-[0.65rem] font-extrabold tracking-[0.14em] uppercase">
           {loadedPresetName ? `Loaded: ${loadedPresetName}` : "Current setup"}
         </p>
-        <p className="text-muted-strong mt-1 truncate text-sm font-bold">
-          {getPracticeSetupSummary(configuration)}
-        </p>
+        <p className="sr-only">{getPracticeSetupSummary(configuration)}</p>
       </div>
-      <div className="grid shrink-0 grid-cols-2 gap-2">
+      <div className="flex flex-row-reverse gap-2">
         <Button
           variant="outline"
           aria-label="Save current setup"
@@ -97,20 +105,57 @@ export function PracticePresetBar({
           type="button"
         >
           <Save aria-hidden="true" className="size-4" />
-          Save current setup
+          Save
         </Button>
-        <Button
-          aria-label="Open presets"
-          className="bg-primary text-accent-ink hover:bg-accent-strong flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-extrabold"
-          onClick={() => {
-            setErrorMessage(null);
-            setPresetsOpen(true);
-          }}
-          type="button"
-        >
-          <FolderOpen aria-hidden="true" className="size-4" />
-          Presets
-        </Button>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="outline"
+                aria-label="Open presets"
+                className="min-h-11 gap-2 px-3"
+              />
+            }
+          >
+            <FolderOpen aria-hidden="true" className="size-4" />
+            Presets
+            <ChevronDown aria-hidden="true" className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-64 max-w-[calc(100vw-2rem)]"
+          >
+            {recentPresetIds.slice(0, 5).flatMap((id) => {
+              const preset = presets.find((candidate) => candidate.id === id);
+              return preset
+                ? [
+                    <DropdownMenuItem
+                      key={id}
+                      className="min-h-11 wrap-anywhere"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        void loadPreset(preset).then((loaded) => {
+                          if (!loaded) setPresetsOpen(true);
+                        });
+                      }}
+                    >
+                      Load {preset.name}
+                    </DropdownMenuItem>,
+                  ]
+                : [];
+            })}
+            {recentPresetIds.length > 0 ? <DropdownMenuSeparator /> : null}
+            <DropdownMenuItem
+              className="min-h-11"
+              onClick={() => {
+                setErrorMessage(null);
+                setPresetsOpen(true);
+              }}
+            >
+              Manage presets
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <SavePracticePresetDialog

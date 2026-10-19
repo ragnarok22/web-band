@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  closeControls,
+  openControls,
+  openPresetManager,
+} from "./practice-helpers";
 
 function trackBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -9,13 +14,7 @@ function trackBrowserErrors(page: Page): string[] {
   return errors;
 }
 
-async function expandMobileSettings(page: Page, name: string): Promise<void> {
-  if ((page.viewportSize()?.width ?? 1_280) < 640) {
-    await page.getByRole("button", { name }).click();
-  }
-}
-
-test("uses a two-column control layout within a 1024px viewport", async ({
+test("expands the workspace when Controls close at 1024px", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1024 });
@@ -28,16 +27,19 @@ test("uses a two-column control layout within a 1024px viewport", async ({
   }));
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
 
-  const patternTools = await page
-    .getByRole("complementary", { name: "Pattern and mixer" })
-    .boundingBox();
-  const practiceSettings = await page
-    .getByRole("complementary", { name: "Practice settings" })
-    .boundingBox();
-  expect(patternTools).not.toBeNull();
-  expect(practiceSettings).not.toBeNull();
-  expect(Math.abs(patternTools!.y - practiceSettings!.y)).toBeLessThan(2);
-  expect(patternTools!.x).toBeLessThan(practiceSettings!.x);
+  const workspace = page.getByRole("region", {
+    name: "Practice session",
+    exact: true,
+  });
+  const fullWidth = (await workspace.boundingBox())!.width;
+  await openControls(page);
+  await expect
+    .poll(async () => (await workspace.boundingBox())!.width)
+    .toBeLessThan(fullWidth - 300);
+  await closeControls(page);
+  await expect
+    .poll(async () => (await workspace.boundingBox())!.width)
+    .toBe(fullWidth);
 });
 
 test("keeps advanced controls reachable without overflow at 320px", async ({
@@ -47,24 +49,15 @@ test("keeps advanced controls reachable without overflow at 320px", async ({
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
-  const guidedPractice = page.getByRole("button", {
-    name: "Show guided practice settings",
-  });
-  await expect(guidedPractice).toHaveAttribute("aria-expanded", "false");
-  await expect(
-    page.getByRole("radiogroup", { name: "Practice mode" }),
-  ).toBeHidden();
-  await guidedPractice.click();
   await expect(
     page.getByRole("radiogroup", { name: "Practice mode" }),
   ).toBeVisible();
 
-  const groove = page.getByRole("button", { name: "Show groove settings" });
-  await expect(groove).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByRole("slider", { name: "Swing" })).toBeHidden();
-  await groove.click();
+  await openControls(page, "Groove Feel");
   await expect(page.getByRole("slider", { name: "Swing" })).toBeVisible();
 
+  await closeControls(page);
+  await page.getByRole("button", { name: "Change Pattern" }).click();
   await page
     .getByRole("link", { name: "Browse all patterns" })
     .scrollIntoViewIfNeeded();
@@ -160,12 +153,16 @@ test("persists groove controls and supports focus keyboard practice", async ({
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
 
-  await expandMobileSettings(page, "Show groove settings");
+  await page
+    .getByRole("radio", { name: "Off", exact: true })
+    .locator("..")
+    .click();
+  await openControls(page, "Groove Feel");
 
-  await page.getByText("Off", { exact: true }).click();
   await page.getByRole("combobox", { name: "Phrase fills" }).selectOption("8");
   await page.getByRole("slider", { name: "Swing" }).fill("0.25");
   await page.getByRole("button", { name: "Mute Kick" }).click();
+  await closeControls(page);
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("Space");
@@ -192,12 +189,12 @@ test("persists groove controls and supports focus keyboard practice", async ({
   ).toBeHidden();
   await page.keyboard.press("f");
   await expect(
-    page.getByRole("combobox", { name: "Current pattern" }),
+    page.getByRole("button", { name: "Change Pattern" }),
   ).toBeVisible();
 
   await page.reload();
-  await expandMobileSettings(page, "Show groove settings");
   await expect(page.getByRole("radio", { name: "Off" })).toBeChecked();
+  await openControls(page, "Groove Feel");
   await expect(
     page.getByRole("combobox", { name: "Phrase fills" }),
   ).toHaveValue("8");
@@ -214,6 +211,7 @@ test("quick select searches patterns and supports keyboard selection", async ({
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
+  await page.getByRole("button", { name: "Change Pattern" }).click();
   const input = page.getByRole("combobox", { name: "Current pattern" });
   await expect(input).toHaveValue("Basic Rock - 4/4");
   await input.fill("no-pattern-matches-this");
@@ -228,6 +226,7 @@ test("quick select searches patterns and supports keyboard selection", async ({
   await expect(
     page.getByRole("heading", { name: "One Drop", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Change Pattern" }).click();
   await input.fill("Driving Eighths");
   await expect(
     page.getByRole("option", { name: "Driving Eighths - 4/4", exact: true }),
@@ -248,7 +247,6 @@ test("persists and restores a guided tempo practice preset", async ({
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
-  await expandMobileSettings(page, "Show guided practice settings");
   const practiceMode = page.getByRole("radiogroup", {
     name: "Practice mode",
   });
@@ -258,6 +256,7 @@ test("persists and restores a guided tempo practice preset", async ({
     .locator("..")
     .click();
   await page.getByRole("spinbutton", { name: "Start BPM" }).fill("84");
+  await page.getByRole("button", { name: "Change Pattern" }).click();
   await page
     .getByRole("combobox", { name: "Current pattern" })
     .fill("One Drop");
@@ -275,7 +274,7 @@ test("persists and restores a guided tempo practice preset", async ({
     .getByRole("radio", { name: /Drums/ })
     .locator("..")
     .click();
-  await page.getByRole("button", { name: "Open presets" }).click();
+  await openPresetManager(page);
   await page.getByRole("tab", { name: "All" }).click();
   await page.getByRole("button", { name: "Load Tempo ladder" }).click();
 
@@ -285,11 +284,11 @@ test("persists and restores a guided tempo practice preset", async ({
     "84",
   );
   await expect(
-    page.getByRole("combobox", { name: "Current pattern" }),
-  ).toHaveValue("One Drop - 4/4");
+    page.getByRole("heading", { name: "One Drop", exact: true }),
+  ).toBeVisible();
 
   await page.reload();
-  await page.getByRole("button", { name: "Open presets" }).click();
+  await openPresetManager(page);
   await expect(
     page.getByRole("heading", { name: "Tempo ladder" }),
   ).toBeVisible();
@@ -299,7 +298,6 @@ test("persists and restores a guided tempo practice preset", async ({
 test("advances the tempo trainer on a musical boundary", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
-  await expandMobileSettings(page, "Show guided practice settings");
   const practiceMode = page.getByRole("radiogroup", {
     name: "Practice mode",
   });
@@ -333,7 +331,6 @@ test("moves the strumming sequence highlight at audible time", async ({
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
-  await expandMobileSettings(page, "Show guided practice settings");
   await page
     .getByRole("radiogroup", { name: "Practice mode" })
     .getByRole("radio", { name: /Strumming/ })

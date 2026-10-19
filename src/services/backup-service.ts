@@ -30,6 +30,7 @@ import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeHistoryStore } from "@/stores/practice-history-store";
 import { usePracticePresetStore } from "@/stores/practice-preset-store";
 import { usePracticeStore } from "@/stores/practice-store";
+import { usePracticeUiStore } from "@/stores/practice-ui-store";
 import { reportPreferenceWrite } from "@/stores/storage-store";
 import { useStrummingPatternStore } from "@/stores/strumming-pattern-store";
 import type {
@@ -343,6 +344,7 @@ export class BackupService {
       issues.push("some live preferences could not be reset");
     }
     let preferencesCleared = false;
+    usePracticeUiStore.setState({ controlsOpen: false });
     try {
       preferencesCleared = this.dependencies.clearAppPreferences();
     } catch {
@@ -394,9 +396,15 @@ export class BackupService {
       issues.push("some app preferences could not be reset");
     }
 
+    const layoutPersisted = usePracticeUiStore
+      .getState()
+      .setControlsOpen(false);
+    if (!layoutPersisted) issues.push("the practice layout could not be reset");
+
     return {
       reset: true,
-      settingsPersisted: settingsPersisted && preferencesPersisted,
+      settingsPersisted:
+        settingsPersisted && preferencesPersisted && layoutPersisted,
       warning:
         issues.length === 0
           ? null

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { navigate } from "./practice-helpers";
 
 function trackBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -7,14 +8,6 @@ function trackBrowserErrors(page: Page): string[] {
   });
   page.on("pageerror", (error) => errors.push(error.message));
   return errors;
-}
-
-async function expandGuidedPracticeOnMobile(page: Page): Promise<void> {
-  if ((page.viewportSize()?.width ?? 1_280) < 640) {
-    await page
-      .getByRole("button", { name: "Show guided practice settings" })
-      .click();
-  }
 }
 
 async function expectSelectedPattern(page: Page, name: string): Promise<void> {
@@ -31,7 +24,6 @@ test("creates, edits, deletes, and restores a custom strumming pattern", async (
 
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
-  await expandGuidedPracticeOnMobile(page);
   await page
     .getByRole("radiogroup", { name: "Practice mode" })
     .getByRole("radio", { name: /Strumming/ })
@@ -60,14 +52,13 @@ test("creates, edits, deletes, and restores a custom strumming pattern", async (
   await expectSelectedPattern(page, editedName);
 
   await page.reload();
-  await expandGuidedPracticeOnMobile(page);
   await expect(page.getByRole("radio", { name: /Strumming/ })).toBeChecked();
   await expectSelectedPattern(page, editedName);
   await expect(
     page.getByRole("list", { name: `${editedName} action sequence` }).first(),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Settings" }).click();
+  await navigate(page, "Settings");
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export data" }).click();
   const download = await downloadPromise;
@@ -76,14 +67,13 @@ test("creates, edits, deletes, and restores a custom strumming pattern", async (
 
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
-  await expandGuidedPracticeOnMobile(page);
   await page.getByRole("button", { exact: true, name: "Delete" }).click();
   await page
     .getByRole("button", { name: `Delete ${editedName} permanently` })
     .click();
   await expectSelectedPattern(page, "Quarter-Note Downstrokes");
 
-  await page.getByRole("link", { name: "Settings" }).click();
+  await navigate(page, "Settings");
   await page
     .getByLabel("Choose backup file")
     .setInputFiles(backupPath as string);
@@ -98,10 +88,8 @@ test("creates, edits, deletes, and restores a custom strumming pattern", async (
 
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
-  await expandGuidedPracticeOnMobile(page);
   await expectSelectedPattern(page, editedName);
   await page.reload();
-  await expandGuidedPracticeOnMobile(page);
   await expectSelectedPattern(page, editedName);
   expect(browserErrors).toEqual([]);
 });
