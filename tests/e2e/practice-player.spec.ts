@@ -313,9 +313,18 @@ test("wraps every guided mode and advanced tempo controls without overflow at 32
       .getByRole("radio", { name: mode, exact: true })
       .locator("..")
       .click();
-    await expect(
-      player.getByRole("region", { name: "Beat visualization" }),
-    ).toBeVisible();
+    if (mode === "Strumming") {
+      await expect(
+        player.getByRole("list", { name: /action sequence/ }),
+      ).toBeVisible();
+      await expect(
+        player.getByRole("region", { name: "Beat visualization" }),
+      ).toHaveCount(0);
+    } else {
+      await expect(
+        player.getByRole("region", { name: "Beat visualization" }),
+      ).toBeVisible();
+    }
     await expectNoOverflow(page);
   }
   await page

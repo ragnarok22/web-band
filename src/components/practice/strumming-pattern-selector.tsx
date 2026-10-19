@@ -2,12 +2,17 @@
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 
-import { AlertTriangle, Pencil, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Ellipsis, Pencil, Plus, Trash2 } from "lucide-react";
 import { useRef, useState, type MouseEvent, type Ref } from "react";
 
 import { StrummingPatternDeleteConfirmation } from "@/components/practice/strumming-pattern-delete-confirmation";
 import { StrummingPatternEditorDialog } from "@/components/practice/strumming-pattern-editor-dialog";
-import { StrummingSequence } from "@/components/practice/strumming-sequence";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   builtInStrummingPatterns,
   quarterDownstrokesPattern,
@@ -21,7 +26,7 @@ import type { TimeSignature } from "@/types/pattern";
 import type { CustomStrummingPattern } from "@/types/persistence";
 import type { StrummingPattern } from "@/types/practice";
 
-interface StrummingTrainerPanelProps {
+interface StrummingPatternSelectorProps {
   disabled?: boolean;
   onChange: (pattern: StrummingPattern) => void;
   pattern: StrummingPattern;
@@ -33,12 +38,12 @@ type EditorTarget = CustomStrummingPattern | "new" | null;
 const buttonClass =
   "border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-extrabold disabled:cursor-not-allowed disabled:opacity-45";
 
-export function StrummingTrainerPanel({
+export function StrummingPatternSelector({
   disabled = false,
   onChange,
   pattern,
   timeSignature,
-}: StrummingTrainerPanelProps) {
+}: StrummingPatternSelectorProps) {
   const customPatterns = useStrummingPatternStore(
     (state) => state.customPatterns,
   );
@@ -124,75 +129,96 @@ export function StrummingTrainerPanel({
 
   return (
     <section
-      aria-labelledby="strumming-trainer-heading"
-      className="border-border bg-surface rounded-2xl border p-4 sm:p-5"
+      aria-label="Strumming pattern"
+      className="min-w-0 px-4 pt-4 pb-3 sm:px-6"
     >
-      <div className="mb-4">
-        <p className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
-          Right-hand rhythm
-        </p>
-        <h3
-          className="text-foreground mt-1 text-lg font-black"
-          id="strumming-trainer-heading"
-        >
-          Strumming trainer
-        </h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-primary text-xs font-extrabold tracking-[0.16em] uppercase">
+          Strumming practice
+        </h2>
+        <span className="text-muted-foreground text-xs font-bold tabular-nums">
+          {pattern.steps.length} steps
+        </span>
       </div>
 
-      <StrummingPatternSelect
-        availableSelected={availableSelected}
-        compatibleBuiltIns={compatibleBuiltIns}
-        compatibleCustom={compatibleCustom}
-        disabled={controlsDisabled}
-        isCompatible={isCompatible}
-        onSelect={(patternId) => {
-          const selected = compatiblePatterns.find(
-            ({ id }) => id === patternId,
-          );
-          if (selected) selectPattern(selected);
-        }}
-        pattern={pattern}
-        selectRef={patternSelectRef}
-        timeSignature={timeSignature}
-      />
+      <div className="flex min-w-0 flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1 basis-64">
+          <StrummingPatternSelect
+            availableSelected={availableSelected}
+            compatibleBuiltIns={compatibleBuiltIns}
+            compatibleCustom={compatibleCustom}
+            disabled={controlsDisabled}
+            isCompatible={isCompatible}
+            onSelect={(patternId) => {
+              const selected = compatiblePatterns.find(
+                ({ id }) => id === patternId,
+              );
+              if (selected) selectPattern(selected);
+            }}
+            pattern={pattern}
+            selectRef={patternSelectRef}
+            timeSignature={timeSignature}
+          />
+        </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          className={buttonClass}
-          disabled={controlsDisabled}
-          onClick={(event) => openEditor("new", event)}
-          type="button"
-        >
-          <Plus aria-hidden="true" className="size-4" />
-          New
-        </Button>
-        {selectedCustom ? (
-          <>
-            <Button
-              variant="outline"
-              className={buttonClass}
-              disabled={controlsDisabled}
-              onClick={(event) => openEditor(selectedCustom, event)}
-              type="button"
-            >
-              <Pencil aria-hidden="true" className="size-4" />
-              Edit
-            </Button>
-            <Button
-              variant="destructive"
-              className={`${buttonClass} border-danger/30 text-danger`}
-              disabled={controlsDisabled}
-              onClick={() => setConfirmingDelete(true)}
-              ref={deleteTriggerRef}
-              type="button"
-            >
-              <Trash2 aria-hidden="true" className="size-4" />
-              Delete
-            </Button>
-          </>
-        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className={buttonClass}
+            disabled={controlsDisabled}
+            onClick={(event) => openEditor("new", event)}
+            type="button"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            New
+          </Button>
+          {selectedCustom ? (
+            <>
+              <Button
+                variant="outline"
+                className={buttonClass}
+                disabled={controlsDisabled}
+                onClick={(event) => openEditor(selectedCustom, event)}
+                type="button"
+              >
+                <Pencil aria-hidden="true" className="size-4" />
+                Edit
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="outline" />}
+                  aria-label="Pattern actions"
+                  className="size-11"
+                  disabled={controlsDisabled}
+                  ref={deleteTriggerRef}
+                >
+                  <Ellipsis aria-hidden="true" className="size-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    className="min-h-11"
+                    onClick={() => setConfirmingDelete(true)}
+                    variant="destructive"
+                  >
+                    <Trash2 aria-hidden="true" className="size-4" />
+                    Delete pattern
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : null}
+        </div>
       </div>
+
+      <p className="text-muted-foreground mt-2 text-xs">
+        <span className="tabular-nums">
+          {pattern.timeSignature.numerator}/{pattern.timeSignature.denominator}
+        </span>
+        {" · "}
+        {pattern.subdivision === 8 ? "Eighth" : "Sixteenth"}-note grid
+        {" · "}
+        {pattern.isBuiltIn ? "Built-in" : "Custom"}
+      </p>
 
       {confirmingDelete && selectedCustom ? (
         <StrummingPatternDeleteConfirmation
@@ -211,25 +237,6 @@ export function StrummingTrainerPanel({
         pattern={pattern}
         timeSignature={timeSignature}
       />
-
-      {availableSelected ? (
-        <>
-          <div className="mt-5 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-foreground text-sm font-extrabold">
-                {availableSelected.name}
-              </p>
-              <p className="text-muted-foreground mt-1 text-xs">
-                {availableSelected.subdivision}th-note grid - every action shown
-              </p>
-            </div>
-            <span className="border-border bg-background text-muted-strong rounded-lg border px-2.5 py-1.5 text-xs font-black tabular-nums">
-              {availableSelected.steps.length} steps
-            </span>
-          </div>
-          <StrummingSequence className="mt-3" pattern={availableSelected} />
-        </>
-      ) : null}
 
       {errorMessage ? (
         <p className="text-danger mt-3 text-sm font-bold" role="alert">
@@ -256,7 +263,7 @@ function StrummingSelectionWarning({
   isCompatible,
   pattern,
   timeSignature,
-}: Pick<StrummingTrainerPanelProps, "pattern" | "timeSignature"> & {
+}: Pick<StrummingPatternSelectorProps, "pattern" | "timeSignature"> & {
   isAvailable: boolean;
   isCompatible: boolean;
 }) {
@@ -292,7 +299,7 @@ function StrummingSelectionWarning({
 }
 
 interface StrummingPatternSelectProps extends Pick<
-  StrummingTrainerPanelProps,
+  StrummingPatternSelectorProps,
   "pattern" | "timeSignature"
 > {
   availableSelected: StrummingPattern | undefined;
@@ -323,11 +330,13 @@ function StrummingPatternSelect({
 
   return (
     <label className="text-muted-strong text-xs font-bold">
-      Pattern for {timeSignature.numerator}/{timeSignature.denominator}
+      <span className="sr-only">
+        Pattern for {timeSignature.numerator}/{timeSignature.denominator}
+      </span>
       <NativeSelect
         aria-describedby={warningId}
         aria-invalid={!availableSelected || !isCompatible}
-        className="mt-1.5"
+        className="[&_select]:text-base [&_select]:font-extrabold"
         disabled={
           disabled || compatibleBuiltIns.length + compatibleCustom.length === 0
         }

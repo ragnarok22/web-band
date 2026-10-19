@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -22,12 +22,10 @@ describe("strumming pattern editor dialog", () => {
   it("prevents accent changes while saving", async () => {
     const user = userEvent.setup();
     let finishSave!: () => void;
-    const onSave = vi.fn(
-      () =>
-        new Promise<void>((resolve) => {
-          finishSave = resolve;
-        }),
-    );
+    const pendingSave = new Promise<void>((resolve) => {
+      finishSave = resolve;
+    });
+    const onSave = vi.fn(() => pendingSave);
     render(
       <StrummingPatternEditorDialog
         onClose={vi.fn()}
@@ -35,19 +33,36 @@ describe("strumming pattern editor dialog", () => {
         timeSignature={{ numerator: 4, denominator: 4 }}
       />,
     );
-    await user.clear(screen.getByRole("textbox", { name: "Pattern name" }));
-    await user.type(
-      screen.getByRole("textbox", { name: "Pattern name" }),
-      "Evening strums",
-    );
-    await user.click(
-      screen.getByRole("button", { name: "Save strumming pattern" }),
-    );
-    const accent = screen.getAllByRole("checkbox")[0]!;
-    expect(accent).toHaveAttribute("aria-disabled", "true");
-    const checked = accent.getAttribute("aria-checked");
-    await user.click(accent);
-    expect(accent).toHaveAttribute("aria-checked", checked);
-    await act(async () => finishSave());
+    try {
+      // Let the dialog's queued initial focus settle before typing into the form.
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", {
+            name: "Close strumming pattern editor",
+          }),
+        ).toHaveFocus(),
+      );
+      const nameInput = screen.getByRole("textbox", { name: "Pattern name" });
+      await user.clear(nameInput);
+      await user.type(nameInput, "Evening strums");
+      expect(nameInput).toHaveValue("Evening strums");
+      await user.click(
+        screen.getByRole("button", { name: "Save strumming pattern" }),
+      );
+      await waitFor(() =>
+        expect(onSave).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ name: "Evening strums" }),
+        ),
+      );
+      const accent = screen.getAllByRole("checkbox")[0]!;
+      await waitFor(() =>
+        expect(accent).toHaveAttribute("aria-disabled", "true"),
+      );
+      const checked = accent.getAttribute("aria-checked");
+      await user.click(accent);
+      expect(accent).toHaveAttribute("aria-checked", checked);
+    } finally {
+      await act(async () => finishSave());
+    }
   });
 });

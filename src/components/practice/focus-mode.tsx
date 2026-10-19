@@ -100,16 +100,24 @@ export function FocusMode({
       transition={motionTransition(reducedMotion, 0.14)}
     >
       <header className="mx-auto flex w-full max-w-5xl items-start justify-between gap-4">
-        <div>
+        <div
+          className={
+            configuration.mode === "strumming" ? "min-w-0 flex-1" : undefined
+          }
+        >
           <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
             Focus session
           </p>
           <h1
-            className="text-foreground mt-2 text-3xl font-black tracking-[-0.045em] sm:text-5xl"
+            className={`text-foreground mt-2 font-black tracking-[-0.045em] ${configuration.mode === "strumming" ? "text-2xl wrap-anywhere sm:text-4xl" : "text-3xl sm:text-5xl"}`}
             ref={headingRef}
             tabIndex={-1}
           >
-            {configuration.mode === "metronome" ? "Metronome" : pattern.name}
+            {configuration.mode === "metronome"
+              ? "Metronome"
+              : configuration.mode === "strumming"
+                ? configuration.strummingPattern.name
+                : pattern.name}
           </h1>
         </div>
         <Button
@@ -123,64 +131,22 @@ export function FocusMode({
         </Button>
       </header>
 
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-6 py-8">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="border-border bg-surface rounded-2xl border p-5 text-center">
-            <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
-              Tempo
-            </p>
-            <p className="text-foreground mt-2 text-6xl font-black tracking-[-0.06em] tabular-nums sm:text-8xl">
-              {displayedBpm}
-            </p>
-            <p className="text-muted-foreground text-xs font-bold">BPM</p>
-          </div>
-          <div className="border-border bg-surface rounded-2xl border p-5 text-center">
-            <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
-              Time
-            </p>
-            <p className="text-foreground mt-5 text-4xl font-black tabular-nums sm:text-6xl">
-              {formatPracticeDuration(elapsedSeconds)}
-            </p>
-          </div>
-        </div>
-
-        {configuration.mode === "metronome" ? (
-          <>
-            <p className="text-muted-strong text-center text-sm">
-              {configuration.metronome.timeSignature.numerator}/
-              {configuration.metronome.timeSignature.denominator} ·{" "}
-              {getMetronomeMeter(configuration.metronome.timeSignature).compound
-                ? "Dotted-quarter BPM"
-                : "Quarter-note BPM"}{" "}
-              ·{" "}
-              {configuration.metronome.trainingMode === "manual"
-                ? getSubdivisionLabel(
-                    configuration.metronome.subdivision,
-                    configuration.metronome.timeSignature,
-                  )
-                : "Progressive subdivisions"}
-            </p>
-            <MetronomeVisualizer
-              configuration={configuration.metronome}
-              countInMeasures={countInMeasures}
-              status={status}
-            />
-          </>
-        ) : (
-          <>
-            <GuidedPracticeDisplay
-              configuration={configuration}
-              timeSignature={pattern.timeSignature}
-            />
-            <BeatVisualizer
-              countInMeasures={countInMeasures}
-              detail={visualSubdivisionDetail}
-              intensity={beatFlashIntensity}
-              pattern={pattern}
-              status={status}
-            />
-          </>
-        )}
+      <div
+        className={`mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center ${configuration.mode === "strumming" ? "gap-4 py-4" : "gap-6 py-8"}`}
+      >
+        <FocusSessionMetrics
+          bpm={displayedBpm}
+          compact={configuration.mode === "strumming"}
+          elapsedSeconds={elapsedSeconds}
+        />
+        <FocusVisualization
+          beatFlashIntensity={beatFlashIntensity}
+          configuration={configuration}
+          countInMeasures={countInMeasures}
+          pattern={pattern}
+          status={status}
+          visualSubdivisionDetail={visualSubdivisionDetail}
+        />
         <PracticeNotices
           practiceLabel={
             configuration.mode === "metronome" ? "metronome" : undefined
@@ -230,6 +196,115 @@ export function FocusMode({
         )}
       </div>
     </m.main>
+  );
+}
+
+function FocusSessionMetrics({
+  bpm,
+  compact,
+  elapsedSeconds,
+}: Pick<FocusModeProps, "bpm" | "elapsedSeconds"> & { compact: boolean }) {
+  if (compact) {
+    return (
+      <div className="text-muted-strong flex flex-wrap items-baseline justify-between gap-3 px-1 text-sm">
+        <p>
+          <span className="text-foreground text-3xl font-black tabular-nums">
+            {bpm}
+          </span>{" "}
+          BPM
+        </p>
+        <p>
+          Time{" "}
+          <span className="text-foreground ml-1 font-bold tabular-nums">
+            {formatPracticeDuration(elapsedSeconds)}
+          </span>
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <div className="border-border bg-surface rounded-2xl border p-5 text-center">
+        <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
+          Tempo
+        </p>
+        <p className="text-foreground mt-2 text-6xl font-black tracking-[-0.06em] tabular-nums sm:text-8xl">
+          {bpm}
+        </p>
+        <p className="text-muted-foreground text-xs font-bold">BPM</p>
+      </div>
+      <div className="border-border bg-surface rounded-2xl border p-5 text-center">
+        <p className="text-muted-foreground text-xs font-extrabold tracking-[0.16em] uppercase">
+          Time
+        </p>
+        <p className="text-foreground mt-5 text-4xl font-black tabular-nums sm:text-6xl">
+          {formatPracticeDuration(elapsedSeconds)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FocusVisualization({
+  beatFlashIntensity,
+  configuration,
+  countInMeasures,
+  pattern,
+  status,
+  visualSubdivisionDetail,
+}: Pick<
+  FocusModeProps,
+  | "beatFlashIntensity"
+  | "configuration"
+  | "countInMeasures"
+  | "pattern"
+  | "status"
+  | "visualSubdivisionDetail"
+>) {
+  if (configuration.mode === "metronome") {
+    return (
+      <>
+        <p className="text-muted-strong text-center text-sm">
+          {configuration.metronome.timeSignature.numerator}/
+          {configuration.metronome.timeSignature.denominator} ·{" "}
+          {getMetronomeMeter(configuration.metronome.timeSignature).compound
+            ? "Dotted-quarter BPM"
+            : "Quarter-note BPM"}{" "}
+          ·{" "}
+          {configuration.metronome.trainingMode === "manual"
+            ? getSubdivisionLabel(
+                configuration.metronome.subdivision,
+                configuration.metronome.timeSignature,
+              )
+            : "Progressive subdivisions"}
+        </p>
+        <MetronomeVisualizer
+          configuration={configuration.metronome}
+          countInMeasures={countInMeasures}
+          status={status}
+        />
+      </>
+    );
+  }
+  return (
+    <>
+      <GuidedPracticeDisplay
+        configuration={configuration}
+        countInMeasures={countInMeasures}
+        intensity={beatFlashIntensity}
+        status={status}
+        timeSignature={pattern.timeSignature}
+      />
+      {configuration.mode !== "strumming" ? (
+        <BeatVisualizer
+          countInMeasures={countInMeasures}
+          detail={visualSubdivisionDetail}
+          intensity={beatFlashIntensity}
+          pattern={pattern}
+          status={status}
+        />
+      ) : null}
+    </>
   );
 }
 

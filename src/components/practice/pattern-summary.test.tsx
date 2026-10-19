@@ -7,6 +7,39 @@ import { builtInPatterns } from "@/data/patterns";
 import { renderWithMotion as render } from "@/test/render-with-motion";
 
 describe("pattern summary", () => {
+  it("distinguishes drum accompaniment from the strumming exercise without changing groove selection", async () => {
+    const user = userEvent.setup();
+    const onPatternChange = vi.fn();
+    const pattern = builtInPatterns[0]!;
+    render(
+      <PatternSummary
+        accompaniment
+        immediatePatternSwitch={false}
+        onImmediatePatternSwitchChange={vi.fn()}
+        onPatternChange={onPatternChange}
+        pattern={pattern}
+        patterns={[...builtInPatterns]}
+        pendingPatternId={null}
+        swing={0}
+      />,
+    );
+    expect(
+      screen.getByRole("region", { name: "Drum accompaniment" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Change Pattern" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Change Groove" }));
+    expect(screen.getByRole("dialog", { name: "Change Groove" })).toBeVisible();
+    const input = screen.getByRole("combobox", { name: "Current pattern" });
+    await user.clear(input);
+    await user.type(input, "One Drop");
+    await user.click(
+      await screen.findByRole("option", { name: "One Drop - 4/4" }),
+    );
+    expect(onPatternChange).toHaveBeenCalledWith("one-drop");
+  });
+
   it("keeps long names and essential metadata visible with musical details collapsed", async () => {
     const user = userEvent.setup();
     const pattern = {

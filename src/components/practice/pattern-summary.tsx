@@ -31,6 +31,7 @@ import { formatPatternCategory } from "@/lib/pattern-filters";
 import type { DrumPattern } from "@/types/pattern";
 
 interface PatternSummaryProps {
+  accompaniment?: boolean;
   immediatePatternSwitch: boolean;
   onImmediatePatternSwitchChange: (enabled: boolean) => void;
   onPatternChange: (patternId: string) => void;
@@ -41,6 +42,7 @@ interface PatternSummaryProps {
 }
 
 export function PatternSummary({
+  accompaniment = false,
   immediatePatternSwitch,
   onImmediatePatternSwitchChange,
   onPatternChange,
@@ -56,14 +58,14 @@ export function PatternSummary({
 
   return (
     <section
-      aria-label="Current groove"
+      aria-label={accompaniment ? "Drum accompaniment" : "Current groove"}
       className="border-border bg-surface min-w-0 rounded-2xl border px-4 py-3 sm:px-5"
     >
       <Collapsible>
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1 basis-52">
             <p className="text-primary text-[0.65rem] font-extrabold tracking-[0.16em] uppercase">
-              Current groove
+              {accompaniment ? "Drum accompaniment" : "Current groove"}
             </p>
             <h2 className="text-foreground mt-1 text-lg leading-snug font-extrabold tracking-tight wrap-anywhere sm:text-xl">
               {pattern.name}
@@ -103,7 +105,7 @@ export function PatternSummary({
                 aria-hidden="true"
                 className="hidden size-4 sm:block"
               />
-              Change Pattern
+              {accompaniment ? "Change Groove" : "Change Pattern"}
             </Button>
           </div>
         </div>
@@ -151,7 +153,9 @@ export function PatternSummary({
         className="sm:max-w-xl"
       >
         <div className="flex items-center justify-between gap-3">
-          <DialogTitle>Change Pattern</DialogTitle>
+          <DialogTitle>
+            {accompaniment ? "Change Groove" : "Change Pattern"}
+          </DialogTitle>
           <Button
             aria-label="Close pattern picker"
             variant="ghost"

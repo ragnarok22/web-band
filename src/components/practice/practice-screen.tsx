@@ -89,6 +89,7 @@ export function PracticeScreen() {
         >
           {practice.guidedPractice.mode !== "metronome" ? (
             <PatternSummary
+              accompaniment={practice.guidedPractice.mode === "strumming"}
               immediatePatternSwitch={practice.immediatePatternSwitch}
               onPatternChange={practice.changePattern}
               onImmediatePatternSwitchChange={
@@ -118,7 +119,6 @@ export function PracticeScreen() {
             showOnboarding={false}
           />
           <GuidedPracticePanel
-            activeTimeSignature={practice.pattern.timeSignature}
             sessionDisabled={!practice.isReady || practice.active}
           />
         </section>

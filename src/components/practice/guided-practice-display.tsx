@@ -1,21 +1,23 @@
 "use client";
 
-import { strumActionDetails } from "@/components/practice/strum-action-details";
-import { StrummingSequence } from "@/components/practice/strumming-sequence";
+import { StrummingPracticeView } from "@/components/practice/strumming-practice-view";
 import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
 import { getChordTrainerPosition } from "@/lib/guided-practice";
+import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
+import type { BeatFlashIntensity } from "@/types/persistence";
 import type {
   GuidanceFrame,
   GuidedPracticeConfiguration,
-  StrumAction,
-  StrumPosition,
   TempoTrainerPosition,
 } from "@/types/practice";
 
 interface GuidedPracticeDisplayProps {
   embedded?: boolean;
   configuration: GuidedPracticeConfiguration;
+  countInMeasures?: CountInMeasures;
+  intensity?: BeatFlashIntensity;
+  status?: AudioEngineStatus;
   timeSignature: TimeSignature;
 }
 
@@ -52,45 +54,12 @@ function getChordFallback(
   return getChordTrainerPosition(configuration.chordTrainer, timeSignature, 0);
 }
 
-function getStrumFallback(
-  configuration: Extract<GuidedPracticeConfiguration, { mode: "strumming" }>,
-): StrumPosition | null {
-  const current = configuration.strummingPattern.steps[0];
-  const next = configuration.strummingPattern.steps[1] ?? current;
-  return current && next
-    ? {
-        accent: current.accent === true,
-        currentAction: current.action,
-        currentStepId: current.id,
-        isStepBoundary: true,
-        nextAction: next.action,
-        nextStepId: next.id,
-        stepIndex: 0,
-      }
-    : null;
-}
-
-function StrumCue({ action, label }: { action: StrumAction; label: string }) {
-  const details = strumActionDetails[action];
-  return (
-    <div className="border-border bg-background rounded-xl border p-3 text-center">
-      <p className="text-muted-foreground text-[0.65rem] font-extrabold tracking-wider uppercase">
-        {label}
-      </p>
-      <span
-        aria-hidden="true"
-        className="text-primary mt-1 block text-4xl font-black"
-      >
-        {details.symbol}
-      </span>
-      <p className="text-foreground mt-1 text-sm font-black">{details.label}</p>
-    </div>
-  );
-}
-
 export function GuidedPracticeDisplay({
   embedded = false,
   configuration,
+  countInMeasures = 0,
+  intensity = "standard",
+  status = "stopped",
   timeSignature,
 }: GuidedPracticeDisplayProps) {
   const snapshot = useGuidanceSnapshot();
@@ -105,7 +74,10 @@ export function GuidedPracticeDisplay({
     >
       <ModeGuidance
         configuration={configuration}
+        countInMeasures={countInMeasures}
+        intensity={intensity}
         snapshot={snapshot}
+        status={status}
         timeSignature={timeSignature}
       />
     </div>
@@ -114,7 +86,10 @@ export function GuidedPracticeDisplay({
 
 function ModeGuidance({
   configuration,
+  countInMeasures,
+  intensity,
   snapshot,
+  status,
   timeSignature,
 }: GuidedPracticeDisplayProps & { snapshot: GuidanceFrame | null }) {
   switch (configuration.mode) {
@@ -134,7 +109,14 @@ function ModeGuidance({
       );
     case "strumming":
       return (
-        <StrummingGuidance configuration={configuration} snapshot={snapshot} />
+        <StrummingPracticeView
+          countInMeasures={countInMeasures}
+          intensity={intensity}
+          pattern={configuration.strummingPattern}
+          snapshot={snapshot}
+          status={status}
+          timeSignature={timeSignature}
+        />
       );
   }
 }
@@ -276,49 +258,6 @@ function ChordGuidance({
       </p>
       <h2 className="sr-only" id="guided-display-heading">
         Chord trainer guidance
-      </h2>
-    </section>
-  );
-}
-
-function StrummingGuidance({
-  configuration,
-  snapshot,
-}: {
-  configuration: Extract<GuidedPracticeConfiguration, { mode: "strumming" }>;
-  snapshot: GuidanceFrame | null;
-}) {
-  const frame = snapshot?.mode === "strumming" ? snapshot : null;
-  const position = frame?.position ?? getStrumFallback(configuration);
-  return (
-    <section
-      aria-labelledby="guided-display-heading"
-      className="border-border bg-surface rounded-2xl border p-4 sm:p-6"
-    >
-      <div className="grid grid-cols-2 gap-3">
-        {position ? (
-          <>
-            <StrumCue action={position.currentAction} label="Current strum" />
-            <StrumCue action={position.nextAction} label="Next strum" />
-          </>
-        ) : (
-          <p className="text-muted-foreground col-span-2 text-center">
-            No strum actions available.
-          </p>
-        )}
-      </div>
-      <StrummingSequence
-        activeStepId={frame?.position.currentStepId ?? null}
-        className="mt-4"
-        pattern={configuration.strummingPattern}
-      />
-      <p className="text-muted-foreground mt-3 text-center text-sm font-bold">
-        Step {(position?.stepIndex ?? 0) + 1} of{" "}
-        {configuration.strummingPattern.steps.length}
-        {position?.accent ? " - Accent" : ""}
-      </p>
-      <h2 className="sr-only" id="guided-display-heading">
-        Strumming trainer guidance
       </h2>
     </section>
   );

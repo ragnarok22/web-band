@@ -55,7 +55,7 @@ test("creates, edits, deletes, and restores a custom strumming pattern", async (
   await expect(page.getByRole("radio", { name: /Strumming/ })).toBeChecked();
   await expectSelectedPattern(page, editedName);
   await expect(
-    page.getByRole("list", { name: `${editedName} action sequence` }).first(),
+    page.getByRole("list", { name: `${editedName} action sequence` }),
   ).toBeVisible();
 
   await navigate(page, "Settings");
@@ -67,7 +67,8 @@ test("creates, edits, deletes, and restores a custom strumming pattern", async (
 
   await page.goto("/practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
-  await page.getByRole("button", { exact: true, name: "Delete" }).click();
+  await page.getByRole("button", { name: "Pattern actions" }).click();
+  await page.getByRole("menuitem", { name: "Delete pattern" }).click();
   await page
     .getByRole("button", { name: `Delete ${editedName} permanently` })
     .click();

@@ -2,11 +2,31 @@ import type { StrumAction } from "@/types/practice";
 
 export const strumActionDetails: Record<
   StrumAction,
-  { label: string; symbol: string }
+  { guidance: string; label: string; symbol: string }
 > = {
-  down: { label: "Down", symbol: "↓" },
-  hold: { label: "Hold", symbol: "·" },
-  mute: { label: "Mute", symbol: "×" },
-  rest: { label: "Rest", symbol: "–" },
-  up: { label: "Up", symbol: "↑" },
+  down: {
+    guidance: "Strum downward.",
+    label: "Down",
+    symbol: "↓",
+  },
+  hold: {
+    guidance: "Let strings ring. No new strum.",
+    label: "Hold",
+    symbol: "·",
+  },
+  mute: {
+    guidance: "Mute the strings.",
+    label: "Mute",
+    symbol: "×",
+  },
+  rest: {
+    guidance: "Do not strum here.",
+    label: "Rest",
+    symbol: "–",
+  },
+  up: {
+    guidance: "Strum upward.",
+    label: "Up",
+    symbol: "↑",
+  },
 };

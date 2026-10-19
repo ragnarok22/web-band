@@ -204,9 +204,18 @@ describe("PracticePlayer", () => {
         screen.getByRole("region", { name: "Practice player" }),
       );
       expect(player.getByRole("region", { name: label })).toBeVisible();
-      expect(
-        player.getByRole("region", { name: "Beat visualization" }),
-      ).toBeVisible();
+      if (mode === "strumming") {
+        expect(
+          player.queryByRole("region", { name: "Beat visualization" }),
+        ).not.toBeInTheDocument();
+        expect(
+          player.getByRole("combobox", { name: /Pattern for 4\/4/ }),
+        ).toBeVisible();
+      } else {
+        expect(
+          player.getByRole("region", { name: "Beat visualization" }),
+        ).toBeVisible();
+      }
       if (mode === "tempoTrainer") {
         expect(
           player.queryByRole("spinbutton", { name: "Current BPM" }),

@@ -3,12 +3,14 @@
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
 import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
 import { PracticeSessionControls } from "@/components/practice/practice-session-controls";
+import { StrummingPatternSelector } from "@/components/practice/strumming-pattern-selector";
 import {
   MetronomeControls,
   MetronomePracticeOptions,
 } from "@/components/practice/metronome-controls";
 import { MetronomeVisualizer } from "@/components/practice/metronome-visualizer";
 import type { usePracticeController } from "@/hooks/use-practice-controller";
+import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
 import type {
   BeatFlashIntensity,
   VisualSubdivisionDetail,
@@ -23,6 +25,9 @@ export function PracticePlayer({
   beatFlashIntensity: BeatFlashIntensity;
   visualSubdivisionDetail: VisualSubdivisionDetail;
 }) {
+  const setStrummingPattern = useGuidedPracticeStore(
+    (state) => state.setStrummingPattern,
+  );
   return (
     <section
       aria-label="Practice player"
@@ -53,6 +58,13 @@ export function PracticePlayer({
             }
           />
         </>
+      ) : practice.guidedPractice.mode === "strumming" ? (
+        <StrummingPatternSelector
+          disabled={!practice.isReady || practice.active}
+          onChange={setStrummingPattern}
+          pattern={practice.guidedPractice.strummingPattern}
+          timeSignature={practice.pattern.timeSignature}
+        />
       ) : (
         <BeatVisualizer
           embedded
@@ -68,6 +80,9 @@ export function PracticePlayer({
         <GuidedPracticeDisplay
           embedded
           configuration={practice.guidedPractice}
+          countInMeasures={practice.countInMeasures}
+          intensity={beatFlashIntensity}
+          status={practice.status}
           timeSignature={practice.pattern.timeSignature}
         />
       ) : null}

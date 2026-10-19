@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { StrummingTrainerPanel } from "@/components/practice/strumming-trainer-panel";
+import { StrummingPatternSelector } from "@/components/practice/strumming-pattern-selector";
 import {
   basicPopPattern,
   basicThreeFourPattern,
@@ -21,9 +21,18 @@ const customPattern: CustomStrummingPattern = {
   updatedAt: "2026-07-19T10:00:00.000Z",
 };
 
-describe("strumming trainer panel", () => {
+async function openDeleteAction(user: ReturnType<typeof userEvent.setup>) {
+  screen.getByRole("button", { name: "Pattern actions" }).focus();
+  await user.keyboard("{ArrowDown}");
+  await user.click(
+    await screen.findByRole("menuitem", { name: "Delete pattern" }),
+  );
+}
+
+describe("strumming pattern selector", () => {
   beforeEach(() => {
     useStrummingPatternStore.setState({
+      ...useStrummingPatternStore.getInitialState(),
       customPatterns: [customPattern],
       isHydrated: true,
     });
@@ -33,7 +42,7 @@ describe("strumming trainer panel", () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
-      <StrummingTrainerPanel
+      <StrummingPatternSelector
         onChange={onChange}
         pattern={quarterDownstrokesPattern}
         timeSignature={{ denominator: 4, numerator: 3 }}
@@ -49,35 +58,29 @@ describe("strumming trainer panel", () => {
       "",
       basicThreeFourPattern.id,
     ]);
-    expect(screen.getAllByRole("listitem", { name: /Step/ })).toHaveLength(
-      quarterDownstrokesPattern.steps.length,
-    );
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
 
     await user.selectOptions(select, basicThreeFourPattern.id);
     expect(onChange).toHaveBeenCalledWith(basicThreeFourPattern);
   });
 
-  it("shows musical positions and includes compatible custom patterns", async () => {
+  it("groups compatible built-in and custom patterns without a duplicate preview", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     render(
-      <StrummingTrainerPanel
+      <StrummingPatternSelector
         onChange={onChange}
         pattern={quarterDownstrokesPattern}
         timeSignature={{ denominator: 4, numerator: 4 }}
       />,
     );
 
-    const sequence = screen.getByRole("list", {
-      name: `${quarterDownstrokesPattern.name} action sequence`,
-    });
-    expect(
-      within(sequence)
-        .getAllByRole("listitem")
-        .map((item) => item.getAttribute("data-position")),
-    ).toEqual(["1", "&", "2", "&", "3", "&", "4", "&"]);
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
 
     const select = screen.getByRole("combobox", { name: /Pattern for 4\/4/ });
+    expect(
+      within(select).getByRole("group", { name: "Built-in patterns" }),
+    ).toBeInTheDocument();
     expect(
       within(select).getByRole("group", { name: "Custom patterns" }),
     ).toBeInTheDocument();
@@ -93,7 +96,7 @@ describe("strumming trainer panel", () => {
       .mockResolvedValue(customPattern);
     useStrummingPatternStore.setState({ create });
     render(
-      <StrummingTrainerPanel
+      <StrummingPatternSelector
         onChange={onChange}
         pattern={quarterDownstrokesPattern}
         timeSignature={{ denominator: 4, numerator: 4 }}
@@ -136,7 +139,7 @@ describe("strumming trainer panel", () => {
     const deletePattern = vi.fn().mockResolvedValue(undefined);
     useStrummingPatternStore.setState({ delete: deletePattern, update });
     render(
-      <StrummingTrainerPanel
+      <StrummingPatternSelector
         onChange={onChange}
         pattern={customPattern}
         timeSignature={{ denominator: 4, numerator: 4 }}
@@ -158,7 +161,7 @@ describe("strumming trainer panel", () => {
       expect(screen.getByRole("button", { name: "Edit" })).toHaveFocus(),
     );
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await openDeleteAction(user);
     expect(deletePattern).not.toHaveBeenCalled();
     await user.click(
       screen.getByRole("button", {
@@ -179,7 +182,7 @@ describe("strumming trainer panel", () => {
   it("identifies an unavailable selection without previewing or editing it", () => {
     useStrummingPatternStore.setState({ customPatterns: [] });
     render(
-      <StrummingTrainerPanel
+      <StrummingPatternSelector
         onChange={vi.fn()}
         pattern={customPattern}
         timeSignature={{ denominator: 4, numerator: 4 }}
@@ -202,7 +205,7 @@ describe("strumming trainer panel", () => {
       screen.queryByRole("button", { name: "Edit" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Delete" }),
+      screen.queryByRole("button", { name: "Pattern actions" }),
     ).not.toBeInTheDocument();
   });
 
@@ -214,7 +217,7 @@ describe("strumming trainer panel", () => {
     ({ disabled, isHydrated }) => {
       useStrummingPatternStore.setState({ isHydrated });
       render(
-        <StrummingTrainerPanel
+        <StrummingPatternSelector
           disabled={disabled}
           onChange={vi.fn()}
           pattern={customPattern}
@@ -225,9 +228,109 @@ describe("strumming trainer panel", () => {
       expect(
         screen.getByRole("combobox", { name: /Pattern for 4\/4/ }),
       ).toBeDisabled();
-      for (const name of ["New", "Edit", "Delete"]) {
+      for (const name of ["New", "Edit", "Pattern actions"]) {
         expect(screen.getByRole("button", { name })).toBeDisabled();
       }
     },
   );
+
+  it("keeps built-in patterns read-only and cancels creation without changing selection", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <StrummingPatternSelector
+        onChange={onChange}
+        pattern={quarterDownstrokesPattern}
+        timeSignature={{ denominator: 4, numerator: 4 }}
+      />,
+    );
+    expect(
+      screen.queryByRole("button", { name: "Edit" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Pattern actions" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "New" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "Pattern name" }),
+      "Unsaved draft",
+    );
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "New" })).toHaveFocus();
+  });
+
+  it("cancels deletion and restores focus to the management trigger", async () => {
+    const user = userEvent.setup();
+    const deletePattern = vi.fn();
+    useStrummingPatternStore.setState({ delete: deletePattern });
+    render(
+      <StrummingPatternSelector
+        onChange={vi.fn()}
+        pattern={customPattern}
+        timeSignature={{ denominator: 4, numerator: 4 }}
+      />,
+    );
+    await openDeleteAction(user);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(deletePattern).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("button", { name: "Pattern actions" }),
+    ).toHaveFocus();
+  });
+
+  it("surfaces failed deletion without discarding the active custom pattern", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    useStrummingPatternStore.setState({
+      delete: vi.fn().mockRejectedValue(new Error("Storage is unavailable.")),
+    });
+    render(
+      <StrummingPatternSelector
+        onChange={onChange}
+        pattern={customPattern}
+        timeSignature={{ denominator: 4, numerator: 4 }}
+      />,
+    );
+    await openDeleteAction(user);
+    await user.click(
+      screen.getByRole("button", {
+        name: `Delete ${customPattern.name} permanently`,
+      }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Storage is unavailable.",
+    );
+    expect(onChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("combobox", { name: /Pattern for 4\/4/ }),
+    ).toHaveValue(customPattern.id);
+  });
+
+  it("retains the editor draft and selection when saving fails", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    useStrummingPatternStore.setState({
+      update: vi.fn().mockRejectedValue(new Error("Could not save pattern.")),
+    });
+    render(
+      <StrummingPatternSelector
+        onChange={onChange}
+        pattern={customPattern}
+        timeSignature={{ denominator: 4, numerator: 4 }}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(
+      screen.getByRole("button", { name: "Save strumming pattern" }),
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not save pattern.",
+    );
+    expect(screen.getByRole("textbox", { name: "Pattern name" })).toHaveValue(
+      customPattern.name,
+    );
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });

@@ -1,10 +1,11 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { guidanceTimeline } from "@/audio/guidance-timeline";
 import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { downDownUpUpDownUpPattern } from "@/data/strumming-patterns";
+import { getStrumPosition } from "@/lib/guided-practice";
 
 describe("guided practice display", () => {
   beforeEach(() => guidanceTimeline.reset());
@@ -103,39 +104,40 @@ describe("guided practice display", () => {
           mode: "strumming",
           strummingPattern: downDownUpUpDownUpPattern,
         }}
+        status="playing"
         timeSignature={{ denominator: 4, numerator: 4 }}
       />,
     );
 
-    expect(screen.getByText("Current strum")).toBeInTheDocument();
-    expect(screen.getAllByText("Down")).not.toHaveLength(0);
+    expect(
+      within(screen.getByRole("group", { name: "Current action" })).getByText(
+        "Down",
+      ),
+    ).toBeInTheDocument();
     expect(document.querySelector('[aria-current="step"]')).toBeNull();
     expect(container.querySelector("[aria-live]")).toBeNull();
-
-    const currentStep = downDownUpUpDownUpPattern.steps[3]!;
-    const nextStep = downDownUpUpDownUpPattern.steps[4]!;
 
     act(() => {
       guidanceTimeline.begin();
       guidanceTimeline.publish({
-        absoluteSixteenth: 3,
+        absoluteSixteenth: 6,
         elapsedSeconds: 0.5,
         measure: 1,
         mode: "strumming",
-        position: {
-          accent: false,
-          currentAction: currentStep.action,
-          currentStepId: currentStep.id,
-          isStepBoundary: true,
-          nextAction: nextStep.action,
-          nextStepId: nextStep.id,
-          stepIndex: 3,
-        },
+        position: getStrumPosition(downDownUpUpDownUpPattern, 6),
       });
     });
 
-    expect(screen.getAllByText("Up")).not.toHaveLength(0);
-    expect(screen.getAllByText("Rest")).not.toHaveLength(0);
+    expect(
+      within(screen.getByRole("group", { name: "Current action" })).getByText(
+        "Up",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("group", { name: "Next action" })).getByText(
+        "Rest",
+      ),
+    ).toBeInTheDocument();
     expect(document.querySelector('[aria-current="step"]')).toHaveAttribute(
       "data-position",
       "&",
@@ -231,6 +233,8 @@ describe("guided practice display", () => {
     );
     expect(screen.getByText("No strum actions available.")).toBeInTheDocument();
     expect(screen.queryByText("Current chord")).not.toBeInTheDocument();
-    expect(screen.queryByText("Current strum")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: "Current action" }),
+    ).not.toBeInTheDocument();
   });
 });
