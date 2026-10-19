@@ -84,51 +84,43 @@ test("starts, changes tempo, pauses, resumes, and stops the groove", async ({
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("90");
 
-  const countIn = page.getByRole("group", { name: "Count-in length" });
-  await countIn.getByText("1 bar", { exact: true }).click();
-  await expect(countIn.getByRole("radio", { name: "1 bar" })).toBeChecked();
+  const countIn = page.getByRole("combobox", { name: "Count-in length" });
+  await countIn.selectOption("1");
+  await expect(countIn).toHaveValue("1");
   const beatVisualizer = page.getByRole("region", {
     name: "Beat visualization",
   });
   const countInDisplay = beatVisualizer.locator('[data-motion="count-in"]');
 
   await page.getByRole("button", { exact: true, name: "Play" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Count in: listen for the downbeat",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Counting in");
   await expect(page.getByTestId("playback-live-region")).toHaveText(
     "Count in: listen for the downbeat",
   );
   await expect(countInDisplay).toHaveAttribute("aria-hidden", "false");
   await expect(beatVisualizer.locator(".beat-step--active")).toHaveCount(0);
 
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-    { timeout: 7_000 },
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing", {
+    timeout: 7_000,
+  });
   await expect(countInDisplay).toHaveAttribute("aria-hidden", "true");
   await expect
     .poll(() => beatVisualizer.locator(".beat-step--active").count())
     .toBe(1);
 
+  await page.getByRole("button", { name: "More tempo controls" }).click();
   await page.getByRole("button", { name: "Increase BPM by 5" }).click();
   await expect(
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("95");
 
   await page.getByRole("button", { name: "Pause playback" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove paused",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Paused");
   await page.getByRole("button", { name: "Resume" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
 
   await page.getByRole("button", { name: "Stop playback" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove stopped",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Stopped");
   expect(browserErrors).toEqual([]);
 });
 
@@ -154,9 +146,8 @@ test("persists groove controls and supports focus keyboard practice", async ({
   await page.goto("/practice");
 
   await page
-    .getByRole("radio", { name: "Off", exact: true })
-    .locator("..")
-    .click();
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
   await openControls(page, "Groove Feel");
 
   await page.getByRole("combobox", { name: "Phrase fills" }).selectOption("8");
@@ -166,21 +157,13 @@ test("persists groove controls and supports focus keyboard practice", async ({
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("Space");
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await page.keyboard.press("Space");
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove paused",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Paused");
   await page.keyboard.press("Space");
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await page.keyboard.press("Escape");
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove stopped",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Stopped");
 
   await page.getByRole("button", { name: "Focus" }).click();
   await expect(page.getByText("Focus session")).toBeVisible();
@@ -193,7 +176,9 @@ test("persists groove controls and supports focus keyboard practice", async ({
   ).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole("radio", { name: "Off" })).toBeChecked();
+  await expect(
+    page.getByRole("combobox", { name: "Count-in length" }),
+  ).toHaveValue("0");
   await openControls(page, "Groove Feel");
   await expect(
     page.getByRole("combobox", { name: "Phrase fills" }),
@@ -306,7 +291,9 @@ test("advances the tempo trainer on a musical boundary", async ({ page }) => {
     .getByRole("radio", { name: /Tempo/ })
     .locator("..")
     .click();
-  await page.getByText("Off", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
   await page.getByRole("spinbutton", { name: "Start BPM" }).fill("200");
   await page.getByRole("spinbutton", { name: "Target BPM" }).fill("205");
   await page.getByRole("spinbutton", { name: "Change by" }).fill("5");
@@ -318,9 +305,7 @@ test("advances the tempo trainer on a musical boundary", async ({ page }) => {
   await expect(page.getByTestId("trainer-current-bpm")).toContainText("205", {
     timeout: 5_000,
   });
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
 
   await page.getByRole("button", { name: "Stop playback" }).click();
   expect(browserErrors).toEqual([]);
@@ -336,7 +321,9 @@ test("moves the strumming sequence highlight at audible time", async ({
     .getByRole("radio", { name: /Strumming/ })
     .locator("..")
     .click();
-  await page.getByText("Off", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
 
   const activeStep = page
     .getByRole("region", { name: "Strumming trainer guidance" })

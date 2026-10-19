@@ -19,7 +19,10 @@ describe("practice screen — focus", () => {
   it("configures count-in and opens the focused practice view", async () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);
-    await user.click(screen.getByRole("radio", { name: "2 bars" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Count-in length" }),
+      "2",
+    );
     expect(usePracticeStore.getState().countInMeasures).toBe(2);
     await user.click(screen.getByRole("button", { name: "Focus" }));
     expect(screen.getByText("Focus session")).toBeInTheDocument();

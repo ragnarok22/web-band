@@ -52,7 +52,9 @@ for (const recovery of ["Try again", "Back to practice"] as const) {
         }
         return matchMedia(query);
       };
-      window.localStorage.setItem("error-page-saved-work", "preserved");
+      if (!window.sessionStorage.getItem("error-page-recovered")) {
+        window.localStorage.setItem("error-page-saved-work", "preserved");
+      }
     });
 
     await page.goto("/about");
@@ -67,11 +69,10 @@ for (const recovery of ["Try again", "Back to practice"] as const) {
     await page.evaluate(() =>
       window.sessionStorage.setItem("error-page-recovered", "true"),
     );
-    await page
-      .getByRole(recovery === "Try again" ? "button" : "link", {
-        name: recovery,
-      })
-      .click();
+    expect(
+      (await new AxeBuilder({ page }).include("main").analyze()).violations,
+    ).toEqual([]);
+    await page.getByRole("button", { name: recovery }).click();
 
     if (recovery === "Back to practice") {
       await expect(page).toHaveURL(/\/practice$/);

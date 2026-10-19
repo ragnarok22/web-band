@@ -19,6 +19,7 @@ export type BeatVisualizerDetail = VisualSubdivisionDetail;
 export type BeatVisualizerIntensity = BeatFlashIntensity;
 
 export interface BeatVisualizerProps {
+  embedded?: boolean;
   countInMeasures: CountInMeasures;
   detail?: BeatVisualizerDetail;
   intensity?: BeatVisualizerIntensity;
@@ -76,6 +77,7 @@ function mapFrameToDisplayedSixteenth(
 }
 
 export function BeatVisualizer({
+  embedded = false,
   countInMeasures,
   detail = "pattern",
   intensity = "standard",
@@ -198,13 +200,13 @@ export function BeatVisualizer({
   return (
     <section
       aria-label="Beat visualization"
-      className={`beat-visualizer beat-visualizer--${intensity} border-border bg-surface relative min-w-0 overflow-hidden rounded-2xl border px-4 py-5 sm:px-6 sm:py-6`}
+      className={`beat-visualizer beat-visualizer--${intensity} relative min-w-0 overflow-hidden px-4 py-5 sm:px-6 ${embedded ? "beat-visualizer--embedded rounded-t-2xl" : "border-border bg-surface rounded-2xl border sm:py-6"}`}
       data-detail={detail}
       data-intensity={intensity}
       data-motion-reduced={reducedMotion}
     >
       <div className="text-muted-foreground mb-5 flex items-center justify-between text-xs font-bold tracking-[0.16em] uppercase">
-        <span>Follow the pulse</span>
+        <span>Follow the beat</span>
         <span className="tabular-nums">
           Measure <span ref={measureRef}>1</span>
         </span>
@@ -216,6 +218,13 @@ export function BeatVisualizer({
             className="beat-visualizer__group"
             data-beat={group.beat + 1}
             key={group.beat}
+            style={
+              embedded
+                ? {
+                    gridTemplateColumns: `repeat(${Math.max(1, group.steps.length - 1)}, minmax(0, 1fr))`,
+                  }
+                : undefined
+            }
           >
             {group.steps.map(({ label, sixteenth }) => (
               <div

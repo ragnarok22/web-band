@@ -5,7 +5,7 @@ import {
 import { PracticeScreen } from "@/components/practice/practice-screen";
 import { act, fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { gDEmCProgression } from "@/data/chord-progressions";
 import { defaultPracticeSettings } from "@/db/repositories/settings-repository";
 import { useAudioStore } from "@/stores/audio-store";
@@ -15,7 +15,6 @@ import {
 } from "@/stores/guided-practice-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
-import { useStorageStore } from "@/stores/storage-store";
 import { renderWithMotion as render } from "@/test/render-with-motion";
 
 describe("practice screen", () => {
@@ -118,19 +117,24 @@ describe("practice screen", () => {
     ).toBeDisabled();
   });
 
-  it("dismisses the browser audio onboarding hint", async () => {
-    const user = userEvent.setup();
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("blocked");
-    });
+  it("shows one compact playback status without redundant onboarding and preserves errors", () => {
     render(<PracticeScreen />);
-    expect(screen.getByRole("note")).toHaveTextContent(
-      "Sound begins after you press Play",
-    );
-    await user.click(screen.getByRole("button", { name: "Dismiss audio tip" }));
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
-    expect(useStorageStore.getState().preferenceWriteFailures).toContain(
-      "onboarding",
+    expect(screen.getAllByText("Ready", { exact: true })).toHaveLength(1);
+    expect(screen.getByTestId("playback-live-region")).toHaveTextContent(
+      "Audio waits for your first press",
+    );
+    act(() =>
+      useAudioStore.setState({
+        status: "error",
+        errorMessage: "Audio permission denied. Try Play again.",
+      }),
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Audio permission denied",
+    );
+    expect(screen.getByTestId("transport-status")).toHaveTextContent(
+      "Audio unavailable",
     );
   });
 });

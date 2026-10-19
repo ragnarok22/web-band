@@ -104,7 +104,7 @@ describe("app providers", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Web Band needs another count-in",
+        name: "We lost the rhythm.",
       }),
     ).toBeVisible();
     expect(screen.queryByText("recovery failed")).toBeNull();

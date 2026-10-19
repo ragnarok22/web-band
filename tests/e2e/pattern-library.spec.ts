@@ -119,11 +119,11 @@ test("navigates patterns by keyboard and commits active changes on a boundary", 
   await bpmInput.fill("220");
   await page.keyboard.press("Enter");
   await expect(bpmInput).toHaveValue("220");
-  await page.getByText("Off", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
   await page.getByRole("button", { exact: true, name: "Play" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("ArrowRight");
@@ -161,11 +161,11 @@ test("resets playback after navigating from an active practice to another patter
 }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/practice");
-  await page.getByText("Off", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
   await page.getByRole("button", { exact: true, name: "Play" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
 
   await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill("One Drop");

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Modal } from "@/components/shared/modal";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -22,13 +21,10 @@ import {
   ComboboxItem,
 } from "@/components/ui/combobox";
 import { DialogTitle } from "@/components/ui/dialog";
-import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
 import { formatPatternCategory } from "@/lib/pattern-filters";
 import type { DrumPattern } from "@/types/pattern";
 
 interface PatternSummaryProps {
-  bpm?: number;
-  tempoTrainerStartBpm?: number;
   immediatePatternSwitch: boolean;
   onImmediatePatternSwitchChange: (enabled: boolean) => void;
   onPatternChange: (patternId: string) => void;
@@ -39,8 +35,6 @@ interface PatternSummaryProps {
 }
 
 export function PatternSummary({
-  bpm,
-  tempoTrainerStartBpm,
   immediatePatternSwitch,
   onImmediatePatternSwitchChange,
   onPatternChange,
@@ -50,13 +44,6 @@ export function PatternSummary({
   swing,
 }: PatternSummaryProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const guidance = useGuidanceSnapshot();
-  const displayedBpm =
-    tempoTrainerStartBpm === undefined
-      ? (bpm ?? pattern.defaultBpm)
-      : guidance?.mode === "tempoTrainer"
-        ? guidance.position.currentBpm
-        : tempoTrainerStartBpm;
   const selectedPattern =
     patterns.find(({ id }) => id === (pendingPatternId ?? pattern.id)) ??
     pattern;
@@ -64,52 +51,53 @@ export function PatternSummary({
   return (
     <section
       aria-label="Current groove"
-      className="border-border bg-surface min-w-0 rounded-2xl border p-4 sm:p-5"
+      className="border-border bg-surface min-w-0 rounded-2xl border px-4 py-3 sm:px-5"
     >
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1 basis-52">
-          <p className="text-primary text-[0.65rem] font-extrabold tracking-[0.16em] uppercase">
-            Current groove
-          </p>
-          <h2 className="text-foreground mt-2 text-xl leading-snug font-extrabold tracking-tight wrap-anywhere sm:text-2xl">
-            {pattern.name}
-          </h2>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">
-              {formatPatternCategory(pattern.category)}
-            </Badge>
-            <Badge variant="outline" className="capitalize">
-              {pattern.difficulty}
-            </Badge>
-            <span className="text-muted-strong text-xs font-bold tabular-nums">
-              {pattern.timeSignature.numerator}/
-              {pattern.timeSignature.denominator}
-            </span>
-            <span className="text-muted-strong text-xs font-bold tabular-nums">
-              {displayedBpm} BPM
-            </span>
+      <Collapsible>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0 flex-1 basis-52">
+            <p className="text-primary text-[0.65rem] font-extrabold tracking-[0.16em] uppercase">
+              Current groove
+            </p>
+            <h2 className="text-foreground mt-1 text-lg leading-snug font-extrabold tracking-tight wrap-anywhere sm:text-xl">
+              {pattern.name}
+            </h2>
+            <div className="text-muted-strong mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+              <span>{formatPatternCategory(pattern.category)}</span>
+              <span aria-hidden="true">·</span>
+              <span className="capitalize">{pattern.difficulty}</span>
+              <span aria-hidden="true">·</span>
+              <span className="tabular-nums">
+                {pattern.timeSignature.numerator}/
+                {pattern.timeSignature.denominator}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <CollapsibleTrigger className="text-muted-strong hover:bg-surface-hover flex min-h-11 items-center gap-1 rounded-lg px-1 text-xs font-bold">
+              Pattern Details{" "}
+              <ChevronDown aria-hidden="true" className="size-4" />
+            </CollapsibleTrigger>
+            <Button
+              variant="outline"
+              className="min-h-11 gap-2 px-2 text-xs sm:px-3 sm:text-sm"
+              onClick={() => setPickerOpen(true)}
+            >
+              <SlidersHorizontal
+                aria-hidden="true"
+                className="hidden size-4 sm:block"
+              />
+              Change Pattern
+            </Button>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="min-h-11 gap-2 px-3"
-          onClick={() => setPickerOpen(true)}
-        >
-          <SlidersHorizontal aria-hidden="true" className="size-4" />
-          Change Pattern
-        </Button>
-      </div>
-      {pendingPatternId ? (
-        <p className="text-secondary-accent mt-3 text-xs font-bold">
-          <span className="block">Queued after a transition fill</span>
-          {selectedPattern.name}
-        </p>
-      ) : null}
-      <Collapsible className="mt-3">
-        <CollapsibleTrigger className="text-muted-strong flex min-h-11 items-center gap-2 rounded-lg text-xs font-bold">
-          Pattern Details <ChevronDown aria-hidden="true" className="size-4" />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="border-border border-t pt-3">
+        {pendingPatternId ? (
+          <p className="text-secondary-accent mt-3 text-xs font-bold">
+            <span className="block">Queued after a transition fill</span>
+            {selectedPattern.name}
+          </p>
+        ) : null}
+        <CollapsibleContent className="border-border mt-3 border-t pt-3">
           <p className="text-muted-strong text-sm leading-6">
             {pattern.description}
           </p>

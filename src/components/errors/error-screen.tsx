@@ -83,25 +83,20 @@ export function ErrorScreen({ code, id, onRetry }: ErrorScreenProps) {
                   Try again
                 </button>
               ) : null}
-              <Link
-                className={
-                  isNotFound ? styles.primaryAction : styles.secondaryAction
-                }
-                href="/practice"
-                onNavigate={
-                  isNotFound
-                    ? undefined
-                    : (event) => {
-                        // A full navigation also recovers failed app providers.
-                        event.preventDefault();
-                        window.location.assign("/practice");
-                      }
-                }
-                prefetch={false}
-              >
-                Back to practice
-                <ArrowRight aria-hidden="true" size={17} />
-              </Link>
+              {isNotFound ? (
+                <Link className={styles.primaryAction} href="/practice">
+                  Back to practice
+                  <ArrowRight aria-hidden="true" size={17} />
+                </Link>
+              ) : (
+                // A native GET navigation also recovers failed app providers.
+                <form action="/practice" method="get">
+                  <button className={styles.secondaryAction} type="submit">
+                    Back to practice
+                    <ArrowRight aria-hidden="true" size={17} />
+                  </button>
+                </form>
+              )}
               {isNotFound ? (
                 <Link className={styles.secondaryAction} href="/patterns">
                   <LibraryBig aria-hidden="true" size={17} />

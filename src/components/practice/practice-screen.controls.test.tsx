@@ -117,7 +117,12 @@ describe("practice screen — controls", () => {
       "aria-disabled",
       "true",
     );
-    expect(screen.getByRole("slider", { name: "Tempo" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "More tempo controls" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("combobox", { name: "Count-in length" }),
+    ).toBeDisabled();
   });
 
   it("shows Wake Lock request failures in regular and focus modes", async () => {

@@ -32,11 +32,11 @@ test("records, persists, and deletes a real practice session", async ({
   ).toHaveValue("1");
   await navigate(page, "Practice");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
-  await page.getByText("Off", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
   await page.getByRole("button", { exact: true, name: "Play" }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await page.waitForTimeout(1_500);
 
   await navigate(page, "History");

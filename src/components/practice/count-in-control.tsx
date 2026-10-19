@@ -2,6 +2,7 @@
 
 import { Clock3 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import type { CountInMeasures } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
@@ -28,6 +29,25 @@ export function CountInControl({
   onChange,
   timeSignature,
 }: CountInControlProps) {
+  if (compact) {
+    return (
+      <NativeSelect
+        aria-label="Count-in length"
+        className="w-auto"
+        disabled={disabled}
+        value={String(measures)}
+        onChange={(event) =>
+          onChange(Number(event.target.value) as CountInMeasures)
+        }
+      >
+        {choices.map((choice) => (
+          <option key={choice.value} value={choice.value}>
+            Count-in: {choice.label}
+          </option>
+        ))}
+      </NativeSelect>
+    );
+  }
   return (
     <fieldset
       className={

@@ -98,6 +98,9 @@ describe("practice screen — shortcuts", () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);
     const liveRegion = screen.getByTestId("practice-live-region");
+    await user.click(
+      screen.getByRole("button", { name: "More tempo controls" }),
+    );
     const slider = screen.getByRole("slider", { name: "Tempo" });
     fireEvent.change(slider, { target: { value: "96" } });
     // Base UI commits a native input change immediately.

@@ -44,6 +44,7 @@ async function expectNamedRouteControls(page: Page, path: string) {
     await expect(
       page.getByRole("button", { exact: true, name: "Play" }),
     ).toBeVisible();
+    await page.getByRole("button", { name: "More tempo controls" }).click();
     await expect(page.getByRole("slider", { name: "Tempo" })).toBeVisible();
   } else if (path === "/patterns") {
     await expect(

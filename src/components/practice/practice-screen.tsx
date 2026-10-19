@@ -1,16 +1,14 @@
 "use client";
 
-import { BeatVisualizer } from "@/components/practice/beat-visualizer";
 import { GuidedPracticePanel } from "@/components/practice/guided-practice-panel";
+import { PracticePlayer } from "@/components/practice/practice-player";
 import { PracticeModeSelector } from "@/components/practice/practice-mode-selector";
 import {
   PracticeControlsPanel,
   PracticeControlsTrigger,
   usePracticeControlsPanel,
 } from "@/components/practice/practice-controls-panel";
-import { PracticeSessionControls } from "@/components/practice/practice-session-controls";
 import { WakeLockStatusMessage } from "@/components/practice/wake-lock-status";
-import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
 import { PatternSummary } from "@/components/practice/pattern-summary";
 import { PracticeFocusSession } from "@/components/practice/practice-focus-session";
 import { PracticeHeader } from "@/components/practice/practice-header";
@@ -63,7 +61,6 @@ export function PracticeScreen() {
   ) : (
     <main className="mx-auto w-full max-w-[100rem] px-3 pb-8 sm:px-6 lg:px-8">
       <PracticeHeader
-        status={practice.status}
         actions={
           <>
             <PracticePresetBar
@@ -90,12 +87,6 @@ export function PracticeScreen() {
           className="flex min-w-0 flex-col gap-4"
         >
           <PatternSummary
-            bpm={practice.bpm}
-            tempoTrainerStartBpm={
-              practice.guidedPractice.mode === "tempoTrainer"
-                ? practice.guidedPractice.tempoTrainer.startBpm
-                : undefined
-            }
             immediatePatternSwitch={practice.immediatePatternSwitch}
             onPatternChange={practice.changePattern}
             onImmediatePatternSwitchChange={practice.setImmediatePatternSwitch}
@@ -105,25 +96,11 @@ export function PracticeScreen() {
             swing={practice.swing}
           />
 
-          <GuidedPracticePanel
-            activeTimeSignature={practice.pattern.timeSignature}
-            sessionDisabled={!practice.isReady || practice.active}
+          <PracticePlayer
+            practice={practice}
+            beatFlashIntensity={beatFlashIntensity}
+            visualSubdivisionDetail={visualSubdivisionDetail}
           />
-          {practice.guidedPractice.mode !== "drums" ? (
-            <GuidedPracticeDisplay
-              configuration={practice.guidedPractice}
-              timeSignature={practice.pattern.timeSignature}
-            />
-          ) : null}
-          <BeatVisualizer
-            countInMeasures={practice.countInMeasures}
-            detail={visualSubdivisionDetail}
-            intensity={beatFlashIntensity}
-            pattern={practice.pattern}
-            status={practice.status}
-          />
-
-          <PracticeSessionControls practice={practice} />
           <WakeLockStatusMessage status={practice.wakeLockStatus} />
 
           <PracticeNotices
@@ -131,7 +108,11 @@ export function PracticeScreen() {
             errorMessage={practice.errorMessage}
             noticeMessage={practice.historyNotice}
             onDismiss={practice.dismissOnboarding}
-            showOnboarding={practice.showOnboarding}
+            showOnboarding={false}
+          />
+          <GuidedPracticePanel
+            activeTimeSignature={practice.pattern.timeSignature}
+            sessionDisabled={!practice.isReady || practice.active}
           />
         </section>
 

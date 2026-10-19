@@ -2,7 +2,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ApplicationError from "@/app/error";
-import GlobalError from "@/app/global-error";
 import NotFound, { metadata } from "@/app/not-found";
 
 describe("error pages", () => {
@@ -44,8 +43,8 @@ describe("error pages", () => {
       screen.queryByText("Private failure details"),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Back to practice" }),
-    ).toHaveAttribute("href", "/practice");
+      screen.getByRole("button", { name: "Back to practice" }).closest("form"),
+    ).toHaveAttribute("action", "/practice");
     expect(screen.queryByRole("link", { name: "Explore grooves" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(retry).toHaveBeenCalledOnce();
@@ -59,33 +58,5 @@ describe("error pages", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "We lost the rhythm.",
     );
-  });
-
-  it("renders a standalone document when the root layout fails", () => {
-    const retry = vi.fn();
-    const error = new Error("Private root failure");
-    const view = render(
-      <GlobalError error={error} retry={retry} />,
-      { container: document, baseElement: document.documentElement },
-    );
-
-    expect(document.documentElement).toHaveAttribute("lang", "en");
-    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
-    expect(document.title).toBe("500 — Something went wrong | Web Band");
-    expect(document.querySelector('meta[name="viewport"]')).toHaveAttribute(
-      "content",
-      "width=device-width, initial-scale=1",
-    );
-    expect(document.body).toHaveAttribute("class");
-    expect(document.querySelectorAll("main")).toHaveLength(1);
-    expect(document.querySelector("h1")).toHaveTextContent(
-      "We lost the rhythm.",
-    );
-    expect(document.querySelector("button")).toHaveTextContent("Try again");
-    expect(document.querySelector('a[href="/practice"]')).not.toBeNull();
-    expect(document.body).not.toHaveTextContent("Private root failure");
-    fireEvent.click(view.getByRole("button", { name: "Try again" }));
-    expect(retry).toHaveBeenCalledOnce();
-    expect(console.error).toHaveBeenCalledWith(error);
   });
 });

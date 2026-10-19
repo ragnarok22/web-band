@@ -14,6 +14,7 @@ import type {
 } from "@/types/practice";
 
 interface GuidedPracticeDisplayProps {
+  embedded?: boolean;
   configuration: GuidedPracticeConfiguration;
   timeSignature: TimeSignature;
 }
@@ -88,11 +89,34 @@ function StrumCue({ action, label }: { action: StrumAction; label: string }) {
 }
 
 export function GuidedPracticeDisplay({
+  embedded = false,
   configuration,
   timeSignature,
 }: GuidedPracticeDisplayProps) {
   const snapshot = useGuidanceSnapshot();
 
+  return (
+    <div
+      className={
+        embedded
+          ? "guided-display--embedded border-border mx-4 border-t py-3 sm:mx-6"
+          : undefined
+      }
+    >
+      <ModeGuidance
+        configuration={configuration}
+        snapshot={snapshot}
+        timeSignature={timeSignature}
+      />
+    </div>
+  );
+}
+
+function ModeGuidance({
+  configuration,
+  snapshot,
+  timeSignature,
+}: GuidedPracticeDisplayProps & { snapshot: GuidanceFrame | null }) {
   switch (configuration.mode) {
     case "drums":
       return <DrumGuidance snapshot={snapshot} />;

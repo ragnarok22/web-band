@@ -65,8 +65,8 @@ describe("section error boundary", () => {
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
     expect(screen.getByRole("main")).toHaveAttribute("tabindex", "-1");
     expect(
-      screen.getByRole("link", { name: "Back to practice" }),
-    ).toHaveAttribute("href", "/practice");
+      screen.getByRole("button", { name: "Back to practice" }).closest("form"),
+    ).toHaveAttribute("action", "/practice");
     expect(screen.queryByText("Private failure details")).toBeNull();
 
     shouldThrow = false;

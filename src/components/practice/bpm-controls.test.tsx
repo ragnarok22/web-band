@@ -148,7 +148,14 @@ describe("BPM controls", () => {
       expect(
         screen.getByRole("spinbutton", { name: "Current BPM" }),
       ).toBeDisabled();
-      expect(screen.getByRole("slider", { name: "Tempo" })).toBeDisabled();
+      if (embedded) {
+        expect(
+          screen.getByRole("button", { name: "More tempo controls" }),
+        ).toBeDisabled();
+        expect(screen.queryByRole("slider", { name: "Tempo" })).toBeNull();
+      } else {
+        expect(screen.getByRole("slider", { name: "Tempo" })).toBeDisabled();
+      }
       for (const button of screen.getAllByRole("button")) {
         expect(button).toBeDisabled();
       }

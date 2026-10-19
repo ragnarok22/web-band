@@ -19,16 +19,16 @@ export function SessionToolbar({
   return (
     <section
       aria-label="Practice session tools"
-      className="flex flex-wrap items-center justify-center gap-2"
+      className="flex flex-wrap items-center gap-1"
     >
-      <div className="text-muted-strong flex min-h-11 items-center gap-2 px-3 text-sm font-bold tabular-nums">
+      <div className="text-muted-strong flex min-h-11 items-center gap-1.5 text-sm font-bold tabular-nums">
         <Clock3 aria-hidden="true" className="size-4" />
         <span className="sr-only">Practice duration </span>
         {formatPracticeDuration(elapsedSeconds)}
       </div>
       <Button
-        variant="outline"
-        className="min-h-11 gap-2 px-3"
+        variant="ghost"
+        className="min-h-11 gap-2 px-2"
         onClick={onFocus}
         ref={focusButtonRef}
       >
@@ -37,12 +37,12 @@ export function SessionToolbar({
       </Button>
       <Button
         aria-label="Open Shortcuts"
+        title="Keyboard shortcuts (?)"
         variant="ghost"
-        className="min-h-11 gap-2 px-3"
+        className="size-11"
         onClick={onShortcuts}
       >
         <Keyboard aria-hidden="true" className="size-4" />
-        Shortcuts
       </Button>
     </section>
   );

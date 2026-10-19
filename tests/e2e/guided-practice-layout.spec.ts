@@ -89,13 +89,10 @@ test("mobile Sheets close on Escape without stopping active audio and restore fo
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/practice");
   await page
-    .getByRole("radio", { name: "Off", exact: true })
-    .locator("..")
-    .click();
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
   await page.getByRole("button", { name: "Play", exact: true }).click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   const trigger = page.getByRole("button", { name: "Controls", exact: true });
   await openControls(page);
   const dialog = page.getByRole("dialog", { name: "Practice controls" });
@@ -103,18 +100,14 @@ test("mobile Sheets close on Escape without stopping active audio and restore fo
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await expect.poll(() => page.locator(".beat-step--active").count()).toBe(1);
   await page.getByRole("button", { name: "Open navigation" }).click();
   await page.keyboard.press("Escape");
   await expect(
     page.getByRole("button", { name: "Open navigation" }),
   ).toBeFocused();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await page.getByRole("button", { name: "Stop playback" }).click();
 });
 

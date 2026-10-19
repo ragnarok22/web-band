@@ -49,13 +49,13 @@ export function TransportControls({
   return (
     <section
       aria-label="Playback controls"
-      className="flex items-center justify-center gap-3 sm:gap-5"
+      className="flex items-center justify-center gap-2"
     >
       <Button
         variant="outline"
         size="icon"
         aria-label="Stop playback"
-        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-14 items-center justify-center rounded-xl border transition-colors disabled:opacity-35"
+        className="text-muted-strong size-11 rounded-xl disabled:opacity-35"
         disabled={!canStop}
         onClick={onStop}
         type="button"
@@ -65,14 +65,14 @@ export function TransportControls({
 
       <Button
         aria-label={playLabel}
-        className="play-control bg-primary text-accent-ink hover:bg-accent-strong flex size-24 items-center justify-center rounded-full transition-[background-color,transform] active:scale-[0.98] disabled:opacity-50 motion-reduce:transform-none"
+        className="play-control bg-primary text-accent-ink hover:bg-accent-strong h-12 min-w-28 rounded-xl px-4 font-extrabold disabled:opacity-50"
         disabled={playDisabled || isBusy || (isRunning && isFinishing)}
         onClick={isRunning ? onFinish : onPlay}
         type="button"
       >
         <m.span
           animate={settled}
-          className="flex flex-col items-center gap-1 text-xs font-black tracking-wide uppercase"
+          className="flex items-center gap-2 text-sm font-extrabold"
           data-motion="play-state"
           data-motion-reduced={reducedMotion}
           initial={reducedMotion ? false : stateEntry}
@@ -81,17 +81,18 @@ export function TransportControls({
         >
           {isRunning ? (
             <>
-              <Flag
-                aria-hidden="true"
-                className="size-8 fill-current sm:size-9"
-              />
+              <Flag aria-hidden="true" className="size-5 fill-current" />
               Finish
             </>
           ) : (
-            <Play
-              aria-hidden="true"
-              className="ml-1 size-10 fill-current sm:size-12"
-            />
+            <>
+              <Play aria-hidden="true" className="size-5 fill-current" />
+              {isBusy
+                ? "Starting…"
+                : status === "paused" || status === "suspended"
+                  ? "Resume"
+                  : "Play"}
+            </>
           )}
         </m.span>
       </Button>
@@ -100,12 +101,12 @@ export function TransportControls({
         variant="outline"
         size="icon"
         aria-label="Pause playback"
-        className="border-border bg-surface text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex size-14 items-center justify-center rounded-xl border transition-colors disabled:opacity-35"
+        className="text-muted-strong size-11 rounded-xl disabled:opacity-35"
         disabled={!isRunning}
         onClick={onPause}
         type="button"
       >
-        <Pause aria-hidden="true" className="size-6 fill-current" />
+        <Pause aria-hidden="true" className="size-5 fill-current" />
       </Button>
     </section>
   );

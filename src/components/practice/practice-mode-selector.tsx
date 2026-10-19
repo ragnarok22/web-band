@@ -74,7 +74,7 @@ export function PracticeModeSelector({
       >
         {modes.map(({ description, icon: Icon, label, value }) => (
           <label
-            className="group/mode border-border bg-surface text-muted-strong has-data-checked:border-primary/65 has-data-checked:bg-primary/10 has-data-checked:text-primary has-[:focus-visible]:outline-primary not-has-data-disabled:not-has-data-checked:hover:bg-surface-hover relative flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 transition-colors has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-3"
+            className="group/mode border-border bg-surface text-muted-strong has-data-checked:border-primary/65 has-data-checked:bg-primary/10 has-data-checked:text-primary has-[:focus-visible]:outline-primary not-has-data-disabled:not-has-data-checked:hover:bg-surface-hover relative flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 transition-colors has-data-disabled:cursor-not-allowed has-data-disabled:opacity-50 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-3"
             key={value}
           >
             <RadioGroupItem
@@ -101,7 +101,7 @@ export function PracticeModeSelector({
         ))}
         <button
           aria-label="Metronome — Coming soon"
-          className="border-border text-muted-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 py-2 text-sm"
+          className="border-border text-muted-foreground flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2 text-sm"
           disabled
           type="button"
         >
@@ -110,10 +110,7 @@ export function PracticeModeSelector({
         </button>
       </RadioGroup>
       {disabled ? (
-        <p
-          className="text-muted-foreground mt-3 text-xs leading-5"
-          id={`${id}-disabled`}
-        >
+        <p className="sr-only" id={`${id}-disabled`}>
           Stop the current session to change practice mode.
         </p>
       ) : null}

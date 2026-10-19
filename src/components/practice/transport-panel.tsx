@@ -29,34 +29,45 @@ export function TransportPanel({
   status,
 }: TransportPanelProps) {
   return (
-    <div className="border-border bg-surface @container/transport rounded-2xl border px-4 py-5 sm:px-6 sm:py-6">
-      <div className="grid items-center justify-items-center gap-6">
+    <div className="border-border @container/transport border-t px-4 py-4 sm:px-6">
+      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 @2xl/transport:justify-between">
         {children}
-        <div>
-          <TransportControls
-            isFinishing={isFinishing}
-            onFinish={onFinish}
-            onPause={onPause}
-            onPlay={onPlay}
-            onStop={onStop}
-            playDisabled={!isReady}
-            status={status}
+        <TransportControls
+          isFinishing={isFinishing}
+          onFinish={onFinish}
+          onPause={onPause}
+          onPlay={onPlay}
+          onStop={onStop}
+          playDisabled={!isReady}
+          status={status}
+        />
+      </div>
+      <div className="border-border mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t pt-3">
+        {footer}
+        <div className="text-muted-foreground flex min-h-6 items-center gap-1.5 text-xs font-semibold">
+          <CircleDot
+            aria-hidden="true"
+            className={`${status === "playing" ? "text-success" : "text-primary"} size-3`}
           />
-          <div className="text-muted-strong mt-5 flex min-h-5 items-center justify-center gap-2 text-center text-sm font-semibold">
-            <CircleDot aria-hidden="true" className="text-primary size-3" />
-            <span data-testid="transport-status">
-              {isReady
-                ? audioStatusCopy[status]
-                : "Loading your saved practice setup…"}
-            </span>
-          </div>
+          <span data-testid="transport-status" title={audioStatusCopy[status]}>
+            {isReady
+              ? compactStatusCopy[status]
+              : "Loading your saved practice setup…"}
+          </span>
         </div>
       </div>
-      {footer ? (
-        <div className="border-border mt-5 flex flex-wrap items-end justify-center gap-4 border-t pt-5">
-          {footer}
-        </div>
-      ) : null}
     </div>
   );
 }
+
+const compactStatusCopy: Record<AudioEngineStatus, string> = {
+  "not-initialized": "Ready",
+  initializing: "Starting audio…",
+  ready: "Ready",
+  "counting-in": "Counting in",
+  playing: "Playing",
+  paused: "Paused",
+  stopped: "Stopped",
+  suspended: "Audio suspended — press Play to resume",
+  error: "Audio unavailable",
+};
