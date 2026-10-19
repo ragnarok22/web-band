@@ -16,6 +16,134 @@ async function expectNoOverflow(page: Page) {
   ).toBe(true);
 }
 
+test("keeps primary transport controls centered between tempo and playback status", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await page.goto("/practice");
+  const player = page.getByRole("region", {
+    name: "Practice player",
+    exact: true,
+  });
+  for (const width of [1920, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const open of [false, true]) {
+      if (open) await openControls(page);
+      const playerBox = (await player.boundingBox())!;
+      const play = (await player
+        .getByRole("button", { name: "Play", exact: true })
+        .boundingBox())!;
+      const tempo = (await player
+        .getByRole("region", { name: "Set your pace" })
+        .boundingBox())!;
+      const status = (await player
+        .getByTestId("transport-status")
+        .boundingBox())!;
+      expect(
+        Math.abs(play.x + play.width / 2 - (playerBox.x + playerBox.width / 2)),
+      ).toBeLessThanOrEqual(1);
+      expect(tempo.x + tempo.width).toBeLessThan(play.x);
+      expect(status.x).toBeGreaterThan(play.x + play.width);
+      expect(
+        Math.abs(status.y + status.height / 2 - (play.y + play.height / 2)),
+      ).toBeLessThanOrEqual(2);
+      await expectNoOverflow(page);
+      if (open) await closeControls(page);
+    }
+  }
+});
+
+test("makes beats and grouped subdivisions readable without stretching across wide screens", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await page.goto("/practice");
+  const visualizer = page.getByRole("region", { name: "Beat visualization" });
+  await expect(visualizer.locator(".beat-step--main")).toHaveCount(4);
+  expect(
+    (await visualizer.locator(".beat-visualizer__grid").boundingBox())!.width,
+  ).toBeLessThanOrEqual(896);
+  const group = visualizer.locator('.beat-visualizer__group[data-beat="1"]');
+  const main = group.locator(".beat-step--main .beat-step__light");
+  const subdivision = group
+    .locator(".beat-step:not(.beat-step--main) .beat-step__light")
+    .first();
+  expect((await main.boundingBox())!.width).toBeGreaterThanOrEqual(32);
+  expect((await subdivision.boundingBox())!.width).toBeGreaterThanOrEqual(8);
+  expect((await group.boundingBox())!.width).toBeLessThanOrEqual(96);
+  const downbeat = await main.evaluate((element) => ({
+    border: getComputedStyle(element).borderWidth,
+    marker: getComputedStyle(element, "::after").content,
+  }));
+  expect(downbeat.border).toBe("2px");
+  expect(downbeat.marker).not.toBe("none");
+  expect(
+    await subdivision.evaluate((element) =>
+      Number(getComputedStyle(element).opacity),
+    ),
+  ).toBeGreaterThanOrEqual(0.8);
+});
+
+test("retains a clear active beat without scaling when reduced motion is enabled", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/practice");
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  const visualizer = page.getByRole("region", { name: "Beat visualization" });
+  await expect(visualizer).toHaveAttribute("data-motion-reduced", "true");
+  const active = visualizer.locator(".beat-step--active .beat-step__light");
+  await expect(active).toHaveCount(1);
+  await expect(active).toHaveCSS("transform", "none");
+  await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("shows explanatory tooltips on hover and keyboard focus without interrupting playback", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === "mobile-chromium",
+    "Tooltips are deliberately disabled for touch input.",
+  );
+  await page.goto("/practice");
+  const tempoOptions = page.getByRole("button", {
+    name: "More tempo controls",
+  });
+  await tempoOptions.hover();
+  await expect(
+    page.getByText("More tempo options", { exact: true }),
+  ).toBeVisible();
+  await tempoOptions.click();
+  await expect(
+    page.getByRole("slider", { name: "Tempo", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Focus", exact: true }).focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Open Shortcuts" }),
+  ).toBeFocused();
+  await expect(
+    page.getByText("Keyboard shortcuts (?)", { exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("0");
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
+  await tempoOptions.hover();
+  await expect(
+    page.getByText("More tempo options", { exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
+  await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
 test("keeps the groove and unified player above the fold with Controls open or closed", async ({
   page,
 }) => {

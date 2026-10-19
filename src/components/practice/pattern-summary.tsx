@@ -1,6 +1,12 @@
 "use client";
 
-import { ChevronDown, LibraryBig, SlidersHorizontal, X } from "lucide-react";
+import {
+  ChevronDown,
+  LibraryBig,
+  ListMusic,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -62,7 +68,7 @@ export function PatternSummary({
             <h2 className="text-foreground mt-1 text-lg leading-snug font-extrabold tracking-tight wrap-anywhere sm:text-xl">
               {pattern.name}
             </h2>
-            <div className="text-muted-strong mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <div className="text-muted-strong mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
               <span>{formatPatternCategory(pattern.category)}</span>
               <span aria-hidden="true">·</span>
               <span className="capitalize">{pattern.difficulty}</span>
@@ -74,9 +80,19 @@ export function PatternSummary({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <CollapsibleTrigger className="text-muted-strong hover:bg-surface-hover flex min-h-11 items-center gap-1 rounded-lg px-1 text-xs font-bold">
-              Pattern Details{" "}
-              <ChevronDown aria-hidden="true" className="size-4" />
+            <CollapsibleTrigger
+              render={<Button variant="ghost" />}
+              className="group/details text-muted-strong min-h-11 gap-1.5 px-1 text-xs font-bold sm:px-2"
+            >
+              <ListMusic
+                aria-hidden="true"
+                className="hidden size-4 sm:block"
+              />
+              Pattern Details
+              <ChevronDown
+                aria-hidden="true"
+                className="size-4 transition-transform group-aria-expanded/details:rotate-180 motion-reduce:transition-none"
+              />
             </CollapsibleTrigger>
             <Button
               variant="outline"

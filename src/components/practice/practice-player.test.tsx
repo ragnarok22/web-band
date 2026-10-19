@@ -67,6 +67,24 @@ describe("PracticePlayer", () => {
     expect(usePracticeStore.getState().bpm).toBe(96);
   });
 
+  it("explains icon-only controls with tooltips while retaining their actions", async () => {
+    const user = userEvent.setup();
+    render(<PlayerHarness />);
+    const tempoOptions = screen.getByRole("button", {
+      name: "More tempo controls",
+    });
+    await user.hover(tempoOptions);
+    expect(await screen.findByText("More tempo options")).toBeVisible();
+    await user.click(tempoOptions);
+    expect(screen.getByRole("slider", { name: "Tempo" })).toBeVisible();
+    const shortcuts = screen.getByRole("button", { name: "Open Shortcuts" });
+    await user.hover(shortcuts);
+    expect(await screen.findByText("Keyboard shortcuts (?)")).toBeVisible();
+    await user.click(shortcuts);
+    expect(engine.play).not.toHaveBeenCalled();
+    expect(engine.stop).not.toHaveBeenCalled();
+  });
+
   it("adjusts live tempo, exposes advanced controls, and preserves the audible playhead", async () => {
     const user = userEvent.setup();
     useAudioStore.setState({ status: "playing" });

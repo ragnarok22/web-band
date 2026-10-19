@@ -9,6 +9,11 @@ import { Slider } from "@/components/ui/slider";
 import { Kbd } from "@/components/ui/kbd";
 import { Card } from "@/components/ui/card";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -165,14 +170,23 @@ export function BpmControls({
           {embedded ? (
             <>
               <BpmAdjustment {...adjustmentProps} adjustment={1} />
-              <CollapsibleTrigger
-                aria-label="More tempo controls"
-                className="text-muted-strong hover:bg-surface-hover flex size-11 shrink-0 items-center justify-center rounded-lg disabled:opacity-50"
-                disabled={disabled}
-                title="Slider, ±5 BPM, and reset"
-              >
-                <ChevronDown aria-hidden="true" className="size-4" />
-              </CollapsibleTrigger>
+              <Tooltip disabled={disabled}>
+                <TooltipTrigger
+                  aria-label="More tempo controls"
+                  render={
+                    <CollapsibleTrigger
+                      className="group/tempo text-muted-strong hover:bg-surface-hover flex size-11 shrink-0 items-center justify-center rounded-lg disabled:opacity-50"
+                      disabled={disabled}
+                    />
+                  }
+                >
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="size-4 transition-transform group-aria-expanded/tempo:rotate-180 motion-reduce:transition-none"
+                  />
+                </TooltipTrigger>
+                <TooltipContent>More tempo options</TooltipContent>
+              </Tooltip>
             </>
           ) : null}
         </div>
