@@ -9,7 +9,7 @@ import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 const appearanceBootstrap = `(()=>{let theme="dark",reducedMotion=false;try{const value=JSON.parse(localStorage.getItem("web-band-appearance-v2")||localStorage.getItem("web-band-appearance-v1")||"null");if(value&&(value.theme==="dark"||value.theme==="light"||value.theme==="system"))theme=value.theme;if(value&&typeof value.reducedMotion==="boolean")reducedMotion=value.reducedMotion;}catch{}const resolved=theme==="system"&&matchMedia("(prefers-color-scheme: light)").matches?"light":theme==="system"?"dark":theme;document.documentElement.dataset.theme=resolved;document.documentElement.dataset.reduceMotion=String(reducedMotion);document.querySelector('meta[name="theme-color"]')?.setAttribute("content",resolved==="light"?"#f3eee5":"#12110f");})();`;
 
@@ -54,7 +54,12 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html
-      className={cn(manrope.variable, geistMono.variable, "font-sans", geist.variable)}
+      className={cn(
+        manrope.variable,
+        geistMono.variable,
+        "font-sans",
+        geist.variable,
+      )}
       data-scroll-behavior="smooth"
       lang="en"
       suppressHydrationWarning
