@@ -9,9 +9,13 @@ export async function navigate(page: Page, name: string) {
 }
 
 export async function openControls(page: Page, section?: string) {
-  const trigger = page.getByRole("button", { name: "Controls", exact: true });
-  if ((await trigger.getAttribute("aria-expanded")) !== "true")
-    await trigger.click();
+  // An open modal Sheet correctly hides the toolbar from accessibility queries.
+  const sheet = page.getByRole("dialog", { name: "Practice controls" });
+  if (!(await sheet.isVisible())) {
+    const trigger = page.getByRole("button", { name: "Controls", exact: true });
+    if ((await trigger.getAttribute("aria-expanded")) !== "true")
+      await trigger.click();
+  }
   if (section) {
     const disclosure = page.getByRole("button", { name: section, exact: true });
     if ((await disclosure.getAttribute("aria-expanded")) !== "true")
