@@ -51,4 +51,26 @@ describe("section error boundary", () => {
     expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
     expect(screen.getByText("Application remains available")).toBeVisible();
   });
+
+  it("uses the 500 page for application failures and can recover", () => {
+    render(
+      <SectionErrorBoundary section="application" variant="application">
+        <UnstableSection />
+      </SectionErrorBoundary>,
+    );
+
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "We lost the rhythm.",
+    );
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+    expect(screen.getByRole("main")).toHaveAttribute("tabindex", "-1");
+    expect(
+      screen.getByRole("link", { name: "Back to practice" }),
+    ).toHaveAttribute("href", "/practice");
+    expect(screen.queryByText("Private failure details")).toBeNull();
+
+    shouldThrow = false;
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByText("Recovered section")).toBeVisible();
+  });
 });

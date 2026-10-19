@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { CircleAlert, RotateCcw } from "lucide-react";
 import { Component, type ErrorInfo, Fragment, type ReactNode } from "react";
 
+import { ErrorScreen } from "@/components/errors/error-screen";
+
 type ErrorBoundaryVariant = "application" | "compact" | "screen" | "silent";
 
 interface SectionErrorBoundaryProps {
@@ -42,11 +44,11 @@ export class SectionErrorBoundary extends Component<
     const { error, retryKey } = this.state;
     if (!error) return <Fragment key={retryKey}>{children}</Fragment>;
     if (variant === "silent") return null;
+    if (variant === "application") {
+      return <ErrorScreen code="500" id="main-content" onRetry={this.retry} />;
+    }
 
-    const title =
-      variant === "application"
-        ? "Web Band needs another count-in"
-        : `${section} hit a snag`;
+    const title = `${section} hit a snag`;
     const Heading = variant === "compact" ? "h2" : "h1";
     const content = (
       <section

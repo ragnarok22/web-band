@@ -2,31 +2,29 @@
 
 import { useEffect } from "react";
 
+import { ErrorScreen } from "@/components/errors/error-screen";
+
 import styles from "./global-error.module.css";
 
 export default function GlobalError({
   error,
-  reset,
+  retry,
 }: {
-  error: Error & { digest?: string };
-  reset: () => void;
+  error: unknown;
+  retry: () => void;
 }) {
   useEffect(() => {
     console.error(error);
   }, [error]);
 
   return (
-    <html lang="en">
+    <html data-theme="dark" lang="en">
+      <head>
+        <title>500 — Something went wrong | Web Band</title>
+        <meta content="width=device-width, initial-scale=1" name="viewport" />
+      </head>
       <body className={styles.body}>
-        <main className={styles.main}>
-          <h1>Web Band could not load</h1>
-          <p className={styles.description}>
-            Your local work is still on this device. Try loading the app again.
-          </p>
-          <button className={styles.button} onClick={reset} type="button">
-            Try again
-          </button>
-        </main>
+        <ErrorScreen code="500" onRetry={retry} />
       </body>
     </html>
   );
