@@ -44,8 +44,9 @@ Every drum sound is synthesized in real time with the Web Audio API. The project
 
 ## Requirements
 
-- Node.js 20.19+, 22.13+, or 24+.
-- pnpm 11.15.1, as declared by `packageManager` in `package.json`.
+- Node.js 22.13+ or 24+.
+- pnpm 12.14.0, as declared by `packageManager` in `package.json`.
+- TypeScript 6 (installed by pnpm); the ESLint toolchain does not yet support TypeScript 7.
 - A modern browser with Web Audio and IndexedDB support.
 
 ## Setup
@@ -84,7 +85,7 @@ pnpm build
 pnpm start
 ```
 
-Serwist currently uses its stable Webpack integration, so both development and production scripts explicitly select Webpack on Next.js 16. The build generates `public/sw.js`; generated service-worker files are ignored by Git, Prettier, and ESLint.
+Serwist currently uses its stable Webpack integration, so development, production builds, and route type generation explicitly select Webpack on Next.js 16. The build generates `public/sw.js`; generated service-worker files are ignored by Git, Prettier, and ESLint.
 
 The application has no route handlers, server actions, or backend data dependencies. Next.js statically prerenders the App Router pages, while `next start` serves the built assets.
 

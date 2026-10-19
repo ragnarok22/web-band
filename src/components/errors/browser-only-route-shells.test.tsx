@@ -32,7 +32,17 @@ describe("browser-only route shells", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
-  it("keeps every dynamic screen client-only", () => {
+  it("keeps every dynamic screen client-only", async () => {
+    // Replay module initialization after Vitest clears mock call history.
+    vi.resetModules();
+    await Promise.all([
+      import("@/components/editor/editor-shell"),
+      import("@/components/history/history-shell"),
+      import("@/components/patterns/pattern-browser-shell"),
+      import("@/components/practice/practice-shell"),
+      import("@/components/settings/settings-shell"),
+    ]);
+
     expect(dynamic).toHaveBeenCalledTimes(5);
     for (const [, options] of dynamic.mock.calls) {
       expect(options).toEqual(expect.objectContaining({ ssr: false }));

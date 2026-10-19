@@ -3,14 +3,14 @@
 ## Ground Truth
 
 - This is one private Next.js 16 App Router package, not a monorepo. `pnpm-workspace.yaml` only configures dependency build policy; run commands from the repository root.
-- Use Node.js 20.19+, 22.13+, or 24+ and the `package.json`-pinned pnpm 11.15.1.
+- Use Node.js 22.13+ or 24+ and the `package.json`-pinned pnpm 12.14.0. Keep TypeScript on version 6 until the ESLint toolchain supports version 7.
 - Treat `PLANING.md` as implementation history and a release checklist, not architectural ground truth; prefer scripts, config, and source when they conflict.
 - Keep the product client-only: no API routes, server actions, backend, auth, analytics, cloud persistence, recorded audio, or external audio assets. Drum sounds are synthesized in the browser.
 
 ## Commands
 
-- `pnpm dev` and `pnpm build` intentionally force Webpack because Serwist's active integration does not use Turbopack.
-- `pnpm typecheck` runs `next typegen` before `tsc --noEmit`; do not replace it with bare `tsc`, because route types under `.next/types` are generated first.
+- `pnpm dev`, `pnpm build`, and type generation in `pnpm typecheck` intentionally force Webpack because Serwist's active integration does not use Turbopack.
+- `pnpm typecheck` runs `next typegen --webpack` before `tsc --noEmit`; do not replace it with bare `tsc`, because route types under `.next/types` are generated first.
 - Routine full verification is `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, then `pnpm test`. Use `pnpm test:coverage` for the V8 text/HTML coverage report and `pnpm build` after Next, routing, or PWA changes.
 - Focus Vitest with `pnpm test src/audio/pattern-scheduler.test.ts` or add `-t "test name"`. Tests are discovered only as `src/**/*.test.{ts,tsx}`.
 - Focus Playwright with `pnpm test:e2e tests/e2e/practice-flow.spec.ts:26 --project=chromium`. Do not put `--` after `pnpm test`/`test:e2e`; it becomes a literal runner separator and the file/project filter may be ignored.
@@ -31,3 +31,13 @@
 
 - Edit `src/app/service-worker.ts` and `next.config.ts`, never generated `public/sw*.js` or `public/swe-worker-*.js`. Also do not edit `.next/`, `next-env.d.ts`, `tsconfig.tsbuildinfo`, `coverage/`, or `test-results/`.
 - New local-first routes must be added to Serwist `additionalPrecacheEntries` and covered by `tests/pwa/offline-shell.spec.ts`; the document fallback is `/practice`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
