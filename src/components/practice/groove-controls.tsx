@@ -82,9 +82,9 @@ export function GrooveControls({
         className={`${settingsOpen ? "block" : "hidden"} sm:block`}
         id="groove-settings"
       >
-        <label className="mb-4 block" htmlFor="swing">
+        <div className="mb-4 block">
           <span className="text-muted-strong mb-2 flex justify-between text-xs font-bold">
-            <span>Swing</span>
+            <label htmlFor="swing">Swing</label>
             <output htmlFor="swing">{swingPercent}%</output>
           </span>
           <input
@@ -99,11 +99,11 @@ export function GrooveControls({
             type="range"
             value={swing}
           />
-        </label>
+        </div>
 
-        <label className="mb-4 block" htmlFor="humanization">
+        <div className="mb-4 block">
           <span className="text-muted-strong mb-2 flex justify-between text-xs font-bold">
-            <span>Human touch</span>
+            <label htmlFor="humanization">Human touch</label>
             <output htmlFor="humanization">{humanizationPercent}%</output>
           </span>
           <input
@@ -120,7 +120,7 @@ export function GrooveControls({
             type="range"
             value={humanization}
           />
-        </label>
+        </div>
 
         <label className="block" htmlFor="fill-frequency">
           <span className="text-muted-strong mb-2 block text-xs font-bold">

@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import type { AdvancedHitChanges } from "@/lib/drum-pattern-editor";
 import type { DrumHit, DrumInstrument } from "@/types/pattern";
@@ -141,17 +141,23 @@ function RangeField({
   step: number;
   value: number;
 }) {
+  const inputId = useId();
+
   return (
-    <label className="grid gap-2 text-sm font-extrabold">
+    <div className="grid gap-2 text-sm font-extrabold">
       <span className="flex justify-between gap-4">
-        {label}
-        <output className="text-accent font-mono tabular-nums">
+        <label htmlFor={inputId}>{label}</label>
+        <output
+          className="text-accent font-mono tabular-nums"
+          htmlFor={inputId}
+        >
           {value.toFixed(label === "Timing offset" ? 3 : 2)}
         </output>
       </span>
       <input
         aria-label={label}
         className={rangeClass}
+        id={inputId}
         max={max}
         min={min}
         onChange={(event) => onChange(event.currentTarget.valueAsNumber)}
@@ -159,7 +165,7 @@ function RangeField({
         type="range"
         value={value}
       />
-    </label>
+    </div>
   );
 }
 
