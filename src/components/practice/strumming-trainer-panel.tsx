@@ -200,33 +200,12 @@ export function StrummingTrainerPanel({
         />
       ) : null}
 
-      {!availableSelected ? (
-        <p
-          className="text-danger mt-3 text-sm font-bold"
-          id="strumming-pattern-unavailable"
-          role="alert"
-        >
-          The selected custom strumming pattern is no longer available. Choose
-          another pattern or create a new one.
-        </p>
-      ) : !isCompatible ? (
-        <div
-          className="border-danger/30 bg-danger/8 text-danger mt-3 flex gap-3 rounded-xl border p-3 text-sm leading-5 font-bold"
-          id="strumming-meter-warning"
-          role="alert"
-        >
-          <AlertTriangle
-            aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0"
-          />
-          <p>
-            {pattern.name} is in {pattern.timeSignature.numerator}/
-            {pattern.timeSignature.denominator} and cannot follow this{" "}
-            {timeSignature.numerator}/{timeSignature.denominator} drum groove.
-            Choose a compatible pattern.
-          </p>
-        </div>
-      ) : null}
+      <StrummingSelectionWarning
+        isAvailable={availableSelected !== undefined}
+        isCompatible={isCompatible}
+        pattern={pattern}
+        timeSignature={timeSignature}
+      />
 
       {availableSelected ? (
         <>
@@ -264,6 +243,46 @@ export function StrummingTrainerPanel({
         />
       ) : null}
     </section>
+  );
+}
+
+function StrummingSelectionWarning({
+  isAvailable,
+  isCompatible,
+  pattern,
+  timeSignature,
+}: Pick<StrummingTrainerPanelProps, "pattern" | "timeSignature"> & {
+  isAvailable: boolean;
+  isCompatible: boolean;
+}) {
+  if (!isAvailable) {
+    return (
+      <p
+        className="text-danger mt-3 text-sm font-bold"
+        id="strumming-pattern-unavailable"
+        role="alert"
+      >
+        The selected custom strumming pattern is no longer available. Choose
+        another pattern or create a new one.
+      </p>
+    );
+  }
+  if (isCompatible) return null;
+
+  return (
+    <div
+      className="border-danger/30 bg-danger/8 text-danger mt-3 flex gap-3 rounded-xl border p-3 text-sm leading-5 font-bold"
+      id="strumming-meter-warning"
+      role="alert"
+    >
+      <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+      <p>
+        {pattern.name} is in {pattern.timeSignature.numerator}/
+        {pattern.timeSignature.denominator} and cannot follow this{" "}
+        {timeSignature.numerator}/{timeSignature.denominator} drum groove.
+        Choose a compatible pattern.
+      </p>
+    </div>
   );
 }
 

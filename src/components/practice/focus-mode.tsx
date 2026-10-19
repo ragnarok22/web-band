@@ -195,15 +195,12 @@ function FocusPlayControl({
 > & { reducedMotion: boolean }) {
   const canResume = status === "paused" || status === "suspended";
   const isRunning = isPracticeRunning(status);
-  const transportLabel = canResume
-    ? "Resume"
-    : isRunning
-      ? isFinishing
-        ? "Finishing after fill"
-        : "Finish with fill"
-      : isReady
-        ? "Play"
-        : "Loading setup";
+  let transportLabel = isReady ? "Play" : "Loading setup";
+  if (isRunning) {
+    transportLabel = isFinishing ? "Finishing after fill" : "Finish with fill";
+  } else if (canResume) {
+    transportLabel = "Resume";
+  }
 
   return (
     <button
