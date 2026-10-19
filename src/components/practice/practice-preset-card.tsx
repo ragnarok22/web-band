@@ -36,6 +36,7 @@ export function PracticePresetCard({
   preset,
 }: PracticePresetCardProps) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(
     null,
@@ -177,6 +178,11 @@ export function PracticePresetCard({
           <p className="text-foreground text-sm font-bold">
             Delete {preset.name} permanently?
           </p>
+          {deleteError ? (
+            <p className="text-danger mt-2 text-sm font-bold" role="alert">
+              {deleteError}
+            </p>
+          ) : null}
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
               autoFocus
@@ -194,11 +200,20 @@ export function PracticePresetCard({
               aria-label={`Delete ${preset.name} permanently`}
               className="bg-danger text-background min-h-11 rounded-xl px-3 text-sm font-black"
               disabled={isPending}
-              onClick={() =>
-                void runAction("delete", onDelete).then((succeeded) => {
-                  if (succeeded) setConfirmingDelete(false);
-                })
-              }
+              onClick={async () => {
+                setDeleteError(null);
+                try {
+                  if (await runAction("delete", onDelete))
+                    setConfirmingDelete(false);
+                } catch (error) {
+                  setDeleteError(
+                    error instanceof Error
+                      ? error.message
+                      : "Practice preset could not be deleted.",
+                  );
+                  setPendingAction(null);
+                }
+              }}
               type="button"
             >
               {pendingAction === "delete" ? "Deleting…" : "Delete preset"}
@@ -239,7 +254,10 @@ export function PracticePresetCard({
             buttonRef={deleteButtonRef}
             disabled={isPending}
             label={`Delete ${preset.name}`}
-            onClick={() => setConfirmingDelete(true)}
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmingDelete(true);
+            }}
           >
             <Trash2 aria-hidden="true" className="text-danger size-4" />
           </CardAction>
