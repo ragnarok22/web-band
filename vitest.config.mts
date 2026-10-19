@@ -20,6 +20,8 @@ export default defineConfig({
     },
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
+    // Reuse jsdom per worker while keeping a fresh VM context/window per file.
+    pool: "vmThreads",
     setupFiles: ["./src/test/test-setup.ts"],
   },
 });
