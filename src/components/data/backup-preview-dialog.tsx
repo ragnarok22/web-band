@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
+
+import { Modal } from "@/components/shared/modal";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import type { BackupPreview } from "@/lib/backup-envelope";
 import type { ImportMode } from "@/types/persistence";
@@ -36,26 +40,16 @@ export function BackupPreviewDialog({
   onImport,
   preview,
 }: BackupPreviewDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const headingId = useId();
   const [mode, setMode] = useState<ImportMode>("merge");
   const [replaceConfirmed, setReplaceConfirmed] = useState(false);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) dialog.showModal();
-  }, []);
-
   return (
-    <dialog
+    <Modal
       aria-labelledby={headingId}
-      className="border-border bg-surface text-foreground fixed inset-0 m-auto max-h-[90vh] w-[min(92vw,34rem)] overflow-y-auto rounded-3xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop:bg-black/75"
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!isPending) dialogRef.current?.close();
-      }}
+      className="p-0 sm:max-w-xl"
+      busy={isPending}
       onClose={onClose}
-      ref={dialogRef}
     >
       <div className="p-5 sm:p-7">
         <p className="text-accent text-xs font-extrabold tracking-[0.16em] uppercase">
@@ -133,12 +127,10 @@ export function BackupPreviewDialog({
 
         {mode === "replace" ? (
           <label className="border-danger/30 bg-danger/8 mt-4 flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 text-sm font-bold">
-            <input
+            <Checkbox
               checked={replaceConfirmed}
-              className="size-5 accent-[var(--danger)]"
               disabled={isPending}
-              onChange={(event) => setReplaceConfirmed(event.target.checked)}
-              type="checkbox"
+              onCheckedChange={setReplaceConfirmed}
             />
             I understand current data will be replaced
           </label>
@@ -151,25 +143,26 @@ export function BackupPreviewDialog({
         ) : null}
 
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button
+          <Button
+            variant="outline"
             autoFocus
             className="border-border text-muted-strong min-h-11 rounded-xl border px-4 text-sm font-extrabold"
             disabled={isPending}
-            onClick={() => dialogRef.current?.close()}
+            onClick={onClose}
             type="button"
           >
             Cancel
-          </button>
-          <button
-            className="bg-accent text-accent-ink min-h-11 rounded-xl px-5 text-sm font-extrabold disabled:opacity-45"
+          </Button>
+          <Button
+            className="min-h-11"
             disabled={isPending || (mode === "replace" && !replaceConfirmed)}
             onClick={() => void onImport(mode)}
             type="button"
           >
             {isPending ? "Importing…" : "Import data"}
-          </button>
+          </Button>
         </div>
       </div>
-    </dialog>
+    </Modal>
   );
 }

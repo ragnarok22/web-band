@@ -1,14 +1,18 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import { strumActionDetails } from "@/components/practice/strum-action-details";
 import {
   createStrummingPatternDraft,
   resizeStrummingSteps,
 } from "@/components/practice/strumming-pattern-editor";
-import { usePracticeModal } from "@/hooks/use-practice-modal";
+import { Modal } from "@/components/shared/modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { NativeSelect } from "@/components/ui/native-select";
 import { getBeatLabels } from "@/lib/musical-time";
 import type { StrummingPatternInput } from "@/stores/strumming-pattern-store";
 import type { TimeSignature } from "@/types/pattern";
@@ -33,22 +37,14 @@ export function StrummingPatternEditorDialog({
   pattern,
   timeSignature,
 }: StrummingPatternEditorDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState(() =>
     createStrummingPatternDraft(timeSignature, pattern),
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const labels = getBeatLabels(draft);
-  usePracticeModal(true);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) dialog.showModal();
-  }, []);
-
   function closeDialog(): void {
-    dialogRef.current?.close();
+    onClose();
   }
 
   async function save(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -74,15 +70,11 @@ export function StrummingPatternEditorDialog({
   }
 
   return (
-    <dialog
+    <Modal
       aria-labelledby="strumming-pattern-editor-heading"
-      className="border-border bg-surface text-foreground fixed inset-0 m-auto max-h-[92dvh] w-[min(94vw,52rem)] overflow-y-auto rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop:bg-black/75"
-      onCancel={(event) => {
-        event.preventDefault();
-        closeDialog();
-      }}
+      className="p-0 sm:max-w-4xl"
+      busy={isSaving}
       onClose={onClose}
-      ref={dialogRef}
     >
       <form onSubmit={(event) => void save(event)}>
         <header className="border-border bg-surface sticky top-0 z-10 flex items-center justify-between border-b p-4 sm:p-5">
@@ -97,21 +89,24 @@ export function StrummingPatternEditorDialog({
               {pattern ? "Edit strumming pattern" : "Create strumming pattern"}
             </h2>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isSaving}
             aria-label="Close strumming pattern editor"
             className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg"
             onClick={closeDialog}
             type="button"
           >
             <X aria-hidden="true" className="size-5" />
-          </button>
+          </Button>
         </header>
 
         <fieldset className="p-4 sm:p-5" disabled={disabled || isSaving}>
           <div className="grid gap-3 sm:grid-cols-[1fr_11rem_8rem]">
             <label className="text-muted-strong text-xs font-bold">
               Pattern name
-              <input
+              <Input
                 autoComplete="off"
                 className={`${inputClass} mt-1.5`}
                 maxLength={100}
@@ -129,7 +124,7 @@ export function StrummingPatternEditorDialog({
             </label>
             <label className="text-muted-strong text-xs font-bold">
               Subdivision
-              <select
+              <NativeSelect
                 className={`${inputClass} mt-1.5`}
                 name="strumming-pattern-subdivision"
                 onChange={(event) => {
@@ -149,7 +144,7 @@ export function StrummingPatternEditorDialog({
               >
                 <option value={8}>Eighth notes</option>
                 <option value={16}>Sixteenth notes</option>
-              </select>
+              </NativeSelect>
             </label>
             <div className="text-muted-strong text-xs font-bold">
               Active meter
@@ -175,7 +170,7 @@ export function StrummingPatternEditorDialog({
                   </p>
                   <label className="text-muted-strong text-xs font-bold">
                     Action
-                    <select
+                    <NativeSelect
                       aria-label={`Action for position ${index + 1}, ${label}`}
                       className={`${inputClass} mt-1.5`}
                       name={`strum-action-${index}`}
@@ -197,28 +192,26 @@ export function StrummingPatternEditorDialog({
                           {strumActionDetails[action].label}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </label>
                   <label className="text-muted-strong mt-2 flex min-h-11 items-center gap-2 text-xs font-bold">
-                    <input
+                    <Checkbox
                       aria-label={`Accent position ${index + 1}, ${label}`}
                       checked={step.accent === true}
-                      className="accent-accent size-5"
                       name={`strum-accent-${index}`}
-                      onChange={(event) =>
+                      onCheckedChange={(checked) =>
                         setDraft((current) => ({
                           ...current,
                           steps: current.steps.map((candidate, stepIndex) =>
                             stepIndex === index
                               ? {
                                   ...candidate,
-                                  accent: event.target.checked || undefined,
+                                  accent: checked || undefined,
                                 }
                               : candidate,
                           ),
                         }))
                       }
-                      type="checkbox"
                     />
                     Accent
                   </label>
@@ -233,22 +226,23 @@ export function StrummingPatternEditorDialog({
             </p>
           ) : null}
           <div className="mt-5 flex flex-col-reverse gap-2 min-[420px]:flex-row min-[420px]:justify-end">
-            <button
+            <Button
+              variant="outline"
               className="border-border text-muted-strong min-h-11 rounded-lg border px-4 text-sm font-extrabold"
               onClick={closeDialog}
               type="button"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               className="bg-accent text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
               type="submit"
             >
               {isSaving ? "Saving…" : "Save strumming pattern"}
-            </button>
+            </Button>
           </div>
         </fieldset>
       </form>
-    </dialog>
+    </Modal>
   );
 }

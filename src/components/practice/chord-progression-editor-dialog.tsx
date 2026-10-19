@@ -1,13 +1,16 @@
 "use client";
 
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 
 import {
   createChordStep,
   createProgressionDraft,
 } from "@/components/practice/chord-progression-editor";
-import { usePracticeModal } from "@/hooks/use-practice-modal";
+import { Modal } from "@/components/shared/modal";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import type { ChordProgressionInput } from "@/stores/chord-progression-store";
 import type { ChordProgression, ChordStep } from "@/types/practice";
 
@@ -27,17 +30,11 @@ export function ChordProgressionEditorDialog({
   onSave,
   progression,
 }: ChordProgressionEditorDialogProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const [draft, setDraft] = useState(() => createProgressionDraft(progression));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  usePracticeModal(true);
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (dialog && !dialog.open) dialog.showModal();
-  }, []);
   function closeDialog(): void {
-    dialogRef.current?.close();
+    onClose();
   }
   function updateStep(index: number, changes: Partial<ChordStep>): void {
     setDraft((current) => ({
@@ -100,15 +97,11 @@ export function ChordProgressionEditorDialog({
     }
   }
   return (
-    <dialog
+    <Modal
       aria-labelledby="progression-editor-heading"
-      className="border-border bg-surface text-foreground fixed inset-0 m-auto max-h-[92dvh] w-[min(94vw,44rem)] overflow-y-auto rounded-2xl border p-0 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop:bg-black/75"
-      onCancel={(event) => {
-        event.preventDefault();
-        closeDialog();
-      }}
+      className="p-0 sm:max-w-3xl"
+      busy={isSaving}
       onClose={onClose}
-      ref={dialogRef}
     >
       <form onSubmit={(event) => void save(event)}>
         <header className="border-border bg-surface sticky top-0 z-10 flex items-center justify-between border-b p-4 sm:p-5">
@@ -123,19 +116,22 @@ export function ChordProgressionEditorDialog({
               {progression ? "Edit progression" : "Create progression"}
             </h2>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isSaving}
             aria-label="Close progression editor"
             className="text-muted hover:bg-surface-hover hover:text-foreground flex size-11 items-center justify-center rounded-lg"
             onClick={closeDialog}
             type="button"
           >
             <X aria-hidden="true" className="size-5" />
-          </button>
+          </Button>
         </header>
         <fieldset className="p-4 sm:p-5" disabled={disabled || isSaving}>
           <label className="text-muted-strong text-xs font-bold">
             Progression name
-            <input
+            <Input
               className={`${inputClass} mt-1.5`}
               maxLength={100}
               onChange={(event) =>
@@ -162,7 +158,9 @@ export function ChordProgressionEditorDialog({
                       Step {index + 1}
                     </span>
                     <div className="flex gap-1">
-                      <button
+                      <Button
+                        variant="outline"
+                        size="icon"
                         aria-label={`Move ${stepName} up`}
                         className="border-border text-muted-strong flex size-11 items-center justify-center rounded-lg border disabled:opacity-35"
                         disabled={index === 0}
@@ -170,8 +168,10 @@ export function ChordProgressionEditorDialog({
                         type="button"
                       >
                         <ArrowUp aria-hidden="true" className="size-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
                         aria-label={`Move ${stepName} down`}
                         className="border-border text-muted-strong flex size-11 items-center justify-center rounded-lg border disabled:opacity-35"
                         disabled={index === draft.steps.length - 1}
@@ -179,8 +179,10 @@ export function ChordProgressionEditorDialog({
                         type="button"
                       >
                         <ArrowDown aria-hidden="true" className="size-4" />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon"
                         aria-label={`Remove ${stepName}`}
                         className="border-danger/30 text-danger flex size-11 items-center justify-center rounded-lg border disabled:opacity-35"
                         disabled={draft.steps.length === 1}
@@ -195,13 +197,13 @@ export function ChordProgressionEditorDialog({
                         type="button"
                       >
                         <Trash2 aria-hidden="true" className="size-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                   <div className="grid gap-3 min-[420px]:grid-cols-[1fr_5.5rem_8.5rem]">
                     <label className="text-muted-strong text-xs font-bold">
                       Chord {index + 1}
-                      <input
+                      <Input
                         className={`${inputClass} mt-1.5`}
                         maxLength={32}
                         onChange={(event) =>
@@ -214,7 +216,7 @@ export function ChordProgressionEditorDialog({
                     </label>
                     <label className="text-muted-strong text-xs font-bold">
                       Duration
-                      <input
+                      <Input
                         aria-label={`Duration for chord ${index + 1}`}
                         className={`${inputClass} mt-1.5`}
                         max={64}
@@ -231,7 +233,7 @@ export function ChordProgressionEditorDialog({
                     </label>
                     <label className="text-muted-strong text-xs font-bold">
                       Unit
-                      <select
+                      <NativeSelect
                         aria-label={`Duration unit for chord ${index + 1}`}
                         className={`${inputClass} mt-1.5`}
                         onChange={(event) =>
@@ -244,14 +246,15 @@ export function ChordProgressionEditorDialog({
                       >
                         <option value="beats">Beats</option>
                         <option value="measures">Measures</option>
-                      </select>
+                      </NativeSelect>
                     </label>
                   </div>
                 </li>
               );
             })}
           </ol>
-          <button
+          <Button
+            variant="outline"
             className="border-border text-muted-strong hover:border-border-strong hover:text-foreground mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border text-sm font-extrabold disabled:opacity-45"
             disabled={draft.steps.length >= 64}
             onClick={() =>
@@ -264,29 +267,30 @@ export function ChordProgressionEditorDialog({
           >
             <Plus aria-hidden="true" className="size-4" />
             Add chord
-          </button>
+          </Button>
           {errorMessage ? (
             <p className="text-danger mt-3 text-sm font-bold" role="alert">
               {errorMessage}
             </p>
           ) : null}
           <div className="mt-5 flex flex-col-reverse gap-2 min-[420px]:flex-row min-[420px]:justify-end">
-            <button
+            <Button
+              variant="outline"
               className="border-border text-muted-strong min-h-11 rounded-lg border px-4 text-sm font-extrabold"
               onClick={closeDialog}
               type="button"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               className="bg-accent text-accent-ink min-h-11 rounded-lg px-5 text-sm font-black disabled:opacity-45"
               type="submit"
             >
               {isSaving ? "Saving…" : "Save progression"}
-            </button>
+            </Button>
           </div>
         </fieldset>
       </form>
-    </dialog>
+    </Modal>
   );
 }
