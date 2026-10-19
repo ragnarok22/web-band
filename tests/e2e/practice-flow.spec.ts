@@ -209,6 +209,40 @@ test("persists groove controls and supports focus keyboard practice", async ({
   expect(browserErrors).toEqual([]);
 });
 
+test("quick select searches patterns and supports keyboard selection", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.goto("/practice");
+  const input = page.getByRole("combobox", { name: "Current pattern" });
+  await expect(input).toHaveValue("Basic Rock - 4/4");
+  await input.fill("no-pattern-matches-this");
+  await expect(page.getByText("No patterns found.")).toBeVisible();
+  await input.fill("One Drop");
+  const option = page.getByRole("option", {
+    name: "One Drop - 4/4",
+    exact: true,
+  });
+  await expect(option).toBeVisible();
+  await option.click();
+  await expect(
+    page.getByRole("heading", { name: "One Drop", exact: true }),
+  ).toBeVisible();
+  await input.fill("Driving Eighths");
+  await expect(
+    page.getByRole("option", { name: "Driving Eighths - 4/4", exact: true }),
+  ).toBeVisible();
+  await input.press("ArrowDown");
+  await input.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Driving Eighths", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Play", exact: true }),
+  ).toBeVisible();
+  expect(browserErrors).toEqual([]);
+});
+
 test("persists and restores a guided tempo practice preset", async ({
   page,
 }) => {
@@ -226,7 +260,10 @@ test("persists and restores a guided tempo practice preset", async ({
   await page.getByRole("spinbutton", { name: "Start BPM" }).fill("84");
   await page
     .getByRole("combobox", { name: "Current pattern" })
-    .selectOption("one-drop");
+    .fill("One Drop");
+  await page
+    .getByRole("option", { name: "One Drop - 4/4", exact: true })
+    .click();
   await page.getByRole("button", { name: "Save current setup" }).click();
   await page.getByRole("textbox", { name: "Preset name" }).fill("Tempo ladder");
   await page.getByRole("button", { name: "Save preset" }).click();
@@ -249,7 +286,7 @@ test("persists and restores a guided tempo practice preset", async ({
   );
   await expect(
     page.getByRole("combobox", { name: "Current pattern" }),
-  ).toHaveValue("one-drop");
+  ).toHaveValue("One Drop - 4/4");
 
   await page.reload();
   await page.getByRole("button", { name: "Open presets" }).click();

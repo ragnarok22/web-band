@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { ConfirmationDialog } from "@/components/editor/confirmation-dialog";
+import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { DrumPatternGrid } from "@/components/editor/drum-pattern-grid";
 import { EditorHeader } from "@/components/editor/editor-header";
 import { PatternEditorFields } from "@/components/editor/pattern-editor-fields";

@@ -1,22 +1,13 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
-import { Card } from "@/components/ui/card";
 
-import {
-  FilterX,
-  LibraryBig,
-  Plus,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react";
+import { LibraryBig, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { PatternCard } from "@/components/patterns/pattern-card";
+import { PatternFiltersPanel } from "@/components/patterns/pattern-filters-panel";
 import { PatternSharingControl } from "@/components/patterns/pattern-sharing-control";
 import { builtInPatterns } from "@/data/patterns";
 import {
@@ -28,32 +19,7 @@ import {
 import { useAudioStore } from "@/stores/audio-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
-import type {
-  DrumPattern,
-  PatternCategory,
-  PatternDifficulty,
-} from "@/types/pattern";
-
-const categories: Array<PatternCategory | "all"> = [
-  "all",
-  "rock",
-  "pop",
-  "blues",
-  "funk",
-  "reggae",
-  "country",
-  "ballad",
-  "latin",
-  "metal",
-  "jazz",
-  "custom",
-];
-
-function formatOption(value: string): string {
-  return value === "all"
-    ? "All"
-    : `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-}
+import type { DrumPattern } from "@/types/pattern";
 
 export function PatternBrowser() {
   const router = useRouter();
@@ -278,142 +244,6 @@ function PatternBrowserHeader({
   );
 }
 
-interface PatternFiltersPanelProps {
-  filters: PatternFilters;
-  isOpen: boolean;
-  onClear: () => void;
-  onFilterChange: <Key extends keyof PatternFilters>(
-    key: Key,
-    value: PatternFilters[Key],
-  ) => void;
-  onSortChange: (sort: PatternSort) => void;
-  onToggle: () => void;
-  sort: PatternSort;
-}
-
-function PatternFiltersPanel({
-  filters,
-  isOpen,
-  onClear,
-  onFilterChange,
-  onSortChange,
-  onToggle,
-  sort,
-}: PatternFiltersPanelProps) {
-  return (
-    <Card
-      role="region"
-      aria-label="Pattern filters"
-      className="mb-6 gap-0 p-4 sm:p-5"
-    >
-      <div className="grid gap-3 sm:grid-cols-[1.7fr_auto]">
-        <label className="border-border bg-surface-elevated focus-within:border-primary flex min-h-12 items-center gap-2 rounded-xl border px-3">
-          <Search aria-hidden="true" className="text-muted-foreground size-4" />
-          <span className="sr-only">Search patterns</span>
-          <Input
-            className="text-foreground placeholder:text-muted-foreground min-w-0 flex-1 bg-transparent text-sm outline-none"
-            onChange={(event) => onFilterChange("search", event.target.value)}
-            placeholder="Search patterns"
-            type="search"
-            value={filters.search}
-          />
-        </label>
-        <Button
-          variant="outline"
-          aria-expanded={isOpen}
-          className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold transition-colors sm:hidden"
-          onClick={onToggle}
-          type="button"
-        >
-          <SlidersHorizontal aria-hidden="true" className="size-4" />
-          {isOpen ? "Hide filters" : "Show filters"}
-        </Button>
-      </div>
-
-      <div
-        className={`${isOpen ? "mt-3 grid" : "hidden"} gap-3 sm:mt-3 sm:grid sm:grid-cols-2 xl:grid-cols-5`}
-      >
-        <FilterSelect
-          label="Genre"
-          onChange={(value) =>
-            onFilterChange("category", value as PatternCategory | "all")
-          }
-          options={categories.map((value) => ({
-            label: value === "custom" ? "Utility" : formatOption(value),
-            value,
-          }))}
-          value={filters.category}
-        />
-        <FilterSelect
-          label="Difficulty"
-          onChange={(value) =>
-            onFilterChange("difficulty", value as PatternDifficulty | "all")
-          }
-          options={["all", "beginner", "intermediate", "advanced"].map(
-            (value) => ({ label: formatOption(value), value }),
-          )}
-          value={filters.difficulty}
-        />
-        <FilterSelect
-          label="Meter"
-          onChange={(value) => onFilterChange("timeSignature", value)}
-          options={[
-            "all",
-            "2/4",
-            "3/4",
-            "4/4",
-            "5/4",
-            "6/8",
-            "7/8",
-            "12/8",
-          ].map((value) => ({
-            label: value === "all" ? "All meters" : value,
-            value,
-          }))}
-          value={filters.timeSignature}
-        />
-        <FilterSelect
-          label="Grid"
-          onChange={(value) =>
-            onFilterChange(
-              "subdivision",
-              value === "all" ? "all" : value === "8" ? 8 : 16,
-            )
-          }
-          options={[
-            { label: "All grids", value: "all" },
-            { label: "Eighth notes", value: "8" },
-            { label: "Sixteenth notes", value: "16" },
-          ]}
-          value={String(filters.subdivision)}
-        />
-        <FilterSelect
-          label="Sort"
-          onChange={(value) => onSortChange(value as PatternSort)}
-          options={[
-            { label: "Name", value: "name" },
-            { label: "Default BPM", value: "bpm" },
-            { label: "Recently used", value: "recent" },
-            { label: "Favorites first", value: "favorites" },
-          ]}
-          value={sort}
-        />
-      </div>
-      <div className={isOpen ? "block" : "hidden sm:block"}>
-        <Button
-          variant="ghost"
-          className="text-muted-strong hover:text-foreground mt-3 flex min-h-11 items-center gap-2 text-xs font-extrabold transition-colors"
-          onClick={onClear}
-          type="button"
-        >
-          <FilterX aria-hidden="true" className="size-4" />
-          Clear filters
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
 interface PatternRailProps {
   favoritePatternIdSet: ReadonlySet<string>;
   pendingFavoriteIds: ReadonlySet<string>;
@@ -471,34 +301,5 @@ function PatternBrowserLoading() {
         Loading your groove library
       </p>
     </main>
-  );
-}
-
-interface FilterSelectProps {
-  label: string;
-  onChange: (value: string) => void;
-  options: Array<{ label: string; value: string }>;
-  value: string;
-}
-
-function FilterSelect({ label, onChange, options, value }: FilterSelectProps) {
-  return (
-    <label className="flex flex-col gap-1">
-      <span className="text-muted-foreground px-1 text-[0.62rem] font-extrabold tracking-wider uppercase">
-        {label}
-      </span>
-      <NativeSelect
-        aria-label={label}
-        className="border-border bg-surface-elevated text-foreground min-h-11 rounded-xl border px-3 text-sm font-bold"
-        onChange={(event) => onChange(event.target.value)}
-        value={value}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </NativeSelect>
-    </label>
   );
 }

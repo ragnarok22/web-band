@@ -235,7 +235,7 @@ export function ChordProgressionEditorDialog({
                       Unit
                       <NativeSelect
                         aria-label={`Duration unit for chord ${index + 1}`}
-                        className={`${inputClass} mt-1.5`}
+                        className="mt-1.5"
                         onChange={(event) =>
                           updateStep(index, {
                             durationUnit: event.target

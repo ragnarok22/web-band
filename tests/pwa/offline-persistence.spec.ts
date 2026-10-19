@@ -40,7 +40,7 @@ test("loads saved custom data and preferences while offline", async ({
   ).toBeVisible();
   await expect(
     page.getByRole("combobox", { name: "Current pattern" }),
-  ).toHaveValue(offlinePattern.id);
+  ).toHaveValue(`${offlinePattern.name} - 4/4`);
   await expect(
     page.getByRole("spinbutton", { name: "Current BPM" }),
   ).toHaveValue("132");

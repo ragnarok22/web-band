@@ -72,7 +72,7 @@ export function PatternEditorFields({
         <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
           Genre / category
           <NativeSelect
-            className={`${inputClass} mt-1.5`}
+            className="mt-1.5"
             name="pattern-category"
             onChange={(event) =>
               update({ category: event.target.value as PatternCategory })
@@ -215,7 +215,7 @@ function SelectField({
     <label className="text-muted-strong text-xs font-extrabold tracking-wide uppercase">
       {label}
       <NativeSelect
-        className={`${inputClass} mt-1.5`}
+        className="mt-1.5"
         name={name}
         onChange={(event) => onChange(event.target.value)}
         value={value}

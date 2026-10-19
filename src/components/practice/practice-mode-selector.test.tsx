@@ -28,7 +28,8 @@ describe("practice mode selector", () => {
     expect(screen.getByRole("radio", { name: /Tempo/ })).toBeChecked();
   });
 
-  it("disables every mode while a session is active", () => {
+  it("disables every mode while a session is active", async () => {
+    const user = userEvent.setup();
     const onChange = vi.fn();
     render(<PracticeModeSelector disabled mode="chords" onChange={onChange} />);
 
@@ -36,23 +37,64 @@ describe("practice mode selector", () => {
       expect(radio).toHaveAttribute("aria-disabled", "true");
     }
     expect(screen.getByText(/Stop the current session/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: "Practice mode" }),
+    ).toHaveAccessibleDescription(
+      "Stop the current session to change practice mode.",
+    );
+
+    await user.click(screen.getByText("Tempo", { exact: true }));
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("radio", { name: "Chords" })).toBeChecked();
   });
 
-  it("keeps choices in two usable columns inside the settings sidebar", () => {
+  it("describes each mode without adding the description to its name", () => {
     render(<SelectorHarness />);
 
-    const choices = screen.getByRole("radiogroup", { name: "Practice mode" });
-    expect(choices).toHaveClass("grid-cols-2");
-    expect(choices).not.toHaveClass("lg:grid-cols-4");
+    expect(
+      screen.getByRole("radio", { name: "Drums" }),
+    ).toHaveAccessibleDescription("Play the groove without added cues.");
+    expect(
+      screen.getByRole("radio", { name: "Tempo" }),
+    ).toHaveAccessibleDescription("Build speed in measured steps.");
+    expect(
+      screen.getByRole("radio", { name: "Chords" }),
+    ).toHaveAccessibleDescription("Follow a timed chord progression.");
+    expect(
+      screen.getByRole("radio", { name: "Strumming" }),
+    ).toHaveAccessibleDescription("Practice a complete strum pattern.");
   });
 
-  it("stretches every card to the full height of its grid row", () => {
+  it("selects a mode from its card text", async () => {
+    const user = userEvent.setup();
     render(<SelectorHarness />);
 
-    for (const radio of screen.getAllByRole("radio")) {
-      const label = radio.closest("label");
-      expect(label).toHaveClass("flex");
-      expect(label).toHaveClass("h-full", "w-full");
-    }
+    await user.click(screen.getByText("Practice a complete strum pattern."));
+    expect(screen.getByRole("radio", { name: "Strumming" })).toBeChecked();
+  });
+
+  it("supports arrow-key selection from the selected mode", async () => {
+    const user = userEvent.setup();
+    render(<SelectorHarness />);
+
+    await user.tab();
+    expect(screen.getByRole("radio", { name: "Drums" })).toHaveFocus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("radio", { name: "Tempo" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Tempo" })).toBeChecked();
+  });
+
+  it("keeps description references unique across selectors", () => {
+    render(
+      <>
+        <SelectorHarness />
+        <SelectorHarness />
+      </>,
+    );
+
+    const descriptions = screen
+      .getAllByRole("radio")
+      .map((radio) => radio.getAttribute("aria-describedby"));
+    expect(new Set(descriptions).size).toBe(descriptions.length);
   });
 });

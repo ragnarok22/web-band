@@ -89,10 +89,8 @@ describe("pattern browser", () => {
     const user = userEvent.setup();
     render(<PatternBrowser />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Genre" }),
-      "reggae",
-    );
+    await user.click(screen.getByRole("combobox", { name: "Genre" }));
+    await user.click(await screen.findByRole("option", { name: "Reggae" }));
     expect(screen.getByText("4 of 44 patterns")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "One Drop favorite" }));
     expect(

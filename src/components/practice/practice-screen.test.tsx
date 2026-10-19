@@ -29,6 +29,21 @@ import type {
   PracticePreset,
 } from "@/types/persistence";
 
+async function selectQuickPattern(
+  user: ReturnType<typeof userEvent.setup>,
+  id: string,
+) {
+  const pattern = builtInPatterns.find((item) => item.id === id)!;
+  const input = screen.getByRole("combobox", { name: "Current pattern" });
+  await user.clear(input);
+  await user.type(input, pattern.name);
+  await user.click(
+    await screen.findByRole("option", {
+      name: `${pattern.name} - ${pattern.timeSignature.numerator}/${pattern.timeSignature.denominator}`,
+    }),
+  );
+}
+
 const engine = vi.hoisted(() => ({
   changePattern: vi.fn((...arguments_: [unknown?, (() => void)?, string?]) => {
     void arguments_;
@@ -180,10 +195,7 @@ describe("practice screen", () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "one-drop",
-    );
+    await selectQuickPattern(user, "one-drop");
     expect(
       screen.getByRole("heading", { name: "One Drop" }),
     ).toBeInTheDocument();
@@ -194,10 +206,7 @@ describe("practice screen", () => {
     const user = userEvent.setup();
     render(<PracticeScreen />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "shuffle-blues",
-    );
+    await selectQuickPattern(user, "shuffle-blues");
 
     expect(usePracticeStore.getState().swing).toBe(0.34);
     expect(screen.getByText("Swing 8ths")).toBeInTheDocument();
@@ -209,10 +218,7 @@ describe("practice screen", () => {
     engine.changePattern.mockReturnValueOnce(true);
     render(<PracticeScreen />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "driving-eighths",
-    );
+    await selectQuickPattern(user, "driving-eighths");
 
     expect(engine.changePattern).toHaveBeenCalledWith(
       expect.objectContaining({ id: "driving-eighths" }),
@@ -241,10 +247,7 @@ describe("practice screen", () => {
     );
 
     await user.click(immediateSwitch);
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "driving-eighths",
-    );
+    await selectQuickPattern(user, "driving-eighths");
 
     expect(usePracticeStore.getState()).toMatchObject({
       selectedPatternId: "driving-eighths",
@@ -266,10 +269,7 @@ describe("practice screen", () => {
         name: "Switch same-meter patterns immediately",
       }),
     );
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "simple-six-eight",
-    );
+    await selectQuickPattern(user, "simple-six-eight");
 
     expect(engine.changePattern).toHaveBeenCalledWith(
       expect.objectContaining({ id: "simple-six-eight" }),
@@ -770,10 +770,7 @@ describe("practice screen", () => {
     const playbackLiveRegion = screen.getByTestId("playback-live-region");
     const practiceLiveRegion = screen.getByTestId("practice-live-region");
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "one-drop",
-    );
+    await selectQuickPattern(user, "one-drop");
     expect(practiceLiveRegion).toHaveTextContent(
       "Pattern changed to One Drop.",
     );
@@ -994,12 +991,12 @@ describe("practice screen", () => {
     engine.changePattern.mockReturnValueOnce(false);
     render(<PracticeScreen />);
 
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Current pattern" }),
-      "simple-six-eight",
-    );
+    await selectQuickPattern(user, "simple-six-eight");
 
     expect(usePracticeStore.getState().selectedPatternId).toBe("basic-rock");
+    expect(
+      screen.getByRole("combobox", { name: "Current pattern" }),
+    ).toHaveValue("Basic Rock - 4/4");
     expect(
       screen.getByText(/Stop the active guided session before changing meter/i),
     ).toBeInTheDocument();

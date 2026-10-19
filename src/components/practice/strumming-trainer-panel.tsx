@@ -327,7 +327,7 @@ function StrummingPatternSelect({
       <NativeSelect
         aria-describedby={warningId}
         aria-invalid={!availableSelected || !isCompatible}
-        className="border-border bg-surface-elevated text-foreground focus:border-primary mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
+        className="mt-1.5"
         disabled={
           disabled || compatibleBuiltIns.length + compatibleCustom.length === 0
         }

@@ -125,7 +125,7 @@ export function StrummingPatternEditorDialog({
             <label className="text-muted-strong text-xs font-bold">
               Subdivision
               <NativeSelect
-                className={`${inputClass} mt-1.5`}
+                className="mt-1.5"
                 name="strumming-pattern-subdivision"
                 onChange={(event) => {
                   const subdivision = Number(event.target.value) as 8 | 16;
@@ -172,7 +172,7 @@ export function StrummingPatternEditorDialog({
                     Action
                     <NativeSelect
                       aria-label={`Action for position ${index + 1}, ${label}`}
-                      className={`${inputClass} mt-1.5`}
+                      className="mt-1.5"
                       name={`strum-action-${index}`}
                       onChange={(event) => {
                         const action = event.target.value as StrumAction;
@@ -196,6 +196,7 @@ export function StrummingPatternEditorDialog({
                   </label>
                   <label className="text-muted-strong mt-2 flex min-h-11 items-center gap-2 text-xs font-bold">
                     <Checkbox
+                      disabled={disabled || isSaving}
                       aria-label={`Accent position ${index + 1}, ${label}`}
                       checked={step.accent === true}
                       name={`strum-accent-${index}`}

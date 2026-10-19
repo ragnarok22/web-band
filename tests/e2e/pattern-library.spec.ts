@@ -19,7 +19,8 @@ test("filters patterns and persists a favorite", async ({ page }) => {
 
   const showFilters = page.getByRole("button", { name: "Show filters" });
   if (await showFilters.isVisible()) await showFilters.click();
-  await page.getByRole("combobox", { name: "Genre" }).selectOption("reggae");
+  await page.getByRole("combobox", { name: "Genre" }).click();
+  await page.getByRole("option", { name: "Reggae", exact: true }).click();
   await expect(page.getByText("4 of 44 patterns")).toBeVisible();
   const favoriteButton = page.getByRole("button", {
     name: "One Drop favorite",
@@ -104,20 +105,20 @@ test("navigates patterns by keyboard and commits active changes on a boundary", 
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("ArrowRight");
-  await expect(patternSelect).toHaveValue("driving-eighths");
+  await expect(patternSelect).toHaveValue("Driving Eighths - 4/4");
   await expect(
     page.getByRole("heading", { name: "Driving Eighths" }),
   ).toBeVisible();
 
   await page.keyboard.press("ArrowLeft");
-  await expect(patternSelect).toHaveValue("basic-rock");
+  await expect(patternSelect).toHaveValue("Basic Rock - 4/4");
   await expect(page.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
 
   await bpmInput.focus();
   await page.keyboard.press("ArrowRight");
   await page.keyboard.press("ArrowLeft");
   await expect(bpmInput).toBeFocused();
-  await expect(patternSelect).toHaveValue("basic-rock");
+  await expect(patternSelect).toHaveValue("Basic Rock - 4/4");
 
   await bpmInput.fill("220");
   await page.keyboard.press("Enter");
@@ -130,7 +131,7 @@ test("navigates patterns by keyboard and commits active changes on a boundary", 
 
   await page.getByText("Practice room", { exact: true }).click();
   await page.keyboard.press("ArrowRight");
-  await expect(patternSelect).toHaveValue("driving-eighths");
+  await expect(patternSelect).toHaveValue("Driving Eighths - 4/4");
   await expect(
     page.getByText("Queued after a transition fill", { exact: true }),
   ).toBeVisible();

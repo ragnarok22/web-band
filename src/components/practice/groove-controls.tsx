@@ -131,7 +131,6 @@ export function GrooveControls({
             Phrase fills
           </span>
           <NativeSelect
-            className="border-border bg-surface-elevated text-foreground min-h-11 w-full rounded-lg border px-3 text-sm font-bold"
             disabled={disabled}
             id="fill-frequency"
             onChange={(event) =>

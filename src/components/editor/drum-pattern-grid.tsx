@@ -1,4 +1,6 @@
 "use client";
+import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import { Clipboard, ClipboardPaste, SlidersHorizontal, X } from "lucide-react";
 import { useState, type KeyboardEvent } from "react";
@@ -243,7 +245,9 @@ export function DrumPatternGrid({
                 <span className="truncate pr-1 text-xs font-extrabold sm:text-sm">
                   {instrumentLabels[instrument]}
                 </span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   aria-label={`Clear ${instrumentLabels[instrument]} row`}
                   className="text-muted-foreground hover:bg-danger/10 hover:text-danger flex size-11 shrink-0 items-center justify-center"
                   disabled={disabled}
@@ -257,7 +261,7 @@ export function DrumPatternGrid({
                   type="button"
                 >
                   <X aria-hidden="true" className="size-4" />
-                </button>
+                </Button>
               </div>
               {Array.from({ length: stepCount }, (_, step) => {
                 const hit = hitsByCell.get(`${instrument}:${step}`);
@@ -382,9 +386,9 @@ function GridToolbar({
       <div className="flex flex-wrap items-end gap-2">
         <label className="text-muted-foreground text-[0.62rem] font-extrabold tracking-wider uppercase">
           Target measure
-          <select
+          <NativeSelect
             aria-label="Target measure"
-            className="border-border bg-surface-elevated text-foreground mt-1 block min-h-11 rounded-xl border px-3 text-sm font-bold"
+            className="mt-1"
             disabled={disabled}
             name="target-measure"
             onChange={(event) =>
@@ -397,7 +401,7 @@ function GridToolbar({
                 Measure {index + 1}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
         <GridAction label="Copy measure" onClick={onCopy} disabled={disabled}>
           <Clipboard aria-hidden="true" className="size-4" />
@@ -518,7 +522,9 @@ function GridAction({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Button
+      variant="outline"
+      size="icon"
       aria-label={label}
       className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:text-foreground flex size-11 items-center justify-center rounded-xl border disabled:opacity-35"
       disabled={disabled}
@@ -527,6 +533,6 @@ function GridAction({
       type="button"
     >
       {children}
-    </button>
+    </Button>
   );
 }

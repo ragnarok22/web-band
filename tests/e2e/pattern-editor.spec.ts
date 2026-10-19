@@ -58,7 +58,7 @@ test("keeps Stop available when the playing draft becomes invalid", async ({
   page,
 }) => {
   await page.goto("/editor");
-  const stop = page.getByRole("button", { name: "Draft preview" });
+  const stop = page.getByRole("button", { name: /draft preview/i });
   await stop.click();
   await expect(stop).toBeEnabled();
 
@@ -66,6 +66,6 @@ test("keeps Stop available when the playing draft becomes invalid", async ({
   await expect(stop).toBeEnabled();
   await stop.click();
   await expect(
-    page.getByRole("button", { name: "Draft preview" }),
+    page.getByRole("button", { name: /draft preview/i }),
   ).toBeDisabled();
 });

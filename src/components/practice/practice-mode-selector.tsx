@@ -1,6 +1,12 @@
 "use client";
 
-import { ArrowDownUp, Drum, Gauge, Guitar, type LucideIcon } from "lucide-react";
+import {
+  ArrowDownUp,
+  Drum,
+  Gauge,
+  Guitar,
+  type LucideIcon,
+} from "lucide-react";
 import { useId } from "react";
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -67,7 +73,7 @@ export function PracticeModeSelector({
       >
         {modes.map(({ description, icon: Icon, label, value }) => (
           <label
-            className="group/mode border-border bg-surface text-foreground has-data-checked:border-primary/65 has-data-checked:bg-primary/8 has-data-checked:text-primary has-[:focus-visible]:outline-primary relative flex h-full min-h-24 w-full min-w-0 cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors not-has-data-disabled:hover:border-border-strong not-has-data-disabled:hover:bg-surface-hover has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-3 has-data-disabled:cursor-not-allowed has-data-disabled:opacity-45 @min-[17rem]/practice-modes:min-h-36 @min-[17rem]/practice-modes:flex-col @min-[17rem]/practice-modes:items-start"
+            className="group/mode border-border bg-surface text-foreground has-data-checked:border-primary/65 has-data-checked:bg-primary/8 has-data-checked:text-primary has-[:focus-visible]:outline-primary not-has-data-disabled:not-has-data-checked:hover:border-border-strong not-has-data-disabled:not-has-data-checked:hover:bg-surface-hover relative flex h-full min-h-24 w-full min-w-0 cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors has-data-disabled:cursor-not-allowed has-data-disabled:opacity-45 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-3 @min-[17rem]/practice-modes:min-h-36 @min-[17rem]/practice-modes:flex-col @min-[17rem]/practice-modes:items-start"
             key={value}
           >
             <RadioGroupItem
