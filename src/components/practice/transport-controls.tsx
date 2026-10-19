@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 
 import { Flag, Pause, Play, Square } from "lucide-react";
 import { m } from "framer-motion";
+import { useId } from "react";
 
 import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
 import {
@@ -32,12 +33,20 @@ export function TransportControls({
   status,
 }: TransportControlsProps) {
   const reducedMotion = useAppReducedMotion();
+  const descriptionId = useId();
   const isBusy = status === "initializing";
   const isRunning = status === "playing" || status === "counting-in";
   const canStop =
     isBusy || isRunning || status === "paused" || status === "suspended";
   const action = getPlaybackAction(status, isFinishing);
   const ActionIcon = isRunning ? Flag : Play;
+  const stopHint = canStop
+    ? "Stop immediately (Esc)."
+    : "Start playback to enable Stop.";
+  const pauseHint = getPauseHint(status);
+  const playHint = playDisabled
+    ? "Loading your saved practice setup."
+    : action.description;
 
   return (
     <section
@@ -48,7 +57,9 @@ export function TransportControls({
         variant="outline"
         size="icon"
         aria-label="Stop playback"
-        className="text-muted-strong size-11 rounded-xl disabled:opacity-35"
+        aria-describedby={`${descriptionId}-stop`}
+        title={stopHint}
+        className="text-foreground disabled:text-muted-foreground size-11 rounded-xl disabled:opacity-35"
         disabled={!canStop}
         onClick={onStop}
         type="button"
@@ -58,6 +69,9 @@ export function TransportControls({
 
       <Button
         aria-label={action.label}
+        aria-busy={isBusy}
+        aria-describedby={`${descriptionId}-play`}
+        title={playHint}
         className="play-control bg-primary text-accent-ink hover:bg-accent-strong h-12 min-w-28 rounded-xl px-4 font-extrabold disabled:opacity-50"
         disabled={playDisabled || isBusy || (isRunning && isFinishing)}
         onClick={isRunning ? onFinish : onPlay}
@@ -81,15 +95,34 @@ export function TransportControls({
         variant="outline"
         size="icon"
         aria-label="Pause playback"
-        className="text-muted-strong size-11 rounded-xl disabled:opacity-35"
+        aria-describedby={`${descriptionId}-pause`}
+        title={pauseHint}
+        className="text-foreground disabled:text-muted-foreground size-11 rounded-xl disabled:opacity-35"
         disabled={!isRunning}
         onClick={onPause}
         type="button"
       >
         <Pause aria-hidden="true" className="size-5 fill-current" />
       </Button>
+      <span className="sr-only" id={`${descriptionId}-stop`}>
+        {stopHint}
+      </span>
+      <span className="sr-only" id={`${descriptionId}-play`}>
+        {playHint}
+      </span>
+      <span className="sr-only" id={`${descriptionId}-pause`}>
+        {pauseHint}
+      </span>
     </section>
   );
+}
+
+function getPauseHint(status: AudioEngineStatus): string {
+  if (status === "playing" || status === "counting-in") {
+    return "Pause and keep your position (Space).";
+  }
+  if (status === "paused") return "Resume playback to enable Pause.";
+  return "Start playback to enable Pause.";
 }
 
 function getPlaybackAction(status: AudioEngineStatus, isFinishing: boolean) {
@@ -97,13 +130,29 @@ function getPlaybackAction(status: AudioEngineStatus, isFinishing: boolean) {
     return {
       label: isFinishing ? "Finishing after fill" : "Finish with fill",
       caption: "Finish",
+      description: isFinishing
+        ? "Finishing after a transition fill. Stop remains available."
+        : "Finish gracefully after a transition fill.",
     };
   }
-  if (status === "paused") return { label: "Resume", caption: "Resume" };
+  if (status === "paused")
+    return {
+      label: "Resume",
+      caption: "Resume",
+      description: "Resume from your paused position (Space).",
+    };
   if (status === "suspended")
-    return { label: "Resume audio", caption: "Resume" };
+    return {
+      label: "Resume audio",
+      caption: "Resume",
+      description: "Resume browser audio (Space).",
+    };
   return {
     label: "Play",
     caption: status === "initializing" ? "Starting…" : "Play",
+    description:
+      status === "initializing"
+        ? "Starting the audio engine."
+        : "Start playback (Space).",
   };
 }

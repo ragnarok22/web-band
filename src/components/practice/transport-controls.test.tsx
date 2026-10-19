@@ -66,6 +66,44 @@ describe("transport controls", () => {
     expect(screen.getByRole("button", { name: "Resume" })).toBeEnabled();
   });
 
+  it("communicates loading while keeping immediate Stop available", () => {
+    render(
+      <TransportControls
+        onFinish={vi.fn()}
+        onPause={vi.fn()}
+        onPlay={vi.fn()}
+        onStop={vi.fn()}
+        status="initializing"
+      />,
+    );
+    const play = screen.getByRole("button", { name: "Play" });
+    expect(play).toBeDisabled();
+    expect(play).toHaveAttribute("aria-busy", "true");
+    expect(play).toHaveAccessibleDescription("Starting the audio engine.");
+    expect(screen.getByRole("button", { name: "Stop playback" })).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: "Pause playback" }),
+    ).toHaveAccessibleDescription("Start playback to enable Pause.");
+  });
+
+  it("explains when inactive controls become available", () => {
+    render(
+      <TransportControls
+        onFinish={vi.fn()}
+        onPause={vi.fn()}
+        onPlay={vi.fn()}
+        onStop={vi.fn()}
+        status="ready"
+      />,
+    );
+    expect(
+      screen.getByRole("button", { name: "Stop playback" }),
+    ).toHaveAccessibleDescription("Start playback to enable Stop.");
+    expect(
+      screen.getByRole("button", { name: "Pause playback" }),
+    ).toHaveAccessibleDescription("Start playback to enable Pause.");
+  });
+
   it("keeps the primary control mounted and focused across play states", () => {
     const callbacks = {
       onFinish: vi.fn(),

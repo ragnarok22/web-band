@@ -133,6 +133,12 @@ describe("practice screen", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Audio permission denied",
     );
+    expect(
+      screen.getByRole("alert").closest('[aria-label="Practice player"]'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Audio permission denied. Try Play again."),
+    ).toHaveLength(1);
     expect(screen.getByTestId("transport-status")).toHaveTextContent(
       "Audio unavailable",
     );

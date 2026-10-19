@@ -30,24 +30,43 @@ test("keeps primary transport controls centered between tempo and playback statu
     await page.setViewportSize({ width, height: 900 });
     for (const open of [false, true]) {
       if (open) await openControls(page);
-      const playerBox = (await player.boundingBox())!;
-      const play = (await player
-        .getByRole("button", { name: "Play", exact: true })
-        .boundingBox())!;
-      const tempo = (await player
-        .getByRole("region", { name: "Set your pace" })
-        .boundingBox())!;
-      const status = (await player
-        .getByTestId("transport-status")
-        .boundingBox())!;
-      expect(
-        Math.abs(play.x + play.width / 2 - (playerBox.x + playerBox.width / 2)),
-      ).toBeLessThanOrEqual(1);
-      expect(tempo.x + tempo.width).toBeLessThan(play.x);
-      expect(status.x).toBeGreaterThan(play.x + play.width);
-      expect(
-        Math.abs(status.y + status.height / 2 - (play.y + play.height / 2)),
-      ).toBeLessThanOrEqual(2);
+      await expect(
+        page.getByRole("button", { name: "Controls", exact: true }),
+      ).toHaveAttribute("aria-expanded", String(open));
+      // Read one layout frame, not rectangles from opposite sides of a resize.
+      await expect
+        .poll(() =>
+          player.evaluate((element) => {
+            const playerBox = element.getBoundingClientRect();
+            const play = element
+              .querySelector(".play-control")!
+              .getBoundingClientRect();
+            const tempo = element
+              .querySelector('[aria-label="Set your pace"]')!
+              .getBoundingClientRect();
+            const status = element
+              .querySelector('[data-testid="transport-status"]')!
+              .getBoundingClientRect();
+            return {
+              playCentered:
+                Math.abs(
+                  play.x + play.width / 2 - (playerBox.x + playerBox.width / 2),
+                ) <= 1,
+              tempoOnLeft: tempo.x + tempo.width < play.x,
+              statusOnRight: status.x > play.x + play.width,
+              statusAligned:
+                Math.abs(
+                  status.y + status.height / 2 - (play.y + play.height / 2),
+                ) <= 2,
+            };
+          }),
+        )
+        .toEqual({
+          playCentered: true,
+          tempoOnLeft: true,
+          statusOnRight: true,
+          statusAligned: true,
+        });
       await expectNoOverflow(page);
       if (open) await closeControls(page);
     }
@@ -100,6 +119,78 @@ test("retains a clear active beat without scaling when reduced motion is enabled
   await expect(active).toHaveCount(1);
   await expect(active).toHaveCSS("transform", "none");
   await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("distinguishes playback states and counts down with the audible count-in", async ({
+  page,
+}) => {
+  await page.goto("/practice");
+  const status = page.getByTestId("transport-status");
+  const indicator = page.getByTestId("playback-status-indicator");
+  await expect(status).toHaveText("Ready");
+  await expect(indicator).toHaveClass(/text-muted-foreground/);
+  await expect(
+    page.getByRole("button", { name: "Pause playback" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Stop playback" }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(status).toHaveText("Counting in");
+  const remaining = page.getByTestId("count-in-remaining");
+  await expect(remaining).toBeVisible();
+  const firstCount = Number(await remaining.innerText());
+  await expect
+    .poll(async () => Number(await remaining.innerText()))
+    .toBeLessThan(firstCount);
+  await expect(status).toHaveText("Playing", { timeout: 7000 });
+  await expect(indicator).toHaveClass(/text-success/);
+  await expect(remaining).toHaveCount(0);
+  await page.getByRole("button", { name: "Pause playback" }).click();
+  await expect(status).toHaveText("Paused");
+  await expect(indicator).toHaveClass(/text-primary/);
+  await expect(
+    page.getByRole("button", { name: "Resume", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Pause playback" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Stop playback" }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("explains audio errors inside the player without duplicating the warning", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.addInitScript(() => {
+    AudioContext.prototype.resume = () =>
+      Promise.reject(new Error("Audio output blocked for this test."));
+  });
+  await page.goto("/practice");
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  const player = page.getByRole("region", {
+    name: "Practice player",
+    exact: true,
+  });
+  await expect(player.getByTestId("transport-status")).toHaveText(
+    "Audio unavailable",
+  );
+  await expect(player.getByTestId("playback-status-indicator")).toHaveClass(
+    /text-danger/,
+  );
+  await expect(player.getByRole("alert")).toContainText(
+    "Audio output blocked for this test.",
+  );
+  await expect(
+    page.getByText("Audio output blocked for this test.", { exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    player.getByRole("button", { name: "Play", exact: true }),
+  ).toBeEnabled();
+  await expectNoOverflow(page);
 });
 
 test("shows explanatory tooltips on hover and keyboard focus without interrupting playback", async ({

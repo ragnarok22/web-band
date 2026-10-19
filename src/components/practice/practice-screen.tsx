@@ -105,7 +105,9 @@ export function PracticeScreen() {
 
           <PracticeNotices
             countInMeasures={practice.countInMeasures}
-            errorMessage={practice.errorMessage}
+            errorMessage={
+              practice.status === "error" ? null : practice.errorMessage
+            }
             noticeMessage={practice.historyNotice}
             onDismiss={practice.dismissOnboarding}
             showOnboarding={false}

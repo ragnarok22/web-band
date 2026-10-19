@@ -2,6 +2,7 @@ import { Hand } from "lucide-react";
 
 import { BpmControls } from "@/components/practice/bpm-controls";
 import { CountInControl } from "@/components/practice/count-in-control";
+import { PlaybackStatus } from "@/components/practice/playback-status";
 import { SessionToolbar } from "@/components/practice/session-toolbar";
 import { TransportPanel } from "@/components/practice/transport-panel";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,15 @@ export function PracticeSessionControls({
       onPlay={() => void practice.play()}
       onStop={practice.stop}
       status={practice.status}
+      statusIndicator={
+        <PlaybackStatus
+          countInMeasures={practice.countInMeasures}
+          errorMessage={practice.errorMessage}
+          isReady={practice.isReady}
+          status={practice.status}
+          timeSignature={practice.pattern.timeSignature}
+        />
+      }
       footer={
         <>
           <div className="flex flex-wrap items-center gap-2">
