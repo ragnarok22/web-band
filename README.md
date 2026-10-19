@@ -273,6 +273,12 @@ Vitest covers musical calculations, BPM clamping, built-in and custom content va
 
 `vitest.config.mts` enforces global minimums of 81% statements, 80% branches, 82% functions, and 82% lines.
 
+After installing or updating Playwright, install its matching browser binaries before running browser tests:
+
+```bash
+pnpm exec playwright install
+```
+
 Playwright runs the real browser audio engine and verifies:
 
 - Root redirect and initial Basic Rock state.
