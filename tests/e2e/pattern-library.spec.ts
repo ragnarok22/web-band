@@ -179,8 +179,6 @@ test("resets playback after navigating from an active practice to another patter
   await expect(
     page.getByRole("button", { exact: true, name: "Play" }),
   ).toBeEnabled();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Audio waits for your first press",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Ready");
   expect(browserErrors).toEqual([]);
 });

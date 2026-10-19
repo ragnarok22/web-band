@@ -46,29 +46,17 @@ export function BpmControls({
     return nextBpm;
   }
 
-  function adjustmentButton(adjustment: number) {
-    const isDefault = Math.abs(adjustment) === adjustmentStep;
-    return (
-      <Button
-        variant={isDefault && !embedded ? "secondary" : "outline"}
-        aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
-        className="min-h-11 min-w-11 rounded-lg px-2 font-extrabold tabular-nums"
-        data-default-adjustment={isDefault}
-        disabled={disabled}
-        key={adjustment}
-        onClick={() => changeAndCommit(bpm + adjustment)}
-        type="button"
-      >
-        {embedded && Math.abs(adjustment) === 1
-          ? adjustment > 0
-            ? "+"
-            : "−"
-          : adjustment > 0
-            ? `+${adjustment}`
-            : adjustment}
-      </Button>
-    );
-  }
+  const adjustmentProps = {
+    adjustmentStep,
+    bpm,
+    disabled,
+    embedded,
+    onChange: changeAndCommit,
+  };
+  const alternateStep = adjustmentStep === 1 ? 5 : 1;
+  const secondaryAdjustments = embedded
+    ? [-5, 5]
+    : [-adjustmentStep, adjustmentStep, -alternateStep, alternateStep];
 
   const reset = (
     <Button
@@ -105,15 +93,13 @@ export function BpmControls({
         }
         role="group"
       >
-        {(embedded
-          ? [-5, 5]
-          : [
-              -adjustmentStep,
-              adjustmentStep,
-              -(adjustmentStep === 1 ? 5 : 1),
-              adjustmentStep === 1 ? 5 : 1,
-            ]
-        ).map(adjustmentButton)}
+        {secondaryAdjustments.map((adjustment) => (
+          <BpmAdjustment
+            {...adjustmentProps}
+            adjustment={adjustment}
+            key={adjustment}
+          />
+        ))}
         {embedded ? reset : null}
       </div>
     </>
@@ -146,7 +132,9 @@ export function BpmControls({
             !embedded && "mb-3",
           )}
         >
-          {embedded ? adjustmentButton(-1) : null}
+          {embedded ? (
+            <BpmAdjustment {...adjustmentProps} adjustment={-1} />
+          ) : null}
           <Input
             aria-label="Current BPM"
             className={cn(
@@ -176,7 +164,7 @@ export function BpmControls({
           </span>
           {embedded ? (
             <>
-              {adjustmentButton(1)}
+              <BpmAdjustment {...adjustmentProps} adjustment={1} />
               <CollapsibleTrigger
                 aria-label="More tempo controls"
                 className="text-muted-strong hover:bg-surface-hover flex size-11 shrink-0 items-center justify-center rounded-lg disabled:opacity-50"
@@ -209,5 +197,40 @@ export function BpmControls({
         </Button>
       ) : null}
     </Container>
+  );
+}
+
+function BpmAdjustment({
+  adjustment,
+  adjustmentStep,
+  bpm,
+  disabled,
+  embedded,
+  onChange,
+}: Pick<
+  BpmControlsProps,
+  "adjustmentStep" | "bpm" | "disabled" | "embedded" | "onChange"
+> & { adjustment: number }) {
+  const isDefault = Math.abs(adjustment) === adjustmentStep;
+  const label =
+    embedded && Math.abs(adjustment) === 1
+      ? adjustment > 0
+        ? "+"
+        : "−"
+      : adjustment > 0
+        ? `+${adjustment}`
+        : adjustment;
+  return (
+    <Button
+      variant={isDefault && !embedded ? "secondary" : "outline"}
+      aria-label={`${adjustment > 0 ? "Increase" : "Decrease"} BPM by ${Math.abs(adjustment)}`}
+      className="min-h-11 min-w-11 rounded-lg px-2 font-extrabold tabular-nums"
+      data-default-adjustment={isDefault}
+      disabled={disabled}
+      onClick={() => onChange(bpm + adjustment)}
+      type="button"
+    >
+      {label}
+    </Button>
   );
 }

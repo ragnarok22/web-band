@@ -7,6 +7,45 @@ import { builtInPatterns } from "@/data/patterns";
 import { renderWithMotion as render } from "@/test/render-with-motion";
 
 describe("pattern summary", () => {
+  it("keeps long names and essential metadata visible with musical details collapsed", async () => {
+    const user = userEvent.setup();
+    const pattern = {
+      ...builtInPatterns[0]!,
+      name: "Guns N' Roses — Knockin' on Heaven's Door — extended practice groove",
+    };
+    const onImmediatePatternSwitchChange = vi.fn();
+    render(
+      <PatternSummary
+        immediatePatternSwitch={false}
+        onImmediatePatternSwitchChange={onImmediatePatternSwitchChange}
+        onPatternChange={vi.fn()}
+        pattern={pattern}
+        patterns={[pattern]}
+        pendingPatternId={null}
+        swing={0}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: pattern.name })).toBeVisible();
+    expect(screen.getByText("Rock")).toBeVisible();
+    expect(screen.getByText("beginner")).toBeVisible();
+    expect(screen.getByText("4/4")).toBeVisible();
+    expect(screen.queryByText(pattern.description)).not.toBeInTheDocument();
+    const details = screen.getByRole("button", { name: "Pattern Details" });
+    expect(details).toHaveAttribute("aria-expanded", "false");
+    await user.click(details);
+    expect(screen.getByText(pattern.description)).toBeVisible();
+    expect(screen.getByText("Default BPM")).toBeVisible();
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "Switch same-meter patterns immediately",
+      }),
+    );
+    expect(onImmediatePatternSwitchChange).toHaveBeenCalledWith(
+      true,
+      expect.any(Object),
+    );
+  });
+
   it("updates committed pattern content without replacing the focused picker", async () => {
     const user = userEvent.setup();
     const first = builtInPatterns[0]!;

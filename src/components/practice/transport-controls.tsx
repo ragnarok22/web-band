@@ -36,15 +36,8 @@ export function TransportControls({
   const isRunning = status === "playing" || status === "counting-in";
   const canStop =
     isBusy || isRunning || status === "paused" || status === "suspended";
-  const playLabel = isRunning
-    ? isFinishing
-      ? "Finishing after fill"
-      : "Finish with fill"
-    : status === "paused"
-      ? "Resume"
-      : status === "suspended"
-        ? "Resume audio"
-        : "Play";
+  const action = getPlaybackAction(status, isFinishing);
+  const ActionIcon = isRunning ? Flag : Play;
 
   return (
     <section
@@ -64,7 +57,7 @@ export function TransportControls({
       </Button>
 
       <Button
-        aria-label={playLabel}
+        aria-label={action.label}
         className="play-control bg-primary text-accent-ink hover:bg-accent-strong h-12 min-w-28 rounded-xl px-4 font-extrabold disabled:opacity-50"
         disabled={playDisabled || isBusy || (isRunning && isFinishing)}
         onClick={isRunning ? onFinish : onPlay}
@@ -76,24 +69,11 @@ export function TransportControls({
           data-motion="play-state"
           data-motion-reduced={reducedMotion}
           initial={reducedMotion ? false : stateEntry}
-          key={playLabel}
+          key={action.label}
           transition={motionTransition(reducedMotion, 0.1)}
         >
-          {isRunning ? (
-            <>
-              <Flag aria-hidden="true" className="size-5 fill-current" />
-              Finish
-            </>
-          ) : (
-            <>
-              <Play aria-hidden="true" className="size-5 fill-current" />
-              {isBusy
-                ? "Starting…"
-                : status === "paused" || status === "suspended"
-                  ? "Resume"
-                  : "Play"}
-            </>
-          )}
+          <ActionIcon aria-hidden="true" className="size-5 fill-current" />
+          {action.caption}
         </m.span>
       </Button>
 
@@ -110,4 +90,20 @@ export function TransportControls({
       </Button>
     </section>
   );
+}
+
+function getPlaybackAction(status: AudioEngineStatus, isFinishing: boolean) {
+  if (status === "playing" || status === "counting-in") {
+    return {
+      label: isFinishing ? "Finishing after fill" : "Finish with fill",
+      caption: "Finish",
+    };
+  }
+  if (status === "paused") return { label: "Resume", caption: "Resume" };
+  if (status === "suspended")
+    return { label: "Resume audio", caption: "Resume" };
+  return {
+    label: "Play",
+    caption: status === "initializing" ? "Starting…" : "Play",
+  };
 }

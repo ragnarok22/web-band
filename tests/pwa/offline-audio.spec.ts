@@ -38,9 +38,7 @@ test("starts synthesized playback offline without network requests", async ({
   };
   context.on("request", trackRequest);
   await playButton.click();
-  await expect(page.getByTestId("transport-status")).toHaveText(
-    "Groove playing",
-  );
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await expect.poll(() => page.locator(".beat-step--active").count()).toBe(1);
   await page.waitForTimeout(350);
   context.off("request", trackRequest);
