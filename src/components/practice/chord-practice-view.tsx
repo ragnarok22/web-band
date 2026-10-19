@@ -1,6 +1,7 @@
 "use client";
 
 import styles from "@/components/practice/chord-practice.module.css";
+import { ChordBeatCountdown } from "@/components/practice/chord-beat-countdown";
 import { ChordProgressionTimeline } from "@/components/practice/chord-progression-timeline";
 import { getChordTrainerPosition } from "@/lib/guided-practice";
 import type { AudioEngineStatus } from "@/types/audio";
@@ -24,8 +25,15 @@ export function ChordPracticeView({
   const frame = snapshot?.mode === "chords" ? snapshot : null;
   const position =
     frame?.position ?? getChordTrainerPosition(configuration, timeSignature, 0);
-  const duration = position.sixteenthsIntoStep + position.sixteenthsRemaining;
   const countdown = configuration.showCountdown ? position.countdown : null;
+  const currentBeat =
+    Math.floor(position.sixteenthsIntoStep / (16 / timeSignature.denominator)) %
+    timeSignature.numerator;
+  // Show at most one bar, trimming a short chord's final group at its boundary.
+  const beatCount = Math.min(
+    timeSignature.numerator,
+    currentBeat + (countdown ?? 0),
+  );
   const chord = position.currentChord ?? "Complete";
 
   return (
@@ -50,16 +58,13 @@ export function ChordPracticeView({
           <div className={styles.countdown}>
             {countdown !== null && !position.isComplete ? (
               <>
+                <ChordBeatCountdown
+                  beatCount={beatCount}
+                  currentBeat={currentBeat}
+                />
                 <p className={styles.changeText}>
                   {`${position.nextChord === null ? "Finish" : "Change"} in ${countdown} ${countdown === 1 ? "beat" : "beats"}`}
                 </p>
-                <progress
-                  aria-label="Current chord progress"
-                  aria-valuetext={`${countdown} ${countdown === 1 ? "beat" : "beats"} remaining`}
-                  className={styles.progress}
-                  max={duration}
-                  value={position.sixteenthsIntoStep}
-                />
               </>
             ) : (
               <p className={styles.changeText}>
@@ -85,6 +90,7 @@ export function ChordPracticeView({
         <ChordProgressionTimeline
           position={position}
           progression={configuration.progression}
+          status={status}
         />
       </div>
     </section>

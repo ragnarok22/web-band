@@ -12,6 +12,60 @@ function timeline(page: Page) {
   });
 }
 
+function currentProgress(page: Page) {
+  return timeline(page)
+    .locator('[aria-current="step"]')
+    .getByRole("progressbar");
+}
+
+async function expectSynchronizedGuidance(page: Page) {
+  // Sample cue, progress and dots together, never from opposite sides of a tick.
+  await expect
+    .poll(() =>
+      player(page).evaluate((element) => {
+        const active = element.querySelector('li[aria-current="step"]');
+        const current = element.querySelector(
+          '[data-testid="current-chord"]',
+        )?.textContent;
+        const next = element
+          .querySelector('li[data-state="next"]')
+          ?.getAttribute("data-chord");
+        const nextCue = element.querySelector(
+          '[aria-label="Next chord"]',
+        )?.textContent;
+        const progress = Number(
+          active
+            ?.querySelector('[role="progressbar"]')
+            ?.getAttribute("data-progress"),
+        );
+        const dots = Array.from(
+          element.querySelector('[aria-label="Chord beat countdown"]')
+            ?.children ?? [],
+        );
+        const beat = Math.floor(progress * 4);
+        return Boolean(
+          active &&
+          active.getAttribute("data-chord") === current &&
+          next &&
+          nextCue?.includes(next) &&
+          progress > 0 &&
+          progress < 1 &&
+          dots.length === 4 &&
+          dots.every(
+            (dot, index) =>
+              dot.getAttribute("data-state") ===
+              (index < beat
+                ? "completed"
+                : index === beat
+                  ? "current"
+                  : "upcoming"),
+          ),
+        );
+      }),
+    )
+    .toBe(true);
+}
+
 async function openChords(page: Page) {
   await page.goto("/practice");
   await expect(
@@ -233,7 +287,7 @@ test("creates mixed durations and preserves countdown and repeat preferences", a
     .getByRole("checkbox", { name: "Repeat progression", exact: true })
     .uncheck();
   await expect(
-    player(page).getByRole("progressbar", { name: "Current chord progress" }),
+    player(page).getByRole("img", { name: "Chord beat countdown" }),
   ).toHaveCount(0);
   await page.reload();
   await expect(
@@ -249,8 +303,9 @@ test("creates mixed durations and preserves countdown and repeat preferences", a
     }),
   ).not.toBeChecked();
   await expect(
-    player(page).getByRole("progressbar", { name: "Current chord progress" }),
+    player(page).getByRole("img", { name: "Chord beat countdown" }),
   ).toHaveCount(0);
+  await expect(timeline(page).getByRole("progressbar")).toHaveCount(4);
 });
 
 test("keeps countdown, active chord, next chord, pause/resume, and Focus on the same playback", async ({
@@ -267,48 +322,41 @@ test("keeps countdown, active chord, next chord, pause/resume, and Focus on the 
   await expect(
     player(page).getByRole("button", { name: "Progression actions" }),
   ).toBeDisabled();
-  await expect
-    .poll(() =>
-      player(page).evaluate((element) => {
-        const active = element.querySelector('li[aria-current="step"]');
-        const current = element.querySelector(
-          '[data-testid="current-chord"]',
-        )?.textContent;
-        const next = element
-          .querySelector('li[data-state="next"]')
-          ?.getAttribute("data-chord");
-        const nextCue = element.querySelector(
-          '[aria-label="Next chord"]',
-        )?.textContent;
-        const progress = element.querySelector<HTMLProgressElement>("progress");
-        return Boolean(
-          active &&
-          active.getAttribute("data-chord") === current &&
-          next &&
-          nextCue?.includes(next) &&
-          progress &&
-          progress.value > 0 &&
-          progress.value < progress.max,
-        );
-      }),
-    )
-    .toBe(true);
+  await expectSynchronizedGuidance(page);
+  const bpm = player(page).getByRole("spinbutton", { name: "Current BPM" });
+  await bpm.fill("160");
+  await bpm.press("Enter");
+  await expect(status).toHaveText("Playing");
+  await expectSynchronizedGuidance(page);
   await player(page)
     .getByRole("button", { name: "Pause playback", exact: true })
     .click();
   await expect(status).toHaveText("Paused");
   const paused = await player(page).getByTestId("current-chord").innerText();
-  const pausedProgress = await player(page)
-    .getByRole("progressbar")
-    .getAttribute("value");
+  const pausedProgress =
+    await currentProgress(page).getAttribute("data-progress");
+  const pausedBeats = await page
+    .getByRole("img", { name: "Chord beat countdown" })
+    .evaluate((element) =>
+      Array.from(element.children).map((dot) => dot.getAttribute("data-state")),
+    );
   await player(page)
     .getByRole("button", { name: "Focus", exact: true })
     .click();
   await expect(page.getByTestId("current-chord")).toHaveText(paused);
-  await expect(page.getByRole("progressbar")).toHaveAttribute(
-    "value",
+  await expect(currentProgress(page)).toHaveAttribute(
+    "data-progress",
     pausedProgress!,
   );
+  expect(
+    await page
+      .getByRole("img", { name: "Chord beat countdown" })
+      .evaluate((element) =>
+        Array.from(element.children).map((dot) =>
+          dot.getAttribute("data-state"),
+        ),
+      ),
+  ).toEqual(pausedBeats);
   await expect(
     page.getByRole("list", { name: "Chord progression", exact: true }),
   ).toHaveCount(1);
@@ -317,7 +365,7 @@ test("keeps countdown, active chord, next chord, pause/resume, and Focus on the 
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Resume", exact: true }).click();
   await expect
-    .poll(() => page.getByRole("progressbar").getAttribute("value"))
+    .poll(() => currentProgress(page).getAttribute("data-progress"))
     .not.toBe(pausedProgress);
   await page
     .getByRole("button", { name: "Pause playback", exact: true })
@@ -333,6 +381,12 @@ test("keeps countdown, active chord, next chord, pause/resume, and Focus on the 
     .click();
   await expect(status).toHaveText("Stopped");
   await expect(player(page).getByTestId("current-chord")).toHaveText("G");
+  await expect(currentProgress(page)).toHaveAttribute("aria-valuenow", "0");
+  await expect(
+    page.getByRole("img", { name: "Chord beat countdown" }),
+  ).toHaveAccessibleDescription(
+    "Beat 1 of 4 in this chord's current beat group.",
+  );
 });
 
 test("loops a short progression and finishes a non-repeating progression without changing the groove", async ({
@@ -365,6 +419,12 @@ test("loops a short progression and finishes a non-repeating progression without
     "Complete",
   );
   await expect(timeline(page).locator('[aria-current="step"]')).toHaveCount(0);
+  for (const bar of await timeline(page).getByRole("progressbar").all()) {
+    await expect(bar).toHaveAttribute("aria-valuenow", "100");
+  }
+  await expect(
+    page.getByRole("img", { name: "Chord beat countdown" }),
+  ).toHaveCount(0);
   // Completing chord guidance has never stopped the independent accompaniment.
   await expect(page.getByTestId("transport-status")).toHaveText("Playing");
   await expect(
@@ -484,6 +544,99 @@ test("keeps the paused active chord visible when the viewport narrows", async ({
   await player(page)
     .getByRole("button", { name: "Stop playback", exact: true })
     .click();
+});
+
+test("keeps the central chord area compact without shrinking the chord or changing desktop columns", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await openChords(page);
+  await page.evaluate(() => document.fonts.ready);
+  const guidance = page.getByRole("region", {
+    name: "Chord trainer guidance",
+    exact: true,
+  });
+  expect((await guidance.boundingBox())!.height).toBeLessThanOrEqual(240);
+  expect((await player(page).boundingBox())!.height).toBeLessThanOrEqual(595);
+  const current = (await page
+    .getByRole("group", { name: "Current chord", exact: true })
+    .boundingBox())!;
+  expect(current.x + current.width).toBeLessThan(
+    (await timeline(page).boundingBox())!.x,
+  );
+  await page.setViewportSize({ width: 320, height: 900 });
+  await expect
+    .poll(async () => (await guidance.boundingBox())!.height)
+    .toBeLessThanOrEqual(330);
+  expect(
+    await page
+      .getByTestId("current-chord")
+      .evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      ),
+  ).toBeGreaterThanOrEqual(80);
+  await expectNoOverflow(page);
+});
+
+test("uses the selected meter for dots, including twelve beats at 320px", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await openChords(page);
+  for (const [name, meter, beats] of [
+    ["Simple 6/8", "6/8", 6],
+    ["Basic Jazz Ride Practice", "12/8", 12],
+  ] as const) {
+    await page
+      .getByRole("button", { name: "Change Groove", exact: true })
+      .click();
+    await page
+      .getByRole("combobox", { name: "Current pattern", exact: true })
+      .fill(name);
+    await page
+      .getByRole("option", { name: `${name} - ${meter}`, exact: true })
+      .click();
+    const dots = page.getByRole("img", { name: "Chord beat countdown" });
+    await expect(dots.locator("span")).toHaveCount(beats);
+    await expect(dots).toHaveAccessibleDescription(
+      `Beat 1 of ${beats} in this chord's current beat group.`,
+    );
+    await expect(
+      player(page).getByText(`Change in ${beats} beats`, { exact: true }),
+    ).toBeVisible();
+    await expectNoOverflow(page);
+  }
+});
+
+test("eases only received progress frames and disables easing while paused or reducing motion", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await openChords(page);
+  await setPace(page, 100);
+  await player(page).getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByTestId("transport-status")).toHaveText("Playing");
+  const fill = () => currentProgress(page).locator("span");
+  await expect(fill()).toHaveCSS("transition-duration", "0.06s");
+  await player(page)
+    .getByRole("button", { name: "Pause playback", exact: true })
+    .click();
+  await expect(fill()).toHaveCSS("transition-duration", "0s");
+  await player(page)
+    .getByRole("button", { name: "Resume", exact: true })
+    .click();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect
+    .poll(() =>
+      fill().evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).transitionDuration),
+      ),
+    )
+    .toBeLessThanOrEqual(0.001);
+  await player(page)
+    .getByRole("button", { name: "Stop playback", exact: true })
+    .click();
+  await expect(currentProgress(page)).toHaveAttribute("aria-valuenow", "0");
 });
 
 for (const theme of ["dark", "light"]) {

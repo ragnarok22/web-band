@@ -1,19 +1,27 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef, type RefObject } from "react";
 
+import { useAppReducedMotion } from "@/components/motion/app-motion-provider";
 import styles from "@/components/practice/chord-practice.module.css";
+import type { AudioEngineStatus } from "@/types/audio";
 import type { ChordProgression, ChordTrainerPosition } from "@/types/practice";
 
 export function ChordProgressionTimeline({
   position,
   progression,
+  status,
 }: {
   position: ChordTrainerPosition;
   progression: ChordProgression;
+  status?: AudioEngineStatus;
 }) {
+  const reducedMotion = useAppReducedMotion();
   const viewportRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLLIElement>(null);
+  const duration = position.sixteenthsIntoStep + position.sixteenthsRemaining;
+  const activeProgress =
+    duration > 0 ? position.sixteenthsIntoStep / duration : 0;
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -59,7 +67,10 @@ export function ChordProgressionTimeline({
   }, [position.currentStepId, progression.id]);
 
   return (
-    <div className={styles.timeline}>
+    <div
+      className={styles.timeline}
+      data-progress-animated={status === "playing" && !reducedMotion}
+    >
       <div className={styles.timelineHeading}>
         <p className={styles.eyebrow}>Chord progression</p>
         <p className="text-muted-foreground text-xs tabular-nums">
@@ -103,28 +114,21 @@ export function ChordProgressionTimeline({
                     : "remaining";
             const unit = step.durationUnit === "measures" ? "bar" : "beat";
             const duration = `${step.duration} ${unit}${step.duration === 1 ? "" : "s"}`;
+            const completed =
+              position.isComplete || index < (position.currentStepIndex ?? 0);
             return (
-              <li
-                aria-current={state === "current" ? "step" : undefined}
-                aria-label={`Chord ${index + 1}: ${step.chord}, ${duration}, ${state}`}
-                className={styles.step}
-                data-chord={step.chord}
-                data-state={state}
+              <ChordTimelineStep
+                activeRef={activeRef}
+                chord={step.chord}
+                cycle={state === "current" ? position.cycle : 0}
+                duration={duration}
+                index={index}
                 key={step.id}
-                ref={state === "current" ? activeRef : undefined}
-              >
-                <span className={styles.stepChord}>{step.chord}</span>
-                <span className={styles.stepDuration}>{duration}</span>
-                <span className={styles.stepState}>
-                  {state === "current"
-                    ? "Current"
-                    : state === "next"
-                      ? "Next"
-                      : state === "completed"
-                        ? "Played"
-                        : "\u00a0"}
-                </span>
-              </li>
+                progress={
+                  state === "current" ? activeProgress : completed ? 1 : 0
+                }
+                state={state}
+              />
             );
           })}
         </ol>
@@ -132,3 +136,61 @@ export function ChordProgressionTimeline({
     </div>
   );
 }
+
+// Only the active card needs subdivision updates; the remaining cards stay stable.
+const ChordTimelineStep = memo(function ChordTimelineStep({
+  activeRef,
+  chord,
+  cycle,
+  duration,
+  index,
+  progress,
+  state,
+}: {
+  activeRef: RefObject<HTMLLIElement | null>;
+  chord: string;
+  cycle: number;
+  duration: string;
+  index: number;
+  progress: number;
+  state: "current" | "next" | "completed" | "remaining";
+}) {
+  return (
+    <li
+      aria-current={state === "current" ? "step" : undefined}
+      aria-label={`Chord ${index + 1}: ${chord}, ${duration}, ${state}`}
+      className={styles.step}
+      data-chord={chord}
+      data-state={state}
+      ref={state === "current" ? activeRef : undefined}
+    >
+      <span className={styles.stepChord}>{chord}</span>
+      <span className={styles.stepDuration}>{duration}</span>
+      <span className={styles.stepState}>
+        {state === "current"
+          ? "Current"
+          : state === "next"
+            ? "Next"
+            : state === "completed"
+              ? "Played"
+              : "\u00a0"}
+      </span>
+      <div
+        aria-label={`Chord ${index + 1}: ${chord} progress`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        className={styles.stepProgress}
+        data-progress={progress}
+        role="progressbar"
+      >
+        <span
+          aria-hidden="true"
+          className={styles.stepProgressFill}
+          key={`${state}-${cycle}`}
+          style={{ transform: `scaleX(${progress})` }}
+        />
+      </div>
+    </li>
+  );
+});

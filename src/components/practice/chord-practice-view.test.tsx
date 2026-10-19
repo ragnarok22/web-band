@@ -46,6 +46,18 @@ function display(config = configuration, timeSignature = meter) {
   );
 }
 
+function progressForChord(index: number) {
+  return within(screen.getAllByRole("listitem")[index]).getByRole(
+    "progressbar",
+  );
+}
+
+function beatStates() {
+  return Array.from(
+    screen.getByRole("img", { name: "Chord beat countdown" }).children,
+  ).map((dot) => dot.getAttribute("data-state"));
+}
+
 describe("chord practice guidance", () => {
   beforeEach(() => guidanceTimeline.begin());
   afterEach(() => guidanceTimeline.reset());
@@ -81,19 +93,14 @@ describe("chord practice guidance", () => {
     publish(configuration, 4);
     render(display());
     expect(screen.getByText("Change in 3 beats")).toBeVisible();
-    expect(
-      screen.getByRole("progressbar", { name: "Current chord progress" }),
-    ).toHaveValue(4);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "25");
     publish(configuration, 12);
     expect(screen.getByText("Change in 1 beat")).toBeVisible();
-    expect(
-      screen.getByRole("progressbar", { name: "Current chord progress" }),
-    ).toHaveValue(12);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "75");
     publish(configuration, 16);
     expect(screen.getByText("Change in 4 beats")).toBeVisible();
-    expect(
-      screen.getByRole("progressbar", { name: "Current chord progress" }),
-    ).toHaveValue(0);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "100");
+    expect(progressForChord(1)).toHaveAttribute("aria-valuenow", "0");
   });
 
   it("handles mixed beat and bar durations in the active meter", () => {
@@ -128,6 +135,7 @@ describe("chord practice guidance", () => {
   it("wraps the next chord and resets completed steps for each repeat", () => {
     render(display());
     publish(configuration, 48);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "100");
     let steps = within(
       screen.getByRole("list", { name: "Chord progression" }),
     ).getAllByRole("listitem");
@@ -136,6 +144,9 @@ describe("chord practice guidance", () => {
       "G",
     );
     publish(configuration, 64);
+    for (const progress of screen.getAllByRole("progressbar")) {
+      expect(progress).toHaveAttribute("aria-valuenow", "0");
+    }
     steps = within(
       screen.getByRole("list", { name: "Chord progression" }),
     ).getAllByRole("listitem");
@@ -162,14 +173,22 @@ describe("chord practice guidance", () => {
     expect(document.querySelectorAll('[data-state="completed"]')).toHaveLength(
       4,
     );
-    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Chord beat countdown" }),
+    ).not.toBeInTheDocument();
+    for (const progress of screen.getAllByRole("progressbar")) {
+      expect(progress).toHaveAttribute("aria-valuenow", "100");
+    }
   });
 
   it("hides both countdown presentations when disabled, even with a retained countdown", () => {
     publish(configuration, 4);
     render(display({ ...configuration, showCountdown: false }));
     expect(screen.queryByText(/Change in/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "Chord beat countdown" }),
+    ).not.toBeInTheDocument();
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "25");
     expect(screen.getByTestId("current-chord")).toHaveTextContent("G");
   });
 
@@ -214,5 +233,190 @@ describe("chord practice guidance", () => {
     expect(screen.getByRole("group", { name: "Next chord" })).toHaveTextContent(
       "G",
     );
+  });
+
+  it.each([0, 1, 2, 3])(
+    "shows completed, current, and upcoming dots on beat %i in 4/4",
+    (beat) => {
+      render(display());
+      publish(configuration, beat * 4);
+      expect(beatStates()).toEqual(
+        Array.from({ length: 4 }, (_, index) =>
+          index < beat ? "completed" : index === beat ? "current" : "upcoming",
+        ),
+      );
+      expect(
+        screen.getByText(
+          `Change in ${4 - beat} ${beat === 3 ? "beat" : "beats"}`,
+        ),
+      ).toBeVisible();
+    },
+  );
+
+  it.each([
+    [{ numerator: 3, denominator: 4 }, 8, 3, 2],
+    [{ numerator: 6, denominator: 8 }, 10, 6, 5],
+    [{ numerator: 12, denominator: 8 }, 14, 12, 7],
+  ] as const)(
+    "uses %o for the countdown dots",
+    (timeSignature, at, count, currentBeat) => {
+      render(display(configuration, timeSignature));
+      publish(configuration, at, timeSignature);
+      const states = beatStates();
+      expect(states).toHaveLength(count);
+      expect(states[currentBeat]).toBe("current");
+      expect(states.filter((state) => state === "completed")).toHaveLength(
+        currentBeat,
+      );
+    },
+  );
+
+  it("restarts multi-bar dots each bar while preserving the overall chord countdown and progress", () => {
+    const config: ChordTrainerConfiguration = {
+      ...configuration,
+      progression: {
+        ...gDEmCProgression,
+        steps: [{ ...gDEmCProgression.steps[0]!, duration: 2 }],
+      },
+    };
+    render(display(config));
+    publish(config, 12);
+    expect(beatStates()).toEqual([
+      "completed",
+      "completed",
+      "completed",
+      "current",
+    ]);
+    expect(screen.getByText("Change in 5 beats")).toBeVisible();
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "38");
+    publish(config, 16);
+    expect(beatStates()).toEqual([
+      "current",
+      "upcoming",
+      "upcoming",
+      "upcoming",
+    ]);
+    expect(screen.getByText("Change in 4 beats")).toBeVisible();
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "50");
+    publish(config, 32);
+    expect(beatStates()).toEqual([
+      "current",
+      "upcoming",
+      "upcoming",
+      "upcoming",
+    ]);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it.each([2, 7])(
+    "does not show nonexistent beats at the end of a %i-beat chord",
+    (beats) => {
+      const config: ChordTrainerConfiguration = {
+        ...configuration,
+        progression: {
+          ...gDEmCProgression,
+          steps: [
+            {
+              chord: "G",
+              duration: beats,
+              durationUnit: "beats",
+              id: "beat-hold",
+            },
+            gDEmCProgression.steps[1]!,
+          ],
+        },
+      };
+      render(display(config));
+      publish(config, (beats - 1) * 4);
+      expect(beatStates()).toHaveLength(beats % 4);
+      expect(beatStates().at(-1)).toBe("current");
+      expect(screen.getByText("Change in 1 beat")).toBeVisible();
+      publish(config, beats * 4);
+      expect(screen.getByTestId("current-chord")).toHaveTextContent("D");
+      expect(beatStates()).toEqual([
+        "current",
+        "upcoming",
+        "upcoming",
+        "upcoming",
+      ]);
+      expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "100");
+      expect(progressForChord(1)).toHaveAttribute("aria-valuenow", "0");
+    },
+  );
+
+  it("keeps dot and card progress fixed between guidance frames, and resets with the timeline on Stop", () => {
+    const { rerender } = render(display());
+    publish(configuration, 6);
+    const pausedStates = beatStates();
+    rerender(
+      <GuidedPracticeDisplay
+        configuration={{ mode: "chords", chordTrainer: configuration }}
+        status="paused"
+        timeSignature={meter}
+      />,
+    );
+    expect(beatStates()).toEqual(pausedStates);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "38");
+    rerender(display());
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "38");
+    publish(configuration, 8);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "50");
+    act(() => guidanceTimeline.reset());
+    expect(beatStates()).toEqual([
+      "current",
+      "upcoming",
+      "upcoming",
+      "upcoming",
+    ]);
+    for (const progress of screen.getAllByRole("progressbar"))
+      expect(progress).toHaveAttribute("aria-valuenow", "0");
+  });
+
+  it("resets a single-chord loop without animating the previous cycle backward", () => {
+    const config: ChordTrainerConfiguration = {
+      ...configuration,
+      progression: { ...gDEmCProgression, steps: [gDEmCProgression.steps[0]!] },
+    };
+    render(display(config));
+    publish(config, 15);
+    const fill = progressForChord(0).firstElementChild;
+    expect(fill).toHaveStyle({ transform: "scaleX(0.9375)" });
+    publish(config, 16);
+    expect(progressForChord(0)).toHaveAttribute("aria-valuenow", "0");
+    expect(progressForChord(0).firstElementChild).not.toBe(fill);
+    expect(progressForChord(0).firstElementChild).toHaveStyle({
+      transform: "scaleX(0)",
+    });
+  });
+
+  it("does not replace the dot row between subdivision-only updates", () => {
+    render(display());
+    const row = screen.getByRole("img", { name: "Chord beat countdown" });
+    const dots = Array.from(row.children);
+    publish(configuration, 1);
+    expect(Array.from(row.children)).toEqual(dots);
+    expect(beatStates()).toEqual([
+      "current",
+      "upcoming",
+      "upcoming",
+      "upcoming",
+    ]);
+    expect(progressForChord(0).firstElementChild).toHaveStyle({
+      transform: "scaleX(0.0625)",
+    });
+    publish(configuration, 4);
+    expect(
+      screen.getByRole("img", { name: "Chord beat countdown" }),
+    ).toHaveAccessibleDescription(
+      "Beat 2 of 4 in this chord's current beat group.",
+    );
+    publish(configuration, 16);
+    expect(screen.getByRole("img", { name: "Chord beat countdown" })).toBe(row);
+    expect(beatStates()).toEqual([
+      "current",
+      "upcoming",
+      "upcoming",
+      "upcoming",
+    ]);
   });
 });
