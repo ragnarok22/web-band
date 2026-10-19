@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Pencil, Plus, Trash2 } from "lucide-react";
-import { useRef, useState, type MouseEvent } from "react";
+import { useRef, useState, type MouseEvent, type Ref } from "react";
 
 import { StrummingPatternDeleteConfirmation } from "@/components/practice/strumming-pattern-delete-confirmation";
 import { StrummingPatternEditorDialog } from "@/components/practice/strumming-pattern-editor-dialog";
@@ -120,12 +120,6 @@ export function StrummingTrainerPanel({
     window.requestAnimationFrame(() => patternSelectRef.current?.focus());
   }
 
-  const warningId = !availableSelected
-    ? "strumming-pattern-unavailable"
-    : !isCompatible
-      ? "strumming-meter-warning"
-      : undefined;
-
   return (
     <section
       aria-labelledby="strumming-trainer-heading"
@@ -143,51 +137,22 @@ export function StrummingTrainerPanel({
         </h3>
       </div>
 
-      <label className="text-muted-strong text-xs font-bold">
-        Pattern for {timeSignature.numerator}/{timeSignature.denominator}
-        <select
-          aria-describedby={warningId}
-          aria-invalid={!availableSelected || !isCompatible}
-          className="border-border bg-surface-elevated text-foreground focus:border-accent mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
-          disabled={controlsDisabled || compatiblePatterns.length === 0}
-          onChange={(event) => {
-            const selected = compatiblePatterns.find(
-              ({ id }) => id === event.target.value,
-            );
-            if (selected) selectPattern(selected);
-          }}
-          ref={patternSelectRef}
-          value={availableSelected && isCompatible ? pattern.id : ""}
-        >
-          {!availableSelected ? (
-            <option disabled value="">
-              Unavailable custom pattern
-            </option>
-          ) : !isCompatible ? (
-            <option disabled value="">
-              Choose a compatible pattern
-            </option>
-          ) : null}
-          {compatibleBuiltIns.length > 0 ? (
-            <optgroup label="Built-in patterns">
-              {compatibleBuiltIns.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </optgroup>
-          ) : null}
-          {compatibleCustom.length > 0 ? (
-            <optgroup label="Custom patterns">
-              {compatibleCustom.map((candidate) => (
-                <option key={candidate.id} value={candidate.id}>
-                  {candidate.name}
-                </option>
-              ))}
-            </optgroup>
-          ) : null}
-        </select>
-      </label>
+      <StrummingPatternSelect
+        availableSelected={availableSelected}
+        compatibleBuiltIns={compatibleBuiltIns}
+        compatibleCustom={compatibleCustom}
+        disabled={controlsDisabled}
+        isCompatible={isCompatible}
+        onSelect={(patternId) => {
+          const selected = compatiblePatterns.find(
+            ({ id }) => id === patternId,
+          );
+          if (selected) selectPattern(selected);
+        }}
+        pattern={pattern}
+        selectRef={patternSelectRef}
+        timeSignature={timeSignature}
+      />
 
       <div className="mt-3 flex flex-wrap gap-2">
         <button
@@ -299,5 +264,81 @@ export function StrummingTrainerPanel({
         />
       ) : null}
     </section>
+  );
+}
+
+interface StrummingPatternSelectProps extends Pick<
+  StrummingTrainerPanelProps,
+  "pattern" | "timeSignature"
+> {
+  availableSelected: StrummingPattern | undefined;
+  compatibleBuiltIns: StrummingPattern[];
+  compatibleCustom: CustomStrummingPattern[];
+  disabled: boolean;
+  isCompatible: boolean;
+  onSelect: (patternId: string) => void;
+  selectRef: Ref<HTMLSelectElement>;
+}
+
+function StrummingPatternSelect({
+  availableSelected,
+  compatibleBuiltIns,
+  compatibleCustom,
+  disabled,
+  isCompatible,
+  onSelect,
+  pattern,
+  selectRef,
+  timeSignature,
+}: StrummingPatternSelectProps) {
+  const warningId = !availableSelected
+    ? "strumming-pattern-unavailable"
+    : !isCompatible
+      ? "strumming-meter-warning"
+      : undefined;
+
+  return (
+    <label className="text-muted-strong text-xs font-bold">
+      Pattern for {timeSignature.numerator}/{timeSignature.denominator}
+      <select
+        aria-describedby={warningId}
+        aria-invalid={!availableSelected || !isCompatible}
+        className="border-border bg-surface-elevated text-foreground focus:border-accent mt-1.5 min-h-11 w-full rounded-lg border px-3 text-sm font-bold outline-none disabled:opacity-45"
+        disabled={
+          disabled || compatibleBuiltIns.length + compatibleCustom.length === 0
+        }
+        onChange={(event) => onSelect(event.target.value)}
+        ref={selectRef}
+        value={availableSelected && isCompatible ? pattern.id : ""}
+      >
+        {!availableSelected ? (
+          <option disabled value="">
+            Unavailable custom pattern
+          </option>
+        ) : !isCompatible ? (
+          <option disabled value="">
+            Choose a compatible pattern
+          </option>
+        ) : null}
+        {compatibleBuiltIns.length > 0 ? (
+          <optgroup label="Built-in patterns">
+            {compatibleBuiltIns.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </option>
+            ))}
+          </optgroup>
+        ) : null}
+        {compatibleCustom.length > 0 ? (
+          <optgroup label="Custom patterns">
+            {compatibleCustom.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.name}
+              </option>
+            ))}
+          </optgroup>
+        ) : null}
+      </select>
+    </label>
   );
 }

@@ -154,6 +154,9 @@ describe("strumming trainer panel", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ name: "Edited Pop Strum" }),
     );
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Edit" })).toHaveFocus(),
+    );
 
     await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(deletePattern).not.toHaveBeenCalled();
@@ -166,5 +169,65 @@ describe("strumming trainer panel", () => {
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({ isBuiltIn: true }),
     );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("combobox", { name: /Pattern for 4\/4/ }),
+      ).toHaveFocus(),
+    );
   });
+
+  it("identifies an unavailable selection without previewing or editing it", () => {
+    useStrummingPatternStore.setState({ customPatterns: [] });
+    render(
+      <StrummingTrainerPanel
+        onChange={vi.fn()}
+        pattern={customPattern}
+        timeSignature={{ denominator: 4, numerator: 4 }}
+      />,
+    );
+    const select = screen.getByRole("combobox", { name: /Pattern for 4\/4/ });
+
+    expect(select).toHaveValue("");
+    expect(select).toHaveAttribute("aria-invalid", "true");
+    expect(select).toHaveAttribute(
+      "aria-describedby",
+      "strumming-pattern-unavailable",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("no longer available");
+    expect(
+      screen.getByRole("option", { name: "Unavailable custom pattern" }),
+    ).toBeDisabled();
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Edit" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Delete" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    { disabled: true, isHydrated: true },
+    { disabled: false, isHydrated: false },
+  ])(
+    "disables selection and editing when disabled=$disabled, hydrated=$isHydrated",
+    ({ disabled, isHydrated }) => {
+      useStrummingPatternStore.setState({ isHydrated });
+      render(
+        <StrummingTrainerPanel
+          disabled={disabled}
+          onChange={vi.fn()}
+          pattern={customPattern}
+          timeSignature={{ denominator: 4, numerator: 4 }}
+        />,
+      );
+
+      expect(
+        screen.getByRole("combobox", { name: /Pattern for 4\/4/ }),
+      ).toBeDisabled();
+      for (const name of ["New", "Edit", "Delete"]) {
+        expect(screen.getByRole("button", { name })).toBeDisabled();
+      }
+    },
+  );
 });

@@ -160,4 +160,77 @@ describe("guided practice display", () => {
 
     expect(screen.getByText("Change in 6 beats")).toBeInTheDocument();
   });
+
+  it("ignores mismatched retained frames and switches between mode fallbacks", () => {
+    guidanceTimeline.begin();
+    guidanceTimeline.publish({
+      absoluteSixteenth: 48,
+      elapsedSeconds: 12,
+      measure: 4,
+      mode: "drums",
+    });
+    const timeSignature = { denominator: 4, numerator: 4 };
+    const { rerender } = render(
+      <GuidedPracticeDisplay
+        configuration={{ mode: "drums" }}
+        timeSignature={timeSignature}
+      />,
+    );
+    expect(screen.getByText("Measure 4")).toBeInTheDocument();
+
+    rerender(
+      <GuidedPracticeDisplay
+        configuration={{
+          mode: "tempoTrainer",
+          tempoTrainer: {
+            endBpm: 80,
+            increment: 5,
+            interval: { seconds: 2.5, type: "seconds" },
+            resetToStartingBpmOnStop: true,
+            startBpm: 100,
+            stopAtTarget: true,
+          },
+        }}
+        timeSignature={timeSignature}
+      />,
+    );
+    expect(screen.getByTestId("trainer-current-bpm")).toHaveTextContent(
+      "100BPM",
+    );
+    expect(screen.getByText("95")).toBeInTheDocument();
+    expect(
+      screen.getByText("3 seconds until the next change"),
+    ).toBeInTheDocument();
+
+    rerender(
+      <GuidedPracticeDisplay
+        configuration={{
+          chordTrainer: {
+            progression: gDEmCProgression,
+            repeat: true,
+            showCountdown: false,
+          },
+          mode: "chords",
+        }}
+        timeSignature={timeSignature}
+      />,
+    );
+    expect(screen.getByText("Measure 1")).toBeInTheDocument();
+    expect(
+      screen.getByText("Current chord").nextElementSibling,
+    ).toHaveTextContent("G");
+
+    rerender(
+      <GuidedPracticeDisplay
+        configuration={{
+          mode: "strumming",
+          strummingPattern: { ...downDownUpUpDownUpPattern, steps: [] },
+        }}
+        timeSignature={timeSignature}
+      />,
+    );
+    expect(screen.getByText("No strum actions available.")).toBeInTheDocument();
+    expect(screen.queryByText("Current chord")).not.toBeInTheDocument();
+    expect(screen.queryByText("Current strum")).not.toBeInTheDocument();
+  });
 });
