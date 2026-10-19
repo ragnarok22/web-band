@@ -1,6 +1,8 @@
 "use client";
 
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
+import styles from "@/components/practice/chord-practice.module.css";
+import { ChordProgressionSelector } from "@/components/practice/chord-progression-selector";
 import { GuidedPracticeDisplay } from "@/components/practice/guided-practice-display";
 import { PracticeSessionControls } from "@/components/practice/practice-session-controls";
 import { StrummingPatternSelector } from "@/components/practice/strumming-pattern-selector";
@@ -27,6 +29,9 @@ export function PracticePlayer({
 }) {
   const setStrummingPattern = useGuidedPracticeStore(
     (state) => state.setStrummingPattern,
+  );
+  const setChordTrainer = useGuidedPracticeStore(
+    (state) => state.setChordTrainerConfiguration,
   );
   return (
     <section
@@ -58,6 +63,30 @@ export function PracticePlayer({
             }
           />
         </>
+      ) : practice.guidedPractice.mode === "chords" ? (
+        <>
+          <ChordProgressionSelector
+            configuration={practice.guidedPractice.chordTrainer}
+            disabled={!practice.isReady || practice.active}
+            onChange={setChordTrainer}
+            timeSignature={practice.pattern.timeSignature}
+          />
+          <GuidedPracticeDisplay
+            configuration={practice.guidedPractice}
+            status={practice.status}
+            timeSignature={practice.pattern.timeSignature}
+          />
+          <div className={styles.beatSupport}>
+            <BeatVisualizer
+              embedded
+              countInMeasures={practice.countInMeasures}
+              detail={visualSubdivisionDetail}
+              intensity={beatFlashIntensity}
+              pattern={practice.pattern}
+              status={practice.status}
+            />
+          </div>
+        </>
       ) : practice.guidedPractice.mode === "strumming" ? (
         <StrummingPatternSelector
           disabled={!practice.isReady || practice.active}
@@ -76,6 +105,7 @@ export function PracticePlayer({
         />
       )}
       {practice.guidedPractice.mode !== "drums" &&
+      practice.guidedPractice.mode !== "chords" &&
       practice.guidedPractice.mode !== "metronome" ? (
         <GuidedPracticeDisplay
           embedded

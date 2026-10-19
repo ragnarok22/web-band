@@ -165,5 +165,30 @@ describe("practice screen — focus", () => {
     expect(screen.getByText("Next chord").nextElementSibling).toHaveTextContent(
       "Em",
     );
+    expect(
+      screen.getAllByRole("list", { name: "Chord progression" }),
+    ).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "G - D - Em - C",
+    );
+    expect(
+      screen.queryByRole("combobox", { name: "Progression" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Progression actions" }),
+    ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Pause playback" }));
+    expect(engine.pause).toHaveBeenCalledOnce();
+    expect(engine.stop).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Exit focus" }));
+    expect(
+      screen.getAllByRole("list", { name: "Chord progression" }),
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole("heading", { name: "Chord trainer" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Drum accompaniment" }),
+    ).toBeVisible();
   });
 });

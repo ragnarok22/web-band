@@ -24,7 +24,9 @@ export async function selectQuickPattern(
   id: string,
 ) {
   const pattern = builtInPatterns.find((item) => item.id === id)!;
-  await user.click(screen.getByRole("button", { name: "Change Pattern" }));
+  await user.click(
+    screen.getByRole("button", { name: /Change Pattern|Change Groove/ }),
+  );
   const input = screen.getByRole("combobox", { name: "Current pattern" });
   await user.clear(input);
   await user.type(input, pattern.name);

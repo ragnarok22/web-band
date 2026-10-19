@@ -89,7 +89,10 @@ export function PracticeScreen() {
         >
           {practice.guidedPractice.mode !== "metronome" ? (
             <PatternSummary
-              accompaniment={practice.guidedPractice.mode === "strumming"}
+              accompaniment={
+                practice.guidedPractice.mode === "strumming" ||
+                practice.guidedPractice.mode === "chords"
+              }
               immediatePatternSwitch={practice.immediatePatternSwitch}
               onPatternChange={practice.changePattern}
               onImmediatePatternSwitchChange={

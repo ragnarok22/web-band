@@ -13,6 +13,7 @@ import {
   stateEntry,
 } from "@/components/motion/motion-presets";
 import { BeatVisualizer } from "@/components/practice/beat-visualizer";
+import chordStyles from "@/components/practice/chord-practice.module.css";
 import { MetronomeVisualizer } from "@/components/practice/metronome-visualizer";
 import { TransportControls } from "@/components/practice/transport-controls";
 import { getSubdivisionLabel, getMetronomeMeter } from "@/lib/metronome";
@@ -80,6 +81,8 @@ export function FocusMode({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const snapshot = useGuidanceSnapshot();
   const canStop = isSessionActive(status);
+  const compact =
+    configuration.mode === "strumming" || configuration.mode === "chords";
   const displayedBpm =
     configuration.mode === "tempoTrainer"
       ? snapshot?.mode === "tempoTrainer"
@@ -100,24 +103,16 @@ export function FocusMode({
       transition={motionTransition(reducedMotion, 0.14)}
     >
       <header className="mx-auto flex w-full max-w-5xl items-start justify-between gap-4">
-        <div
-          className={
-            configuration.mode === "strumming" ? "min-w-0 flex-1" : undefined
-          }
-        >
+        <div className={compact ? "min-w-0 flex-1" : undefined}>
           <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
             Focus session
           </p>
           <h1
-            className={`text-foreground mt-2 font-black tracking-[-0.045em] ${configuration.mode === "strumming" ? "text-2xl wrap-anywhere sm:text-4xl" : "text-3xl sm:text-5xl"}`}
+            className={`text-foreground mt-2 font-black tracking-[-0.045em] ${compact ? "text-2xl wrap-anywhere sm:text-4xl" : "text-3xl sm:text-5xl"}`}
             ref={headingRef}
             tabIndex={-1}
           >
-            {configuration.mode === "metronome"
-              ? "Metronome"
-              : configuration.mode === "strumming"
-                ? configuration.strummingPattern.name
-                : pattern.name}
+            {getFocusTitle(configuration, pattern)}
           </h1>
         </div>
         <Button
@@ -132,11 +127,11 @@ export function FocusMode({
       </header>
 
       <div
-        className={`mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center ${configuration.mode === "strumming" ? "gap-4 py-4" : "gap-6 py-8"}`}
+        className={`mx-auto flex w-full max-w-5xl min-w-0 flex-1 flex-col justify-center ${compact ? "gap-4 py-4" : "gap-6 py-8"}`}
       >
         <FocusSessionMetrics
           bpm={displayedBpm}
-          compact={configuration.mode === "strumming"}
+          compact={compact}
           elapsedSeconds={elapsedSeconds}
         />
         <FocusVisualization
@@ -162,10 +157,12 @@ export function FocusMode({
           status={wakeLockStatus}
         />
 
-        {configuration.mode === "metronome" ? (
+        {configuration.mode === "metronome" ||
+        configuration.mode === "chords" ? (
           <TransportControls
-            finishWithFill={false}
-            onFinish={onStop}
+            finishWithFill={configuration.mode === "chords"}
+            isFinishing={isFinishing}
+            onFinish={configuration.mode === "chords" ? onFinish : onStop}
             onPause={onPause}
             onPlay={onPlay}
             onStop={onStop}
@@ -197,6 +194,22 @@ export function FocusMode({
       </div>
     </m.main>
   );
+}
+
+function getFocusTitle(
+  configuration: GuidedPracticeConfiguration,
+  pattern: DrumPattern,
+): string {
+  switch (configuration.mode) {
+    case "metronome":
+      return "Metronome";
+    case "strumming":
+      return configuration.strummingPattern.name;
+    case "chords":
+      return configuration.chordTrainer.progression.name;
+    default:
+      return pattern.name;
+  }
 }
 
 function FocusSessionMetrics({
@@ -283,6 +296,27 @@ function FocusVisualization({
           countInMeasures={countInMeasures}
           status={status}
         />
+      </>
+    );
+  }
+  if (configuration.mode === "chords") {
+    return (
+      <>
+        <GuidedPracticeDisplay
+          configuration={configuration}
+          status={status}
+          timeSignature={pattern.timeSignature}
+        />
+        <div className={chordStyles.beatSupport}>
+          <BeatVisualizer
+            embedded
+            countInMeasures={countInMeasures}
+            detail={visualSubdivisionDetail}
+            intensity={beatFlashIntensity}
+            pattern={pattern}
+            status={status}
+          />
+        </div>
       </>
     );
   }

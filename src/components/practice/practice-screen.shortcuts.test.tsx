@@ -56,7 +56,11 @@ describe("practice screen — shortcuts", () => {
       screen.getByRole("button", { name: "Close practice presets" }),
     );
     await user.click(screen.getByRole("radio", { name: /Chords/ }));
-    await user.click(screen.getByRole("button", { name: "New" }));
+    screen.getByRole("button", { name: "Progression actions" }).focus();
+    await user.keyboard("{ArrowDown}");
+    await user.click(
+      await screen.findByRole("menuitem", { name: "New progression" }),
+    );
     expect(
       screen.getByRole("dialog", { name: "Create progression" }),
     ).toBeInTheDocument();

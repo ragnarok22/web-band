@@ -191,6 +191,51 @@ describe("PracticePlayer", () => {
     expect(engine.stop).toHaveBeenCalledOnce();
   });
 
+  it("unifies chord setup and one progression timeline without changing the drum groove", async () => {
+    const user = userEvent.setup();
+    useGuidedPracticeStore.setState({ mode: "chords" });
+    render(<PlayerHarness />);
+    const player = within(
+      screen.getByRole("region", { name: "Practice player" }),
+    );
+    expect(player.getByRole("combobox", { name: "Progression" })).toBeVisible();
+    expect(
+      player.getAllByRole("list", { name: "Chord progression" }),
+    ).toHaveLength(1);
+    const groove = usePracticeStore.getState().selectedPatternId;
+    await user.selectOptions(
+      player.getByRole("combobox", { name: "Progression" }),
+      "c-g-am-f",
+    );
+    expect(useGuidedPracticeStore.getState().chordTrainer.progression.id).toBe(
+      "c-g-am-f",
+    );
+    expect(usePracticeStore.getState().selectedPatternId).toBe(groove);
+    expect(engine.changePattern).not.toHaveBeenCalled();
+    expect(player.getByTestId("current-chord")).toHaveTextContent(/^C$/);
+    for (const status of [
+      "initializing",
+      "counting-in",
+      "playing",
+      "paused",
+      "suspended",
+    ] as const) {
+      act(() => useAudioStore.setState({ status }));
+      expect(
+        player.getByRole("combobox", { name: "Progression" }),
+      ).toBeDisabled();
+      expect(
+        player.getByRole("button", { name: "Progression actions" }),
+      ).toBeDisabled();
+      expect(
+        player.getByRole("checkbox", { name: "Repeat progression" }),
+      ).toHaveAttribute("aria-disabled", "true");
+      expect(
+        player.getByRole("checkbox", { name: "Show change countdown" }),
+      ).toHaveAttribute("aria-disabled", "true");
+    }
+  });
+
   it.each([
     ["strumming", "Strumming trainer guidance"],
     ["chords", "Chord trainer guidance"],

@@ -1,6 +1,5 @@
 "use client";
 
-import { ChordTrainerPanel } from "@/components/practice/chord-trainer-panel";
 import { TempoTrainerPanel } from "@/components/practice/tempo-trainer-panel";
 import { useGuidedPracticeStore } from "@/stores/guided-practice-store";
 
@@ -11,12 +10,8 @@ export function GuidedPracticePanel({
 }) {
   const mode = useGuidedPracticeStore((state) => state.mode);
   const tempoTrainer = useGuidedPracticeStore((state) => state.tempoTrainer);
-  const chordTrainer = useGuidedPracticeStore((state) => state.chordTrainer);
   const setTempoTrainer = useGuidedPracticeStore(
     (state) => state.setTempoTrainerConfiguration,
-  );
-  const setChordTrainer = useGuidedPracticeStore(
-    (state) => state.setChordTrainerConfiguration,
   );
 
   // Essential trainer setup stays in the workspace, not behind Controls.
@@ -24,6 +19,7 @@ export function GuidedPracticePanel({
     case "drums":
     case "metronome":
     case "strumming":
+    case "chords":
       return null;
     case "tempoTrainer":
       return (
@@ -31,14 +27,6 @@ export function GuidedPracticePanel({
           configuration={tempoTrainer}
           disabled={sessionDisabled}
           onChange={setTempoTrainer}
-        />
-      );
-    case "chords":
-      return (
-        <ChordTrainerPanel
-          configuration={chordTrainer}
-          disabled={sessionDisabled}
-          onChange={setChordTrainer}
         />
       );
   }

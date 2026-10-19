@@ -1,8 +1,8 @@
 "use client";
 
 import { StrummingPracticeView } from "@/components/practice/strumming-practice-view";
+import { ChordPracticeView } from "@/components/practice/chord-practice-view";
 import { useGuidanceSnapshot } from "@/hooks/use-guidance-snapshot";
-import { getChordTrainerPosition } from "@/lib/guided-practice";
 import type { AudioEngineStatus, CountInMeasures } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
 import type { BeatFlashIntensity } from "@/types/persistence";
@@ -45,13 +45,6 @@ function getTempoFallback(
     secondsUntilChange: interval.type === "seconds" ? interval.seconds : null,
     shouldStop: startBpm === endBpm && stopAtTarget,
   };
-}
-
-function getChordFallback(
-  configuration: Extract<GuidedPracticeConfiguration, { mode: "chords" }>,
-  timeSignature: TimeSignature,
-) {
-  return getChordTrainerPosition(configuration.chordTrainer, timeSignature, 0);
 }
 
 export function GuidedPracticeDisplay({
@@ -101,9 +94,10 @@ function ModeGuidance({
       );
     case "chords":
       return (
-        <ChordGuidance
-          configuration={configuration}
+        <ChordPracticeView
+          configuration={configuration.chordTrainer}
           snapshot={snapshot}
+          status={status}
           timeSignature={timeSignature}
         />
       );
@@ -206,58 +200,6 @@ function TempoGuidance({
       />
       <h2 className="sr-only" id="guided-display-heading">
         Tempo trainer guidance
-      </h2>
-    </section>
-  );
-}
-
-function ChordGuidance({
-  configuration,
-  snapshot,
-  timeSignature,
-}: {
-  configuration: Extract<GuidedPracticeConfiguration, { mode: "chords" }>;
-  snapshot: GuidanceFrame | null;
-  timeSignature: TimeSignature;
-}) {
-  const frame = snapshot?.mode === "chords" ? snapshot : null;
-  const measure = frame?.measure ?? 1;
-  const position =
-    frame?.position ?? getChordFallback(configuration, timeSignature);
-  return (
-    <section
-      aria-labelledby="guided-display-heading"
-      className="border-border bg-surface rounded-2xl border p-4 sm:p-6"
-    >
-      <div
-        aria-atomic="true"
-        aria-live="polite"
-        className="grid grid-cols-2 gap-3"
-      >
-        <div className="border-primary/40 bg-primary/8 rounded-xl border p-3 text-center">
-          <p className="text-muted-foreground text-xs font-extrabold uppercase">
-            Current chord
-          </p>
-          <p className="text-primary mt-1 truncate text-4xl font-black">
-            {position.currentChord ?? "Complete"}
-          </p>
-        </div>
-        <div className="border-border bg-background rounded-xl border p-3 text-center">
-          <p className="text-muted-foreground text-xs font-extrabold uppercase">
-            Next chord
-          </p>
-          <p className="text-foreground mt-1 truncate text-4xl font-black">
-            {position.nextChord ?? "Finish"}
-          </p>
-        </div>
-      </div>
-      <p className="text-muted-foreground mt-3 text-center text-sm font-bold">
-        {position.countdown === null
-          ? `Measure ${measure}`
-          : `Change in ${position.countdown} ${position.countdown === 1 ? "beat" : "beats"}`}
-      </p>
-      <h2 className="sr-only" id="guided-display-heading">
-        Chord trainer guidance
       </h2>
     </section>
   );
