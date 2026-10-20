@@ -1,6 +1,13 @@
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const settingsSections = [
+  { id: "appearance", rows: 4 },
+  { id: "practice-defaults", rows: 4 },
+  { id: "sound", rows: 2 },
+  { id: "history", rows: 2 },
+];
+
 export function SettingsSkeleton() {
   return (
     <LoadingSkeleton
@@ -13,10 +20,10 @@ export function SettingsSkeleton() {
       </div>
 
       <div className="grid items-start gap-4 sm:gap-5 md:grid-cols-2">
-        {[4, 4, 2, 2].map((rows, index) => (
+        {settingsSections.map(({ id, rows }) => (
           <div
             className="border-border bg-surface min-w-0 space-y-5 rounded-2xl border p-4 sm:p-5"
-            key={index}
+            key={id}
           >
             <div className="space-y-2">
               <Skeleton className="h-6 w-40 max-w-full" />

@@ -1,6 +1,14 @@
 import { LoadingSkeleton } from "@/components/shared/loading-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const practiceModes = [
+  { id: "drums", width: "w-24" },
+  { id: "strumming", width: "w-32" },
+  { id: "chords", width: "w-24" },
+  { id: "tempoTrainer", width: "w-24" },
+  { id: "metronome", width: "w-36" },
+];
+
 export function PracticeSkeleton() {
   return (
     <LoadingSkeleton
@@ -17,8 +25,8 @@ export function PracticeSkeleton() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {["w-24", "w-32", "w-24", "w-24", "w-36"].map((width, index) => (
-          <Skeleton className={`h-11 rounded-xl ${width}`} key={index} />
+        {practiceModes.map(({ id, width }) => (
+          <Skeleton className={`h-11 rounded-xl ${width}`} key={id} />
         ))}
       </div>
 
