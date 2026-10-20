@@ -60,7 +60,7 @@ test("loads every local-first route offline after the first visit", async ({
 
   await page.goto("/history", { waitUntil: "domcontentloaded" });
   await expect(
-    page.getByRole("heading", { name: "The work you put in." }),
+    page.getByRole("heading", { name: "Practice history" }),
   ).toBeVisible();
 
   await page.goto("/settings", { waitUntil: "domcontentloaded" });

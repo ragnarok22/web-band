@@ -1,112 +1,62 @@
 import {
-  CalendarDays,
-  Clock3,
-  Gauge,
-  Music2,
-  NotebookTabs,
-} from "lucide-react";
-
-import {
-  getCurrentLocalWeekDuration,
   formatHistoryDuration,
-  getMostUsedBpmRange,
-  getMostUsedPattern,
+  getCurrentLocalWeekDuration,
+  getMostPracticedMode,
   getPracticeSessionCount,
   getTotalPracticeDuration,
+  historyModeLabels,
 } from "@/lib/practice-history";
 import type { PracticeSession } from "@/types/persistence";
 
-interface HistorySummaryProps {
+export function HistorySummary({
+  sessions,
+  now,
+}: {
   sessions: readonly PracticeSession[];
-}
-
-export function HistorySummary({ sessions }: HistorySummaryProps) {
-  const pattern = getMostUsedPattern(sessions);
-  const bpmRange = getMostUsedBpmRange(sessions);
+  now: Date;
+}) {
+  const mode = getMostPracticedMode(sessions);
   const summaries = [
     {
-      detail: "All saved practice",
-      icon: Clock3,
-      label: "Total time",
+      label: "Total practice",
       value: formatHistoryDuration(getTotalPracticeDuration(sessions)),
+      detail: "All saved sessions",
     },
     {
-      detail: "Since Monday",
-      icon: CalendarDays,
       label: "This week",
-      value: formatHistoryDuration(getCurrentLocalWeekDuration(sessions)),
+      value: formatHistoryDuration(getCurrentLocalWeekDuration(sessions, now)),
+      detail: "Since Monday",
     },
     {
-      detail: "Local entries",
-      icon: NotebookTabs,
       label: "Sessions",
       value: String(getPracticeSessionCount(sessions)),
+      detail: "Saved on this device",
     },
     {
-      detail: pattern
-        ? `${formatHistoryDuration(pattern.durationSeconds)} saved`
-        : "No pattern yet",
-      icon: Music2,
-      label: "Most used pattern",
-      value: pattern?.patternName ?? "None yet",
-    },
-    {
-      detail: bpmRange
-        ? `${formatHistoryDuration(bpmRange.durationSeconds)} saved`
-        : "No tempo yet",
-      icon: Gauge,
-      label: "Most used range",
-      value: bpmRange
-        ? `${bpmRange.minimumBpm}-${bpmRange.maximumBpm} BPM`
-        : "None yet",
+      label: "Most practiced mode",
+      value: mode ? historyModeLabels[mode.mode] : "—",
+      detail: "By saved duration",
     },
   ];
-
   return (
-    <section aria-labelledby="history-summary-heading">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-primary text-xs font-extrabold tracking-[0.18em] uppercase">
-            At a glance
-          </p>
-          <h2
-            className="mt-2 text-2xl font-black tracking-[-0.04em] sm:text-3xl"
-            id="history-summary-heading"
-          >
-            Your local rhythm
-          </h2>
-        </div>
-        <p className="text-muted-foreground hidden max-w-sm text-right text-xs leading-5 sm:block">
-          These summaries reflect only practice saved on this device. They are a
-          personal journal, not professional analytics.
-        </p>
-      </div>
-
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {summaries.map(({ detail, icon: Icon, label, value }, index) => (
-          <dl
-            className={`border-border bg-surface relative overflow-hidden rounded-2xl border p-5 ${index === 0 ? "sm:col-span-2 xl:col-span-1" : ""}`}
-            key={label}
-          >
-            <dt className="text-muted-foreground text-xs font-extrabold tracking-[0.12em] uppercase">
-              <span className="bg-primary/8 text-primary absolute -top-5 -right-5 flex size-20 items-end justify-start rounded-full p-4">
-                <Icon aria-hidden="true" className="size-5" />
-              </span>
-              {label}
-            </dt>
-            <dd className="text-foreground mt-6 text-2xl leading-tight font-black tracking-[-0.04em] [overflow-wrap:anywhere] break-words">
-              {value}
-            </dd>
-            <dd className="text-muted-foreground mt-2 text-xs font-semibold">
-              {detail}
-            </dd>
-          </dl>
-        ))}
-      </div>
-      <p className="text-muted-foreground mt-4 text-xs leading-5 sm:hidden">
-        These summaries reflect only practice saved on this device. They are a
-        personal journal, not professional analytics.
-      </p>
+    <section
+      aria-label="Practice overview"
+      className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+    >
+      {summaries.map(({ label, value, detail }) => (
+        <dl
+          className="border-border bg-surface min-w-0 rounded-xl border p-4 sm:p-5"
+          key={label}
+        >
+          <dt className="text-muted-foreground min-h-8 text-xs font-semibold sm:min-h-5">
+            {label}
+          </dt>
+          <dd className="text-foreground mt-2 text-xl leading-tight font-extrabold tracking-tight break-words tabular-nums sm:text-2xl">
+            {value}
+          </dd>
+          <dd className="text-muted-foreground mt-2 text-xs">{detail}</dd>
+        </dl>
+      ))}
     </section>
   );
 }

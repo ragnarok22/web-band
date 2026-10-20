@@ -7,7 +7,7 @@ const routes = [
   { heading: "Practice room", path: "/practice" },
   { heading: "Find your pocket", path: "/patterns" },
   { heading: "Shape your groove", path: "/editor" },
-  { heading: "The work you put in.", path: "/history" },
+  { heading: "Practice history", path: "/history" },
   { heading: "Settings, kept simple.", path: "/settings" },
   { heading: "A drum room without the room.", path: "/about" },
 ] as const;
@@ -63,7 +63,7 @@ async function expectNamedRouteControls(page: Page, path: string) {
     ).toBeVisible();
   } else if (path === "/history") {
     await expect(
-      page.getByRole("heading", { name: "No sessions yet" }),
+      page.getByRole("heading", { name: "Your practice journey starts here." }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Start practicing" }),

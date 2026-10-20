@@ -1,100 +1,130 @@
-import { Clock3, Gauge, Trash2 } from "lucide-react";
+"use client";
+
+import {
+  ChevronDown,
+  Drum,
+  Guitar,
+  MoreHorizontal,
+  Timer,
+  Trash2,
+  AudioLines,
+} from "lucide-react";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { HistorySessionDetails } from "@/components/history/history-session-details";
+import {
+  formatHistoryDuration,
+  getHistorySessionBpm,
+  getHistorySessionMetadata,
+  getPracticeSessionTitle,
+} from "@/lib/practice-history";
 import type { PracticeSession } from "@/types/persistence";
-import { getPracticeSessionTitle } from "@/lib/practice-history";
-import { getSubdivisionLabel } from "@/lib/metronome";
 
-interface HistorySessionCardProps {
-  onDelete: (session: PracticeSession) => void;
-  session: PracticeSession;
-}
-
-const modeLabels: Record<PracticeSession["practiceMode"], string> = {
-  chords: "Chord practice",
-  drums: "Drum groove",
-  strumming: "Strumming",
-  tempoTrainer: "Tempo trainer",
-  metronome: "Metronome",
+const modeIcons = {
+  drums: Drum,
+  strumming: Guitar,
+  chords: Guitar,
+  tempoTrainer: Timer,
+  metronome: AudioLines,
 };
-
-const sessionTimeFormatter = new Intl.DateTimeFormat(undefined, {
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
 
-function formatSessionDuration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  if (minutes === 0) return `${remainingSeconds} sec`;
-  return remainingSeconds === 0
-    ? `${minutes} min`
-    : `${minutes} min ${remainingSeconds} sec`;
-}
-
 export function HistorySessionCard({
-  onDelete,
   session,
-}: HistorySessionCardProps) {
-  const time = sessionTimeFormatter.format(new Date(session.startedAt));
+  onDelete,
+}: {
+  session: PracticeSession;
+  onDelete: (session: PracticeSession, trigger: HTMLElement | null) => void;
+}) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const title = getPracticeSessionTitle(session);
-  const [numerator, denominator] = session.timeSignature.split("/").map(Number);
-  const detail =
-    session.practiceMode === "metronome"
-      ? `${session.metronome.trainingMode === "progressive" ? "Progressive · 1 → 2 → 3 → 4" : getSubdivisionLabel(session.metronome.subdivision, { numerator: numerator!, denominator: denominator! })}`
-      : session.category;
-  const bpm =
-    session.startingBpm === session.endingBpm
-      ? `${session.startingBpm} BPM`
-      : `${session.startingBpm} to ${session.endingBpm} BPM`;
-
+  const Icon = modeIcons[session.practiceMode];
   return (
-    <article className="border-border bg-surface/80 hover:border-border-strong group grid gap-4 rounded-2xl border p-4 transition-colors sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <p className="text-primary text-xs font-extrabold tracking-[0.12em] uppercase">
-            {time}
+    <article className="border-border bg-surface hover:border-border-strong min-w-0 rounded-xl border p-4 transition-colors">
+      <Collapsible>
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1">
+          <h4 className="flex min-w-0 items-center gap-2 text-sm font-extrabold sm:text-base">
+            <Icon aria-hidden="true" className="text-primary size-4 shrink-0" />
+            <span className="truncate">{title}</span>
+          </h4>
+          <p className="text-right text-sm font-extrabold tabular-nums">
+            {formatHistoryDuration(session.durationSeconds)}
           </p>
-          <span className="text-muted-foreground text-xs font-semibold">
-            {modeLabels[session.practiceMode]}
-          </span>
+          <p className="text-muted-foreground col-span-2 min-w-0 text-xs leading-5 break-words sm:col-span-1">
+            {getHistorySessionMetadata(session)}
+          </p>
+          <p className="text-muted-strong col-span-2 text-xs font-semibold tabular-nums sm:col-span-1 sm:text-right">
+            {getHistorySessionBpm(session)}
+          </p>
         </div>
-        <h3 className="text-foreground mt-2 truncate text-xl font-black tracking-[-0.035em]">
-          {title}
-        </h3>
-        <p className="text-muted-foreground mt-1 text-sm capitalize">
-          {detail} · {session.timeSignature}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 sm:justify-end">
-        <div className="text-muted-strong flex flex-wrap items-center gap-3 text-sm font-bold">
-          <span className="flex items-center gap-1.5">
-            <Clock3
-              aria-hidden="true"
-              className="text-muted-foreground size-4"
-            />
-            {formatSessionDuration(session.durationSeconds)}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Gauge
-              aria-hidden="true"
-              className="text-muted-foreground size-4"
-            />
-            {bpm}
-          </span>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <time
+            className="text-muted-foreground text-xs"
+            dateTime={session.startedAt}
+          >
+            {timeFormatter.format(new Date(session.startedAt))}
+          </time>
+          <div className="flex items-center gap-1">
+            <CollapsibleTrigger
+              render={
+                <Button
+                  className="group min-h-11 gap-1.5 px-3 text-xs"
+                  variant="ghost"
+                />
+              }
+              aria-label={`Details for ${title} session`}
+            >
+              Details{" "}
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 transition-transform group-aria-expanded:rotate-180"
+              />
+            </CollapsibleTrigger>
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label={`More options for ${title} session`}
+                    className="size-11 shrink-0"
+                    ref={triggerRef}
+                    size="icon"
+                    variant="ghost"
+                  />
+                }
+              >
+                <MoreHorizontal aria-hidden="true" className="size-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  className="min-h-11"
+                  onClick={() => onDelete(session, triggerRef.current)}
+                  variant="destructive"
+                >
+                  <Trash2 aria-hidden="true" />
+                  Delete session
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={`Delete ${title} session`}
-          className="border-border text-muted-foreground hover:border-danger/40 hover:bg-danger/10 hover:text-danger flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors"
-          onClick={() => onDelete(session)}
-          type="button"
-        >
-          <Trash2 aria-hidden="true" className="size-4" />
-        </Button>
-      </div>
+        <CollapsibleContent>
+          <HistorySessionDetails session={session} />
+        </CollapsibleContent>
+      </Collapsible>
     </article>
   );
 }
