@@ -1,10 +1,72 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { HistorySessionCard } from "@/components/history/history-session-card";
 import { historySession } from "@/test/history-fixtures";
 
 describe("history session cards", () => {
+  it("defers local time formatting until after hydration with a different client locale and timezone", () => {
+    const session = historySession("one");
+    const card = <HistorySessionCard session={session} onDelete={vi.fn()} />;
+    const clientTimeFormat = new Intl.DateTimeFormat("fr-FR", {
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "America/Los_Angeles",
+    }).format;
+    const expectedTime = clientTimeFormat(new Date(session.startedAt));
+    // Intl types declare a method, but format is an accessor at runtime.
+    const prototype: { readonly format: unknown } =
+      Intl.DateTimeFormat.prototype;
+    const format = vi.spyOn(prototype, "format", "get");
+    try {
+      const markup = renderToString(card);
+      expect(format).not.toHaveBeenCalled();
+
+      format.mockReturnValue(clientTimeFormat);
+      const container = document.createElement("div");
+      container.innerHTML = markup;
+      document.body.appendChild(container);
+      expect(container.querySelector("time")).toBeEmptyDOMElement();
+      const onRecoverableError = vi.fn();
+      render(card, { container, hydrate: true, onRecoverableError });
+
+      expect(onRecoverableError).not.toHaveBeenCalled();
+      expect(container.querySelector("time")).toHaveTextContent(expectedTime);
+      expect(container.querySelector("time")).toHaveAttribute(
+        "dateTime",
+        session.startedAt,
+      );
+    } finally {
+      format.mockRestore();
+    }
+  });
+
+  it("updates the local time when the session start changes", () => {
+    const onDelete = vi.fn();
+    const { rerender, container } = render(
+      <HistorySessionCard
+        session={historySession("one")}
+        onDelete={onDelete}
+      />,
+    );
+    const session = historySession("two", {
+      startedAt: new Date(2026, 9, 21, 8, 45).toISOString(),
+    });
+    rerender(<HistorySessionCard session={session} onDelete={onDelete} />);
+
+    expect(container.querySelector("time")).toHaveTextContent(
+      new Intl.DateTimeFormat(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(session.startedAt)),
+    );
+    expect(container.querySelector("time")).toHaveAttribute(
+      "dateTime",
+      session.startedAt,
+    );
+  });
+
   it.each([
     ["drums", "Basic Rock", "Drums · rock · 4/4"],
     ["strumming", "Strumming", "Drum accompaniment: Basic Rock · 4/4"],

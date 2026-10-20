@@ -29,7 +29,7 @@ test("records, persists, and deletes a real practice session", async ({
   });
   await page.goto("/settings");
   await expect(
-    page.getByRole("checkbox", { name: "Save practice history" }),
+    page.getByRole("switch", { name: "Save practice history" }),
   ).toBeChecked();
   await expect(
     page.getByRole("spinbutton", { name: "Minimum session duration" }),

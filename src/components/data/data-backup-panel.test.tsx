@@ -73,116 +73,123 @@ function actions(): DataBackupActions {
   };
 }
 
-describe("data backup panel", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-    backupBrowser.parseBackupFile.mockImplementation(async (file: File) => {
-      const parsed = parseBackupText(await file.text(), file.name);
-      return {
-        byteSize: parsed.byteSize,
-        counts: parsed.counts,
-        exportedAt: parsed.exportedAt,
-        fileName: parsed.fileName,
-        sourceVersion: parsed.sourceVersion,
-        totalRecords: parsed.totalRecords,
-      };
+describe.each(["default", "settings"] as const)(
+  "data backup panel (%s)",
+  (variant) => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+      backupBrowser.parseBackupFile.mockImplementation(async (file: File) => {
+        const parsed = parseBackupText(await file.text(), file.name);
+        return {
+          byteSize: parsed.byteSize,
+          counts: parsed.counts,
+          exportedAt: parsed.exportedAt,
+          fileName: parsed.fileName,
+          sourceVersion: parsed.sourceVersion,
+          totalRecords: parsed.totalRecords,
+        };
+      });
     });
-  });
 
-  it("previews a valid file and imports it with merge by default", async () => {
-    const user = userEvent.setup();
-    const backupActions = actions();
-    render(<DataBackupPanel actions={backupActions} />);
+    it("previews a valid file and imports it with merge by default", async () => {
+      const user = userEvent.setup();
+      const backupActions = actions();
+      render(<DataBackupPanel actions={backupActions} variant={variant} />);
 
-    await user.upload(
-      screen.getByLabelText("Choose backup file"),
-      backupFile(serializeBackupEnvelope(envelope())),
-    );
+      await user.upload(
+        screen.getByLabelText("Choose backup file"),
+        backupFile(serializeBackupEnvelope(envelope())),
+      );
 
-    expect(
-      await screen.findByRole("dialog", { name: "Review backup" }),
-    ).toBeVisible();
-    expect(screen.getByText("Favorite patterns")).toBeVisible();
-    expect(screen.getByText("1", { selector: "dd" })).toBeVisible();
-    expect(document.querySelector("time")).toHaveAttribute(
-      "datetime",
-      "2026-07-18T12:00:00.000Z",
-    );
-    await user.click(screen.getByRole("button", { name: "Import data" }));
+      expect(
+        await screen.findByRole("dialog", { name: "Review backup" }),
+      ).toBeVisible();
+      expect(screen.getByText("Favorite patterns")).toBeVisible();
+      expect(screen.getByText("1", { selector: "dd" })).toBeVisible();
+      expect(document.querySelector("time")).toHaveAttribute(
+        "datetime",
+        "2026-07-18T12:00:00.000Z",
+      );
+      await user.click(screen.getByRole("button", { name: "Import data" }));
 
-    await waitFor(() =>
-      expect(backupActions.importBackup).toHaveBeenCalledWith(
-        expect.objectContaining({
-          fileName: "web-band-backup.json",
-          sourceVersion: 5,
+      await waitFor(() =>
+        expect(backupActions.importBackup).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fileName: "web-band-backup.json",
+            sourceVersion: 5,
+          }),
+          "merge",
+        ),
+      );
+      expect(await screen.findByRole("status")).toHaveTextContent(
+        "1 record imported by merge",
+      );
+      expect(
+        screen.getByRole("button", { name: "Import backup" }),
+      ).toHaveFocus();
+    });
+
+    it("shows an invalid-file error without offering an import", async () => {
+      const user = userEvent.setup();
+      const backupActions = actions();
+      render(<DataBackupPanel actions={backupActions} variant={variant} />);
+
+      await user.upload(
+        screen.getByLabelText("Choose backup file"),
+        backupFile("not-json", "invalid.json"),
+      );
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("valid JSON");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(backupActions.importBackup).not.toHaveBeenCalled();
+    });
+
+    it("requires explicit confirmation before replace import", async () => {
+      const user = userEvent.setup();
+      const backupActions = actions();
+      render(<DataBackupPanel actions={backupActions} variant={variant} />);
+      await user.upload(
+        screen.getByLabelText("Choose backup file"),
+        backupFile(serializeBackupEnvelope(envelope())),
+      );
+
+      await user.click(
+        await screen.findByRole("radio", { name: /Replace current data/ }),
+      );
+      expect(
+        screen.getByText(
+          /safety backup download is started before replacement/i,
+        ),
+      ).toBeVisible();
+      const importButton = screen.getByRole("button", { name: "Import data" });
+      expect(importButton).toBeDisabled();
+      await user.click(
+        screen.getByRole("checkbox", {
+          name: "I understand current data will be replaced",
         }),
-        "merge",
-      ),
-    );
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "1 record imported by merge",
-    );
-    expect(screen.getByRole("button", { name: "Import backup" })).toHaveFocus();
-  });
+      );
+      expect(importButton).toBeEnabled();
+      await user.click(importButton);
 
-  it("shows an invalid-file error without offering an import", async () => {
-    const user = userEvent.setup();
-    const backupActions = actions();
-    render(<DataBackupPanel actions={backupActions} />);
+      await waitFor(() =>
+        expect(backupActions.importBackup).toHaveBeenCalledWith(
+          expect.objectContaining({ sourceVersion: 5 }),
+          "replace",
+        ),
+      );
+    });
 
-    await user.upload(
-      screen.getByLabelText("Choose backup file"),
-      backupFile("not-json", "invalid.json"),
-    );
+    it("exports from an explicit button action", async () => {
+      const user = userEvent.setup();
+      const backupActions = actions();
+      render(<DataBackupPanel actions={backupActions} variant={variant} />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("valid JSON");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(backupActions.importBackup).not.toHaveBeenCalled();
-  });
+      await user.click(screen.getByRole("button", { name: "Export data" }));
 
-  it("requires explicit confirmation before replace import", async () => {
-    const user = userEvent.setup();
-    const backupActions = actions();
-    render(<DataBackupPanel actions={backupActions} />);
-    await user.upload(
-      screen.getByLabelText("Choose backup file"),
-      backupFile(serializeBackupEnvelope(envelope())),
-    );
-
-    await user.click(
-      await screen.findByRole("radio", { name: /Replace current data/ }),
-    );
-    expect(
-      screen.getByText(/safety backup download is started before replacement/i),
-    ).toBeVisible();
-    const importButton = screen.getByRole("button", { name: "Import data" });
-    expect(importButton).toBeDisabled();
-    await user.click(
-      screen.getByRole("checkbox", {
-        name: "I understand current data will be replaced",
-      }),
-    );
-    expect(importButton).toBeEnabled();
-    await user.click(importButton);
-
-    await waitFor(() =>
-      expect(backupActions.importBackup).toHaveBeenCalledWith(
-        expect.objectContaining({ sourceVersion: 5 }),
-        "replace",
-      ),
-    );
-  });
-
-  it("exports from an explicit button action", async () => {
-    const user = userEvent.setup();
-    const backupActions = actions();
-    render(<DataBackupPanel actions={backupActions} />);
-
-    await user.click(screen.getByRole("button", { name: "Export data" }));
-
-    expect(backupActions.exportCurrentBackup).toHaveBeenCalledOnce();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Backup download started",
-    );
-  });
-});
+      expect(backupActions.exportCurrentBackup).toHaveBeenCalledOnce();
+      expect(await screen.findByRole("status")).toHaveTextContent(
+        "Backup download started",
+      );
+    });
+  },
+);

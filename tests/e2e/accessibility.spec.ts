@@ -8,7 +8,7 @@ const routes = [
   { heading: "Find your pocket", path: "/patterns" },
   { heading: "Shape your groove", path: "/editor" },
   { heading: "Practice history", path: "/history" },
-  { heading: "Settings, kept simple.", path: "/settings" },
+  { heading: "Settings", path: "/settings" },
   { heading: "A drum room without the room.", path: "/about" },
 ] as const;
 const themes = ["dark", "light"] as const;
@@ -73,7 +73,7 @@ async function expectNamedRouteControls(page: Page, path: string) {
       page.getByRole("combobox", { name: "Color theme" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("checkbox", { name: "Reduce motion" }),
+      page.getByRole("switch", { name: "Reduce motion" }),
     ).toBeVisible();
   } else {
     await expect(
@@ -96,6 +96,7 @@ async function findUndersizedTargets(page: Page) {
       "#main-content select",
       '#main-content label:has([role="checkbox"], input[type="checkbox"])',
       '#main-content label:has([role="radio"], input[type="radio"])',
+      '#main-content label:has([role="switch"])',
     ].join(", "),
   );
 
@@ -208,7 +209,7 @@ test("dialog has a name, traps focus, and restores its trigger", async ({
   page,
 }) => {
   await page.goto("/settings");
-  const trigger = page.getByRole("button", { name: "Delete all local data" });
+  const trigger = page.getByRole("button", { name: "Delete local data" });
   await trigger.focus();
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Delete all local data?" });

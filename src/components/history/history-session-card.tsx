@@ -9,7 +9,7 @@ import {
   Trash2,
   AudioLines,
 } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -38,10 +38,6 @@ const modeIcons = {
   tempoTrainer: Timer,
   metronome: AudioLines,
 };
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: "numeric",
-  minute: "2-digit",
-});
 
 export function HistorySessionCard({
   session,
@@ -51,6 +47,16 @@ export function HistorySessionCard({
   onDelete: (session: PracticeSession, trigger: HTMLElement | null) => void;
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const timeFormatterRef = useRef<Intl.DateTimeFormat | null>(null);
+  const [localTime, setLocalTime] = useState("");
+  useEffect(() => {
+    // Capture browser defaults after mount and reuse the formatter for updates.
+    timeFormatterRef.current ??= new Intl.DateTimeFormat(undefined, {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    setLocalTime(timeFormatterRef.current.format(new Date(session.startedAt)));
+  }, [session.startedAt]);
   const title = getPracticeSessionTitle(session);
   const Icon = modeIcons[session.practiceMode];
   return (
@@ -76,7 +82,7 @@ export function HistorySessionCard({
             className="text-muted-foreground text-xs"
             dateTime={session.startedAt}
           >
-            {timeFormatter.format(new Date(session.startedAt))}
+            {localTime}
           </time>
           <div className="flex items-center gap-1">
             <CollapsibleTrigger

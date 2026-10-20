@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 
-import { RotateCcw, Settings2, Trash2 } from "lucide-react";
+import { RotateCcw, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import {
@@ -76,21 +76,15 @@ export function SettingsScreen({
   }
 
   return (
-    <main className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[100rem] px-3 py-6 sm:px-6 lg:px-8">
-      <header className="border-border border-b pb-8 sm:pb-10">
-        <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.18em] uppercase">
-          <Settings2 aria-hidden="true" className="size-4" />
-          Device preferences
-        </p>
-        <h1 className="mt-3 text-4xl font-black tracking-[-0.055em] sm:text-6xl">
-          Settings, kept simple.
-        </h1>
-        <p className="text-muted-foreground mt-4 max-w-2xl leading-7">
-          Manage appearance, practice history, and data saved in this browser.
+    <main className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[70rem] px-4 py-6 sm:px-6 sm:py-8">
+      <header className="mb-6">
+        <h1 className="text-3xl font-black tracking-[-0.045em]">Settings</h1>
+        <p className="text-muted-foreground mt-2 text-sm leading-6">
+          Personalize your practice experience and manage your data.
         </p>
       </header>
 
-      <div className="mt-8 space-y-6 sm:mt-10">
+      <div className="grid items-start gap-4 sm:gap-5 md:grid-cols-2">
         <AppearanceSettingsSection />
 
         <PracticeDefaultsSettingsSection />
@@ -98,60 +92,66 @@ export function SettingsScreen({
         <SoundSettingsSection />
 
         <HistorySettingsSection />
-
-        <StorageStatusSection />
-
-        <DataBackupPanel actions={actions} />
-
-        <section
-          aria-labelledby="reset-settings-heading"
-          className="border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
-        >
-          <h2 className="text-2xl font-black" id="reset-settings-heading">
-            Reset settings
-          </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-            Return app preferences to their defaults without removing patterns,
-            presets, favorites, or practice history.
-          </p>
-          <Button
-            variant="outline"
-            className="border-border text-foreground hover:bg-surface-hover mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
-            onClick={resetSettings}
-            type="button"
-          >
-            <RotateCcw aria-hidden="true" className="size-4" />
-            Reset settings to defaults
-          </Button>
-        </section>
-
-        <section
-          aria-labelledby="danger-heading"
-          className="border-danger/30 bg-danger/5 rounded-3xl border p-5 sm:p-7"
-        >
-          <h2 className="text-2xl font-black" id="danger-heading">
-            Delete local data
-          </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl text-sm leading-6">
-            Remove only Web Band data and settings from this browser. Other site
-            storage is left alone, and a backup download is started before
-            deletion.
-          </p>
-          <Button
-            variant="destructive"
-            className="border-danger/45 text-danger mt-5 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
-            onClick={() => {
-              setDeleteError(null);
-              setDeleteOpen(true);
-            }}
-            ref={deleteButtonRef}
-            type="button"
-          >
-            <Trash2 aria-hidden="true" className="size-4" />
-            Delete all local data
-          </Button>
-        </section>
       </div>
+
+      <section aria-labelledby="data-privacy-heading" className="mt-7">
+        <h2 id="data-privacy-heading" className="mb-3 text-base font-extrabold">
+          Data &amp; privacy
+        </h2>
+        <div className="border-border bg-card space-y-4 rounded-2xl border p-4 sm:p-5">
+          <StorageStatusSection />
+          <DataBackupPanel actions={actions} variant="settings" />
+        </div>
+      </section>
+
+      <section aria-labelledby="advanced-actions-heading" className="mt-7">
+        <h2
+          id="advanced-actions-heading"
+          className="mb-3 text-base font-extrabold"
+        >
+          Advanced actions
+        </h2>
+        <div className="border-border grid gap-5 border-t pt-4 md:grid-cols-2 md:gap-8">
+          <div className="flex flex-col items-start">
+            <h3 className="text-sm font-bold">Reset preferences</h3>
+            <p className="text-muted-foreground mt-1 mb-3 text-xs leading-5">
+              Restore application settings to their defaults without deleting
+              your patterns, presets, favorites, or history.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-auto min-h-11 gap-2 px-4"
+              onClick={resetSettings}
+              type="button"
+            >
+              <RotateCcw aria-hidden="true" className="size-4" />
+              Reset preferences
+            </Button>
+          </div>
+
+          <div className="flex flex-col items-start">
+            <h3 className="text-sm font-bold">Delete local data</h3>
+            <p className="text-muted-foreground mt-1 mb-3 text-xs leading-5">
+              Remove Web Band data and settings from this browser. A safety
+              backup download starts before deletion. Other site storage is left
+              alone.
+            </p>
+            <Button
+              variant="destructive"
+              className="mt-auto min-h-11 gap-2 px-4"
+              onClick={() => {
+                setDeleteError(null);
+                setDeleteOpen(true);
+              }}
+              ref={deleteButtonRef}
+              type="button"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+              Delete local data
+            </Button>
+          </div>
+        </div>
+      </section>
 
       <p
         aria-live="polite"

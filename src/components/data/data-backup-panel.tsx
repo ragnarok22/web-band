@@ -24,16 +24,53 @@ export interface DataBackupActions {
 interface DataBackupPanelProps {
   actions?: DataBackupActions;
   compact?: boolean;
+  variant?: "default" | "settings";
 }
 
 function messageFromError(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
+const presentations = {
+  default: {
+    container: "border-border bg-surface/70 rounded-3xl border p-5 sm:p-7",
+    heading: "mt-2 text-2xl font-black",
+    title: "Backup and restore",
+    description:
+      "Download a portable JSON copy of patterns, presets, sessions, favorites, settings, appearance, recents, and onboarding state stored on this device.",
+    descriptionClass: "text-muted-foreground mt-2 text-sm leading-6",
+    actions: "mt-6 flex flex-col gap-2 sm:flex-row",
+  },
+  journal: {
+    container:
+      "border-border bg-surface/55 mt-10 rounded-2xl border p-5 sm:flex sm:items-center sm:justify-between sm:gap-6",
+    heading: "mt-2 text-xl font-black",
+    title: "Journal backup",
+    description:
+      "Keep a portable copy of this journal, practice setup, and app preferences.",
+    descriptionClass: "text-muted-foreground mt-2 text-sm leading-6",
+    actions: "mt-4 flex shrink-0 flex-wrap gap-2 sm:mt-0",
+  },
+  settings: {
+    container:
+      "border-border grid gap-3 border-t pt-4 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-x-6",
+    heading: "text-sm font-bold",
+    title: "Backup & restore",
+    description:
+      "Export a JSON copy of your Web Band data or restore a backup.",
+    descriptionClass: "text-muted-foreground mt-1 text-sm leading-5",
+    actions: "flex flex-wrap gap-2",
+  },
+};
+
 export function DataBackupPanel({
   actions = backupService,
   compact = false,
+  variant = "default",
 }: DataBackupPanelProps) {
+  const isSettings = variant === "settings";
+  const presentation =
+    presentations[isSettings ? "settings" : compact ? "journal" : "default"];
   const fileInputId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadButtonRef = useRef<HTMLButtonElement>(null);
@@ -41,6 +78,7 @@ export function DataBackupPanel({
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const Heading = isSettings ? "h3" : "h2";
 
   async function exportData(): Promise<void> {
     setIsPending(true);
@@ -98,39 +136,24 @@ export function DataBackupPanel({
   return (
     <section
       aria-labelledby={`${fileInputId}-heading`}
-      className={
-        compact
-          ? "border-border bg-surface/55 mt-10 rounded-2xl border p-5 sm:flex sm:items-center sm:justify-between sm:gap-6"
-          : "border-border bg-surface/70 rounded-3xl border p-5 sm:p-7"
-      }
+      className={presentation.container}
     >
       <div className={compact ? "max-w-xl" : "max-w-2xl"}>
-        <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
-          <ShieldCheck aria-hidden="true" className="size-4" />
-          Local archive
-        </p>
-        <h2
-          className={
-            compact ? "mt-2 text-xl font-black" : "mt-2 text-2xl font-black"
-          }
-          id={`${fileInputId}-heading`}
-        >
-          {compact ? "Journal backup" : "Backup and restore"}
-        </h2>
-        <p className="text-muted-foreground mt-2 text-sm leading-6">
-          {compact
-            ? "Keep a portable copy of this journal, practice setup, and app preferences."
-            : "Download a portable JSON copy of patterns, presets, sessions, favorites, settings, appearance, recents, and onboarding state stored on this device."}
+        {!isSettings ? (
+          <p className="text-primary flex items-center gap-2 text-xs font-extrabold tracking-[0.16em] uppercase">
+            <ShieldCheck aria-hidden="true" className="size-4" />
+            Local archive
+          </p>
+        ) : null}
+        <Heading className={presentation.heading} id={`${fileInputId}-heading`}>
+          {presentation.title}
+        </Heading>
+        <p className={presentation.descriptionClass}>
+          {presentation.description}
         </p>
       </div>
 
-      <div
-        className={
-          compact
-            ? "mt-4 flex shrink-0 flex-wrap gap-2 sm:mt-0"
-            : "mt-6 flex flex-col gap-2 sm:flex-row"
-        }
-      >
+      <div className={presentation.actions}>
         <Button
           variant="outline"
           className="border-border bg-surface-elevated text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-extrabold disabled:opacity-45"
@@ -164,13 +187,18 @@ export function DataBackupPanel({
       </div>
 
       {errorMessage && !preview ? (
-        <p className="text-danger mt-4 text-sm leading-5" role="alert">
+        <p
+          className="text-danger mt-4 text-sm leading-5 sm:col-span-2"
+          role="alert"
+        >
           {errorMessage}
         </p>
       ) : null}
       <p
         aria-live="polite"
-        className={announcement ? "text-success mt-4 text-sm" : "sr-only"}
+        className={
+          announcement ? "text-success mt-4 text-sm sm:col-span-2" : "sr-only"
+        }
         role="status"
       >
         {announcement}

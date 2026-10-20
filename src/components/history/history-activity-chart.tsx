@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useMemo, useSyncExternalStore } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -12,13 +12,16 @@ import {
   type HistoryActivityDay,
 } from "@/lib/practice-history";
 
-const dayFormatter = new Intl.DateTimeFormat(undefined, { weekday: "short" });
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
+const defaultLocale = new Intl.DateTimeFormat().resolvedOptions();
+
+function subscribeToStaticLocale() {
+  // Match the original module-scoped formatters: defaults stay fixed.
+  return () => undefined;
+}
+
+function getLocaleSnapshot() {
+  return defaultLocale;
+}
 
 export function HistoryActivityChart({
   days,
@@ -26,6 +29,26 @@ export function HistoryActivityChart({
   days: readonly HistoryActivityDay[];
 }) {
   const id = useId();
+  // Browser defaults are unavailable during SSR and the initial hydration pass.
+  const localFormat = useSyncExternalStore(
+    subscribeToStaticLocale,
+    getLocaleSnapshot,
+    () => null,
+  );
+  const formatters = useMemo(() => {
+    if (!localFormat) return null;
+    const { locale, timeZone } = localFormat;
+    return {
+      day: new Intl.DateTimeFormat(locale, { weekday: "short", timeZone }),
+      date: new Intl.DateTimeFormat(locale, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone,
+      }),
+    };
+  }, [localFormat]);
   const scale = getHistoryChartScale(
     Math.max(...days.map((day) => day.durationSeconds)),
   );
@@ -66,7 +89,7 @@ export function HistoryActivityChart({
           </div>
           <div className="grid min-w-0 grid-cols-7 gap-1 sm:gap-3">
             {days.map((day) => {
-              const label = `${dateFormatter.format(day.date)}${day.isToday ? " (today)" : ""}: ${formatHistoryDuration(day.durationSeconds)}`;
+              const label = `${formatters?.date.format(day.date) ?? day.dateKey}${day.isToday ? " (today)" : ""}: ${formatHistoryDuration(day.durationSeconds)}`;
               return (
                 <Tooltip key={day.dateKey}>
                   <TooltipTrigger
@@ -91,7 +114,7 @@ export function HistoryActivityChart({
                       aria-hidden="true"
                       className={`mt-2 text-center text-[0.65rem] font-semibold sm:text-xs ${day.isToday ? "text-primary" : "text-muted-foreground"}`}
                     >
-                      {dayFormatter.format(day.date)}
+                      {formatters?.day.format(day.date) ?? "\u00a0"}
                     </span>
                     <span
                       aria-hidden="true"

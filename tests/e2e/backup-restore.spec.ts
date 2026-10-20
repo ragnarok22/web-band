@@ -11,6 +11,11 @@ function trackBrowserErrors(page: Page): string[] {
   return errors;
 }
 
+async function selectPreference(page: Page, id: string, option: string) {
+  await page.locator(id).click();
+  await page.getByRole("option", { name: option, exact: true }).click();
+}
+
 test("exports, clears, and restores a custom pattern backup", async ({
   page,
 }) => {
@@ -40,20 +45,20 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await page.getByRole("button", { name: "Exit focus" }).click();
   await navigate(page, "Settings");
   await expect(
-    page.getByRole("heading", { name: "Settings, kept simple." }),
+    page.getByRole("heading", { name: "Settings", exact: true }),
   ).toBeVisible();
-  await page.selectOption("#color-theme", "light");
-  await page.getByRole("checkbox", { name: "Reduce motion" }).check();
-  await page.selectOption("#visual-detail", "sixteenths");
-  await page.selectOption("#beat-intensity", "strong");
-  await page.selectOption("#default-count-in", "2");
-  await page.selectOption("#bpm-step", "5");
+  await selectPreference(page, "#color-theme", "Light");
+  await page.getByRole("switch", { name: "Reduce motion" }).check();
+  await selectPreference(page, "#visual-detail", "All sixteenths");
+  await selectPreference(page, "#beat-intensity", "Strong");
+  await selectPreference(page, "#default-count-in", "2 measures");
+  await selectPreference(page, "#bpm-step", "5 BPM");
   await page.getByRole("slider", { name: "Master volume" }).fill("0.4");
   await page
-    .getByRole("checkbox", { name: "Keep screen awake while playing" })
+    .getByRole("switch", { name: "Keep screen awake while playing" })
     .uncheck();
   await page
-    .getByRole("checkbox", { name: "Restore last practice setup" })
+    .getByRole("switch", { name: "Restore last practice setup" })
     .uncheck();
 
   const exportDownloadPromise = page.waitForEvent("download");
@@ -114,9 +119,7 @@ test("exports, clears, and restores a custom pattern backup", async ({
     customPatternId,
   );
 
-  await page
-    .getByRole("button", { name: "Reset settings to defaults" })
-    .click();
+  await page.getByRole("button", { name: "Reset preferences" }).click();
   await expect(
     page.getByText(
       /patterns, presets, favorites, and practice history were preserved/i,
@@ -151,14 +154,17 @@ test("exports, clears, and restores a custom pattern backup", async ({
     window.localStorage.setItem("web-band-appearance-v1", "legacy");
     window.localStorage.setItem("unrelated-app", "keep");
   });
-  await page.getByRole("button", { name: "Delete all local data" }).click();
+  await page.getByRole("button", { name: "Delete local data" }).click();
   await page
     .getByRole("checkbox", {
       name: /I understand this removes all Web Band data/,
     })
     .check();
   const safetyDownloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Delete local data" }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Delete local data" })
+    .click();
   await safetyDownloadPromise;
   await expect(
     page.getByText("All Web Band data on this device was deleted."),
@@ -216,21 +222,21 @@ test("exports, clears, and restores a custom pattern backup", async ({
   ).toBeVisible();
   await page.getByRole("radio", { name: /Merge with current data/ }).check();
   await page.getByRole("button", { name: "Import data" }).click();
-  await expect(page.locator("#color-theme")).toHaveValue("light", {
+  await expect(page.locator("#color-theme")).toContainText("Light", {
     timeout: 15_000,
   });
   await expect(
-    page.getByRole("checkbox", { name: "Reduce motion" }),
+    page.getByRole("switch", { name: "Reduce motion" }),
   ).toBeChecked();
-  await expect(page.locator("#visual-detail")).toHaveValue("sixteenths");
-  await expect(page.locator("#beat-intensity")).toHaveValue("strong");
-  await expect(page.locator("#default-count-in")).toHaveValue("2");
-  await expect(page.locator("#bpm-step")).toHaveValue("5");
+  await expect(page.locator("#visual-detail")).toContainText("All sixteenths");
+  await expect(page.locator("#beat-intensity")).toContainText("Strong");
+  await expect(page.locator("#default-count-in")).toContainText("2 measures");
+  await expect(page.locator("#bpm-step")).toContainText("5 BPM");
   await expect(
-    page.getByRole("checkbox", { name: "Keep screen awake while playing" }),
+    page.getByRole("switch", { name: "Keep screen awake while playing" }),
   ).not.toBeChecked();
   await expect(
-    page.getByRole("checkbox", { name: "Restore last practice setup" }),
+    page.getByRole("switch", { name: "Restore last practice setup" }),
   ).not.toBeChecked();
 
   await navigate(page, "Patterns");
