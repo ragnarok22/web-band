@@ -121,7 +121,7 @@ export function PatternBrowser() {
       const settings = usePracticeStore.getState();
       await engine.play({
         bpm: pattern.defaultBpm,
-        countInMeasures: settings.countInMeasures,
+        countInMeasures: 0,
         fillFrequency: settings.fillFrequency,
         guidedPractice: { mode: "drums" },
         humanization: settings.humanization,

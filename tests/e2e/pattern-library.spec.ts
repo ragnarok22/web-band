@@ -106,6 +106,32 @@ test("starts with foundations and preserves explicit alphabetical and recommende
   await expect(headings.first()).toHaveText("Straight Blues");
 });
 
+test("library preview skips the saved count-in without changing practice settings", async ({
+  page,
+}) => {
+  await page.goto("/practice");
+  await page
+    .getByRole("combobox", { name: "Count-in length" })
+    .selectOption("4");
+  await navigate(page, "Patterns");
+  const card = page.getByRole("article", { name: "Basic Rock", exact: true });
+  await card
+    .getByRole("button", { name: "Basic Rock preview", exact: true })
+    .click();
+  await expect(card.getByText("Playing", { exact: true })).toBeVisible({
+    timeout: 5000,
+  });
+  await expect(card.getByText("Count-in", { exact: true })).toHaveCount(0);
+  await expect(
+    card.locator('[data-rhythm-cell][data-active="true"]'),
+  ).toHaveCount(3);
+  await card.getByRole("button", { name: "Stop Basic Rock preview" }).click();
+  await card.getByRole("button", { name: "Practice", exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "Count-in length" }),
+  ).toHaveValue("4");
+});
+
 test("previews one groove at a time and stops before entering practice", async ({
   page,
 }) => {

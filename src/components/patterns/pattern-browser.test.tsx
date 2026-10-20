@@ -138,6 +138,24 @@ describe("pattern browser", () => {
     ).toHaveAttribute("aria-pressed", "false");
   });
 
+  it("previews immediately without count-in and preserves the practice count-in setting", async () => {
+    const user = userEvent.setup();
+    usePracticeStore.setState({ countInMeasures: 4 });
+    render(<PatternBrowser />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    );
+
+    expect(engine.play).toHaveBeenCalledWith(
+      expect.objectContaining({
+        countInMeasures: 0,
+        pattern: expect.objectContaining({ id: "basic-rock" }),
+      }),
+    );
+    expect(usePracticeStore.getState().countInMeasures).toBe(4);
+  });
+
   it("disables a favorite toggle while its write is pending", async () => {
     const user = userEvent.setup();
     let finishFavorite!: () => void;
