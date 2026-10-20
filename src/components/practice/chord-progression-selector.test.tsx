@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChordProgressionSelector } from "@/components/practice/chord-progression-selector";
-import { gDEmCProgression } from "@/data/chord-progressions";
+import {
+  builtInChordProgressions,
+  gDEmCProgression,
+} from "@/data/chord-progressions";
 import {
   useChordProgressionStore,
   type ChordProgressionInput,
@@ -177,6 +180,50 @@ describe("chord progression selector", () => {
     ).toHaveLength(1);
   });
 
+  it("preserves group order and updates membership when favorite IDs change", () => {
+    useChordProgressionStore.setState({
+      favoriteProgressionIds: [
+        customProgression.id,
+        gDEmCProgression.id,
+        customProgression.id,
+        "missing-progression",
+      ],
+    });
+    renderSelector();
+    const names = (group: string) =>
+      within(screen.getByRole("group", { name: group }))
+        .getAllByRole("option")
+        .map((option) => option.textContent);
+
+    expect(names("Favorite progressions")).toEqual([
+      gDEmCProgression.name,
+      customProgression.name,
+    ]);
+    expect(names("Built-in progressions")).toEqual(
+      builtInChordProgressions.slice(1).map(({ name }) => name),
+    );
+    expect(
+      screen.queryByRole("group", { name: "Custom progressions" }),
+    ).toBeNull();
+
+    act(() =>
+      useChordProgressionStore.setState({ favoriteProgressionIds: [] }),
+    );
+    expect(
+      screen.queryByRole("group", { name: "Favorite progressions" }),
+    ).toBeNull();
+    expect(names("Built-in progressions")).toEqual(
+      builtInChordProgressions.map(({ name }) => name),
+    );
+    expect(names("Custom progressions")).toEqual([customProgression.name]);
+    expect(screen.getByRole("combobox", { name: "Progression" })).toHaveValue(
+      customProgression.id,
+    );
+    expect(
+      screen.getByRole("button", { name: "Custom turnaround favorite" }),
+    ).toHaveAttribute("aria-pressed", "false");
+  });
+
   it.each([false, true])(
     "disables configuration when hydration or the active session blocks it (%s)",
     (active) => {
@@ -208,6 +255,58 @@ describe("chord progression selector", () => {
         screen.getByRole("button", { name: "Progression actions" }),
       ).toHaveFocus(),
     );
+  });
+
+  it("starts a fresh new-editor draft after cancelling edits and saves through create", async () => {
+    const user = userEvent.setup();
+    const created = {
+      ...customProgression,
+      id: "created-turnaround",
+      name: "New turnaround",
+    };
+    const create = vi.fn().mockResolvedValue(created);
+    useChordProgressionStore.setState({ create });
+    const onChange = renderSelector();
+    await action(user, "Edit progression");
+    await user.type(
+      screen.getByRole("textbox", { name: "Progression name" }),
+      " unsaved",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Close progression editor" }),
+    );
+
+    await action(user, "New progression");
+    expect(
+      screen.getByRole("dialog", { name: "Create progression" }),
+    ).toBeVisible();
+    const name = screen.getByRole("textbox", { name: "Progression name" });
+    expect(name).toHaveValue("");
+    expect(screen.getByRole("textbox", { name: "Chord 1" })).toHaveValue("");
+    await user.type(name, "New turnaround");
+    await user.type(screen.getByRole("textbox", { name: "Chord 1" }), "Am");
+    await user.click(screen.getByRole("button", { name: "Save progression" }));
+
+    expect(create).toHaveBeenCalledWith({
+      name: "New turnaround",
+      steps: [
+        {
+          chord: "Am",
+          duration: 1,
+          durationUnit: "measures",
+          id: expect.any(String),
+        },
+      ],
+    });
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ progression: created }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Progression actions" }),
+      ).toHaveFocus(),
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("selects built-in and custom progressions without mutating their source data", async () => {

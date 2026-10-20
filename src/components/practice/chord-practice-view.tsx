@@ -8,6 +8,7 @@ import type { AudioEngineStatus } from "@/types/audio";
 import type { TimeSignature } from "@/types/pattern";
 import type {
   ChordTrainerConfiguration,
+  ChordTrainerPosition,
   GuidanceFrame,
 } from "@/types/practice";
 
@@ -25,15 +26,6 @@ export function ChordPracticeView({
   const frame = snapshot?.mode === "chords" ? snapshot : null;
   const position =
     frame?.position ?? getChordTrainerPosition(configuration, timeSignature, 0);
-  const countdown = configuration.showCountdown ? position.countdown : null;
-  const currentBeat =
-    Math.floor(position.sixteenthsIntoStep / (16 / timeSignature.denominator)) %
-    timeSignature.numerator;
-  // Show at most one bar, trimming a short chord's final group at its boundary.
-  const beatCount = Math.min(
-    timeSignature.numerator,
-    currentBeat + (countdown ?? 0),
-  );
   const chord = position.currentChord ?? "Complete";
 
   return (
@@ -56,23 +48,12 @@ export function ChordPracticeView({
             </p>
           </div>
           <div className={styles.countdown}>
-            {countdown !== null && !position.isComplete ? (
-              <>
-                <ChordBeatCountdown
-                  beatCount={beatCount}
-                  currentBeat={currentBeat}
-                />
-                <p className={styles.changeText}>
-                  {`${position.nextChord === null ? "Finish" : "Change"} in ${countdown} ${countdown === 1 ? "beat" : "beats"}`}
-                </p>
-              </>
-            ) : (
-              <p className={styles.changeText}>
-                {position.isComplete
-                  ? "Progression complete"
-                  : `Measure ${frame?.measure ?? 1}`}
-              </p>
-            )}
+            <ChordChangeCountdown
+              measure={frame?.measure ?? 1}
+              position={position}
+              showCountdown={configuration.showCountdown}
+              timeSignature={timeSignature}
+            />
           </div>
           <div aria-label="Next chord" className={styles.next} role="group">
             <span className="sr-only">Next chord</span>
@@ -94,5 +75,41 @@ export function ChordPracticeView({
         />
       </div>
     </section>
+  );
+}
+
+function ChordChangeCountdown({
+  measure,
+  position,
+  showCountdown,
+  timeSignature,
+}: {
+  measure: number;
+  position: ChordTrainerPosition;
+  showCountdown: boolean;
+  timeSignature: TimeSignature;
+}) {
+  const countdown = showCountdown ? position.countdown : null;
+  if (countdown === null || position.isComplete) {
+    return (
+      <p className={styles.changeText}>
+        {position.isComplete ? "Progression complete" : `Measure ${measure}`}
+      </p>
+    );
+  }
+
+  const currentBeat =
+    Math.floor(position.sixteenthsIntoStep / (16 / timeSignature.denominator)) %
+    timeSignature.numerator;
+  // Show at most one bar, trimming a short chord's final group at its boundary.
+  const beatCount = Math.min(timeSignature.numerator, currentBeat + countdown);
+
+  return (
+    <>
+      <ChordBeatCountdown beatCount={beatCount} currentBeat={currentBeat} />
+      <p className={styles.changeText}>
+        {`${position.nextChord === null ? "Finish" : "Change"} in ${countdown} ${countdown === 1 ? "beat" : "beats"}`}
+      </p>
+    </>
   );
 }

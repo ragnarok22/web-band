@@ -192,6 +192,31 @@ describe("chord practice guidance", () => {
     expect(screen.getByTestId("current-chord")).toHaveTextContent("G");
   });
 
+  it("shows the snapshot measure without a countdown, then prioritizes completion", () => {
+    const config = { ...configuration, repeat: false, showCountdown: false };
+    act(() => {
+      guidanceTimeline.publish({
+        absoluteSixteenth: 32,
+        elapsedSeconds: 4,
+        measure: 3,
+        mode: "chords",
+        position: getChordTrainerPosition(config, meter, 32),
+      });
+    });
+    render(display(config));
+    expect(screen.getByText("Measure 3")).toBeVisible();
+    expect(
+      screen.queryByRole("img", { name: "Chord beat countdown" }),
+    ).toBeNull();
+
+    publish(config, 64);
+    expect(screen.getByText("Progression complete")).toBeVisible();
+    expect(screen.queryByText(/^Measure /)).toBeNull();
+    expect(screen.getByRole("group", { name: "Next chord" })).toHaveTextContent(
+      "Finish",
+    );
+  });
+
   it("keeps repeated chord names distinct by step ID rather than chord symbol", () => {
     const config: ChordTrainerConfiguration = {
       ...configuration,

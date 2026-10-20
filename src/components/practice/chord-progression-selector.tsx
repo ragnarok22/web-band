@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Ellipsis, Heart, Pencil, Plus, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState, type Ref } from "react";
 
 import { ChordProgressionDeleteConfirmation } from "@/components/practice/chord-progression-delete-confirmation";
 import { ChordProgressionEditorDialog } from "@/components/practice/chord-progression-editor-dialog";
@@ -47,6 +47,10 @@ export function ChordProgressionSelector({
   const favoriteProgressionIds = useChordProgressionStore(
     (state) => state.favoriteProgressionIds,
   );
+  const favoriteProgressionIdSet = useMemo(
+    () => new Set(favoriteProgressionIds),
+    [favoriteProgressionIds],
+  );
   const isHydrated = useChordProgressionStore((state) => state.isHydrated);
   const copyBuiltIn = useChordProgressionStore((state) => state.copyBuiltIn);
   const create = useChordProgressionStore((state) => state.create);
@@ -72,19 +76,19 @@ export function ChordProgressionSelector({
     {
       label: "Favorite progressions",
       progressions: available.filter(({ id }) =>
-        favoriteProgressionIds.includes(id),
+        favoriteProgressionIdSet.has(id),
       ),
     },
     {
       label: "Built-in progressions",
       progressions: builtInChordProgressions.filter(
-        ({ id }) => !favoriteProgressionIds.includes(id),
+        ({ id }) => !favoriteProgressionIdSet.has(id),
       ),
     },
     {
       label: "Custom progressions",
       progressions: customProgressions.filter(
-        ({ id }) => !favoriteProgressionIds.includes(id),
+        ({ id }) => !favoriteProgressionIdSet.has(id),
       ),
     },
   ];
@@ -214,53 +218,14 @@ export function ChordProgressionSelector({
               className={`size-4 ${selectedIsFavorite ? "fill-primary text-primary" : ""}`}
             />
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button variant="outline" />}
-              aria-label="Progression actions"
-              className="size-11 shrink-0"
-              disabled={controlsDisabled}
-              ref={actionsTriggerRef}
-            >
-              <Ellipsis aria-hidden="true" className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem
-                className="min-h-11"
-                onClick={() => setEditorTarget("new")}
-              >
-                <Plus aria-hidden="true" />
-                New progression
-              </DropdownMenuItem>
-              {availableSelected?.isBuiltIn ? (
-                <DropdownMenuItem
-                  className="min-h-11"
-                  onClick={() => void copySelectedProgression()}
-                >
-                  <Copy aria-hidden="true" />
-                  Copy built-in
-                </DropdownMenuItem>
-              ) : availableSelected ? (
-                <>
-                  <DropdownMenuItem
-                    className="min-h-11"
-                    onClick={() => setEditorTarget(availableSelected)}
-                  >
-                    <Pencil aria-hidden="true" />
-                    Edit progression
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="min-h-11"
-                    onClick={() => setConfirmingDelete(true)}
-                    variant="destructive"
-                  >
-                    <Trash2 aria-hidden="true" />
-                    Delete progression
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ChordProgressionActions
+            disabled={controlsDisabled}
+            onCopy={() => void copySelectedProgression()}
+            onDelete={() => setConfirmingDelete(true)}
+            onEdit={setEditorTarget}
+            selected={availableSelected}
+            triggerRef={actionsTriggerRef}
+          />
         </div>
         <div className="text-muted-strong flex flex-wrap items-center gap-x-5 text-xs font-bold">
           <label className="flex min-h-11 items-center gap-2">
@@ -308,15 +273,96 @@ export function ChordProgressionSelector({
           {errorMessage}
         </p>
       ) : null}
-      {editorTarget ? (
-        <ChordProgressionEditorDialog
-          disabled={controlsDisabled}
-          key={editorTarget === "new" ? "new" : editorTarget.id}
-          onClose={closeEditor}
-          onSave={saveEditor}
-          progression={editorTarget === "new" ? undefined : editorTarget}
-        />
-      ) : null}
+      <ChordProgressionEditor
+        disabled={controlsDisabled}
+        onClose={closeEditor}
+        onSave={saveEditor}
+        target={editorTarget}
+      />
     </section>
+  );
+}
+
+function ChordProgressionActions({
+  disabled,
+  onCopy,
+  onDelete,
+  onEdit,
+  selected,
+  triggerRef,
+}: {
+  disabled: boolean;
+  onCopy: () => void;
+  onDelete: () => void;
+  onEdit: (target: Exclude<EditorTarget, null>) => void;
+  selected: ChordProgression | undefined;
+  triggerRef: Ref<HTMLButtonElement>;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="outline" />}
+        aria-label="Progression actions"
+        className="size-11 shrink-0"
+        disabled={disabled}
+        ref={triggerRef}
+      >
+        <Ellipsis aria-hidden="true" className="size-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem className="min-h-11" onClick={() => onEdit("new")}>
+          <Plus aria-hidden="true" />
+          New progression
+        </DropdownMenuItem>
+        {selected?.isBuiltIn ? (
+          <DropdownMenuItem className="min-h-11" onClick={onCopy}>
+            <Copy aria-hidden="true" />
+            Copy built-in
+          </DropdownMenuItem>
+        ) : selected ? (
+          <>
+            <DropdownMenuItem
+              className="min-h-11"
+              onClick={() => onEdit(selected)}
+            >
+              <Pencil aria-hidden="true" />
+              Edit progression
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="min-h-11"
+              onClick={onDelete}
+              variant="destructive"
+            >
+              <Trash2 aria-hidden="true" />
+              Delete progression
+            </DropdownMenuItem>
+          </>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function ChordProgressionEditor({
+  disabled,
+  onClose,
+  onSave,
+  target,
+}: {
+  disabled: boolean;
+  onClose: () => void;
+  onSave: (input: ChordProgressionInput) => Promise<void>;
+  target: EditorTarget;
+}) {
+  if (!target) return null;
+
+  return (
+    <ChordProgressionEditorDialog
+      disabled={disabled}
+      key={target === "new" ? "new" : target.id}
+      onClose={onClose}
+      onSave={onSave}
+      progression={target === "new" ? undefined : target}
+    />
   );
 }
