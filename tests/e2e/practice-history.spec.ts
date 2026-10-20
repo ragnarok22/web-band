@@ -207,6 +207,35 @@ test("combines calendar filters, sorting, mode-specific details and safe deletio
   expect(errors).toEqual([]);
 });
 
+test("keeps activity graphics out of the keyboard tab order", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === "webkit",
+    "WebKit tabbing follows the host's Full Keyboard Access setting.",
+  );
+  await page.clock.setFixedTime(new Date("2026-10-20T15:00:00"));
+  await seedHistory(page, [historySession("one")]);
+
+  const graphics = page
+    .getByRole("region", { name: "Practice activity" })
+    .getByRole("img");
+  await expect(graphics).toHaveCount(7);
+  const audit = await new AxeBuilder({ page })
+    .include('[data-slot="tooltip-trigger"][role="img"]')
+    .withRules(["focus-order-semantics"])
+    .analyze();
+  expect(audit.violations).toEqual([]);
+  for (const graphic of await graphics.all())
+    await expect(graphic).not.toHaveAttribute("tabindex");
+
+  await page.getByRole("button", { name: "More history options" }).focus();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("combobox", { name: "Practice mode" }),
+  ).toBeFocused();
+});
+
 test("keeps populated history accessible and contained at mobile, tablet and desktop widths", async ({
   page,
 }, testInfo) => {
@@ -260,8 +289,7 @@ test("keeps populated history accessible and contained at mobile, tablet and des
     )
     .toBe(true);
   const today = page.getByRole("img", { name: /\(today\)/ });
-  await page.keyboard.press("Tab");
-  await today.focus();
+  await today.hover();
   await expect(page.getByRole("tooltip")).toContainText("1h 1m 1s");
   await page.keyboard.press("Escape");
   await expect(page.getByRole("tooltip")).toBeHidden();

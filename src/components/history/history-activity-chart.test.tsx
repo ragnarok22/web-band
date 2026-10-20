@@ -7,6 +7,25 @@ import { getHistoryActivity } from "@/lib/practice-history";
 import { historySession } from "@/test/history-fixtures";
 
 describe("practice activity chart", () => {
+  it("keeps informational graphics out of the keyboard tab order", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <HistoryActivityChart
+          days={getHistoryActivity([], new Date(2026, 9, 20))}
+        />
+        <button type="button">Next control</button>
+      </>,
+    );
+
+    for (const graphic of screen.getAllByRole("img")) {
+      expect(graphic).not.toHaveAttribute("tabindex");
+      expect(graphic.tabIndex).toBe(-1);
+    }
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Next control" })).toHaveFocus();
+  });
+
   it("defers labels until after hydration with a different client locale and timezone", () => {
     const days = getHistoryActivity([], new Date(2026, 9, 20));
     const chart = <HistoryActivityChart days={days} />;
@@ -73,7 +92,7 @@ describe("practice activity chart", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("exposes exact dates and durations to keyboard and screen-reader users", async () => {
+  it("exposes exact dates and durations to screen readers and on hover", async () => {
     const user = userEvent.setup();
     render(
       <HistoryActivityChart
@@ -88,13 +107,12 @@ describe("practice activity chart", () => {
     const today = screen.getByRole("img", {
       name: "Tuesday, October 20, 2026 (today): 31 sec",
     });
-    today.focus();
+    await user.hover(today);
     expect(await screen.findByRole("tooltip")).toHaveTextContent(
       "Tuesday, October 20, 2026 (today): 31 sec",
     );
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
-    expect(today).toHaveFocus();
   });
 
   it("provides zero-day text alternatives without visible fake activity", () => {

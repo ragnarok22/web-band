@@ -96,7 +96,7 @@ export function HistoryActivityChart({
                     aria-label={label}
                     role="img"
                     className="group flex min-w-0 flex-col rounded-md outline-offset-2"
-                    render={<div tabIndex={0} />}
+                    render={<div />}
                   >
                     <div
                       aria-hidden="true"
