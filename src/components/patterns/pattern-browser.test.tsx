@@ -483,24 +483,30 @@ describe("pattern browser", () => {
     expect(router.push).toHaveBeenCalledWith("/practice");
   });
 
-  it("keeps one active preview while switching on the existing measure boundary and cleans up on exit", async () => {
+  it("immediately stops the previous preview and starts the next from its own defaults", async () => {
     const user = userEvent.setup();
+    usePracticeStore.setState({ swing: 0.2 });
     const { unmount } = render(<PatternBrowser />);
     await user.click(
       screen.getByRole("button", { name: "Basic Rock preview" }),
     );
     act(() => useAudioStore.setState({ status: "playing" }));
     const basicPop = builtInPatterns.find(({ id }) => id === "basic-pop")!;
-    engine.changePattern.mockImplementationOnce((_pattern, onChange) => {
-      onChange(basicPop);
-      return true;
-    });
+    engine.changePattern.mockReturnValue(true);
     await user.click(screen.getByRole("button", { name: "Basic Pop preview" }));
-    expect(engine.play).toHaveBeenCalledOnce();
-    expect(engine.changePattern).toHaveBeenLastCalledWith(
-      basicPop,
-      expect.any(Function),
-      "measure",
+    expect(engine.stop).toHaveBeenCalledOnce();
+    expect(engine.play).toHaveBeenCalledTimes(2);
+    expect(engine.stop.mock.invocationCallOrder[0]).toBeLessThan(
+      engine.play.mock.invocationCallOrder[1],
+    );
+    expect(engine.changePattern).not.toHaveBeenCalled();
+    expect(engine.play).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        bpm: basicPop.defaultBpm,
+        countInMeasures: 0,
+        pattern: basicPop,
+        swing: 0.2,
+      }),
     );
     expect(
       screen.getByRole("button", { name: "Basic Rock preview" }),
@@ -510,5 +516,58 @@ describe("pattern browser", () => {
     ).toHaveTextContent("Stop");
     unmount();
     expect(disposeAudioEngine).toHaveBeenCalled();
+  });
+
+  it("replaces an initializing preview without waiting for it or allowing a stale error to reset the new one", async () => {
+    const user = userEvent.setup();
+    let rejectFirst!: (error: Error) => void;
+    engine.play.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    render(<PatternBrowser />);
+    await user.click(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    );
+    act(() => useAudioStore.setState({ status: "initializing" }));
+    await user.click(screen.getByRole("button", { name: "Basic Pop preview" }));
+
+    expect(engine.stop).toHaveBeenCalledOnce();
+    expect(engine.play).toHaveBeenCalledTimes(2);
+    await act(async () =>
+      rejectFirst(new Error("Cancelled preview failed late.")),
+    );
+    expect(
+      screen.getByRole("button", { name: "Stop Basic Pop preview" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("keeps a stopped preview stopped if its pending start fails later", async () => {
+    const user = userEvent.setup();
+    let rejectStart!: (error: Error) => void;
+    engine.play.mockImplementationOnce(
+      () =>
+        new Promise<void>((_resolve, reject) => {
+          rejectStart = reject;
+        }),
+    );
+    render(<PatternBrowser />);
+    await user.click(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Stop Basic Rock preview" }),
+    );
+    await act(async () =>
+      rejectStart(new Error("Stopped preview failed late.")),
+    );
+    expect(engine.stop).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });

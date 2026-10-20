@@ -50,6 +50,7 @@ export function PatternBrowser() {
   const resultsRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const nextFocusIndex = useRef<number | null>(null);
+  const previewRequestId = useRef(0);
   const [previewPatternId, setPreviewPatternId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingFavoriteIds, setPendingFavoriteIds] = useState<
@@ -66,7 +67,13 @@ export function PatternBrowser() {
   );
   const visiblePatterns = matchingPatterns.slice(0, visibleCount);
 
-  useEffect(() => () => disposeAudioEngine(), []);
+  useEffect(
+    () => () => {
+      previewRequestId.current += 1;
+      disposeAudioEngine();
+    },
+    [],
+  );
   useEffect(() => {
     if (nextFocusIndex.current === null) return;
     resultsRef.current
@@ -98,24 +105,16 @@ export function PatternBrowser() {
     if (!pattern) return;
 
     const engine = getAudioEngine();
+    const requestId = ++previewRequestId.current;
     if (previewPatternId === pattern.id && status !== "stopped") {
       engine.stop();
       setPreviewPatternId(null);
       return;
     }
 
-    if (
-      engine.changePattern(
-        pattern,
-        (changedPattern) => {
-          setPreviewPatternId(changedPattern.id);
-        },
-        "measure",
-      )
-    ) {
-      return;
-    }
+    if (previewPatternId !== null) engine.stop();
 
+    setErrorMessage(null);
     setPreviewPatternId(pattern.id);
     try {
       const settings = usePracticeStore.getState();
@@ -132,6 +131,7 @@ export function PatternBrowser() {
         swing: pattern.swing ?? settings.swing,
       });
     } catch (error) {
+      if (requestId !== previewRequestId.current) return;
       setPreviewPatternId(null);
       setErrorMessage(
         error instanceof Error && error.message
@@ -146,6 +146,7 @@ export function PatternBrowser() {
     if (!usePatternStore.getState().isHydrated) return;
     const pattern = patterns.find((candidate) => candidate.id === patternId);
     if (!pattern) return;
+    previewRequestId.current += 1;
     disposeAudioEngine();
     setSelectedPatternId(pattern.id);
     setBpm(pattern.defaultBpm);

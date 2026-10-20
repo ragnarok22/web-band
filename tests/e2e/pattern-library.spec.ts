@@ -132,7 +132,7 @@ test("library preview skips the saved count-in without changing practice setting
   ).toHaveValue("4");
 });
 
-test("previews one groove at a time and stops before entering practice", async ({
+test("immediately replaces the audible preview and stops before entering practice", async ({
   page,
 }) => {
   const browserErrors = trackBrowserErrors(page);
@@ -148,10 +148,16 @@ test("previews one groove at a time and stops before entering practice", async (
     first.locator('[data-rhythm-cell][data-active="true"]'),
   ).toHaveCount(3, { timeout: 10_000 });
   const second = page.getByRole("article", { name: "Basic Pop", exact: true });
+  await second.scrollIntoViewIfNeeded();
+  // Switch at the start of the old bar, not just before its natural boundary.
+  // A measure-queued change would take roughly 2.7 seconds at 90 BPM.
+  await expect(
+    first.locator('[data-rhythm-cell][data-active="true"]').first(),
+  ).toHaveAttribute("data-step", "0", { timeout: 5000 });
   await second.getByRole("button", { name: "Basic Pop preview" }).click();
   await expect(
     second.getByRole("button", { name: "Stop Basic Pop preview" }),
-  ).toHaveAttribute("aria-pressed", "true", { timeout: 10_000 });
+  ).toHaveAttribute("aria-pressed", "true", { timeout: 1000 });
   await expect(
     first.getByRole("button", { name: "Basic Rock preview" }),
   ).toHaveAttribute("aria-pressed", "false");
@@ -163,7 +169,7 @@ test("previews one groove at a time and stops before entering practice", async (
   ).toHaveCount(0);
   await expect(
     second.locator('[data-rhythm-cell][data-active="true"]'),
-  ).toHaveCount(3);
+  ).toHaveCount(3, { timeout: 1000 });
   await second.getByRole("button", { name: "Stop Basic Pop preview" }).click();
   await expect(
     page.getByRole("button", { name: /preview$/, pressed: true }),
