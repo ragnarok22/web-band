@@ -9,6 +9,7 @@ import {
   type DataBackupActions,
 } from "@/components/data/data-backup-panel";
 import { DeleteLocalDataDialog } from "@/components/settings/delete-local-data-dialog";
+import { SettingsSkeleton } from "@/components/settings/settings-skeleton";
 import {
   AppearanceSettingsSection,
   HistorySettingsSection,
@@ -21,6 +22,9 @@ import {
   type ClearLocalDataCompletion,
   type ResetSettingsCompletion,
 } from "@/services/backup-service";
+import { useAppearanceStore } from "@/stores/appearance-store";
+import { useHistorySettingsStore } from "@/stores/history-settings-store";
+import { usePracticeStore } from "@/stores/practice-store";
 
 interface SettingsActions extends DataBackupActions {
   clearAllLocalData: () => Promise<ClearLocalDataCompletion>;
@@ -40,11 +44,20 @@ function messageFromError(error: unknown): string {
 export function SettingsScreen({
   actions = backupService,
 }: SettingsScreenProps) {
+  const appearanceHydrated = useAppearanceStore((state) => state.hasHydrated);
+  const historySettingsHydrated = useHistorySettingsStore(
+    (state) => state.hasHydrated,
+  );
+  const practiceHydrated = usePracticeStore((state) => state.hasHydrated);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState("");
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
+
+  if (!appearanceHydrated || !historySettingsHydrated || !practiceHydrated) {
+    return <SettingsSkeleton />;
+  }
 
   async function deleteLocalData(): Promise<void> {
     setIsDeleting(true);

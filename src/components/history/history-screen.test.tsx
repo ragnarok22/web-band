@@ -61,6 +61,9 @@ describe("practice journal", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Opening your practice journal",
     );
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(screen.queryByText("Your practice journey starts here.")).toBeNull();
     act(() =>
       usePracticeHistoryStore.setState({
         isHydrated: true,
@@ -69,6 +72,21 @@ describe("practice journal", () => {
     );
     rerender(<HistoryScreen />);
     expect(screen.getByRole("alert")).toHaveTextContent("Storage unavailable");
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+  });
+
+  it("keeps existing sessions visible during a background refresh", () => {
+    usePracticeHistoryStore.setState({
+      isLoading: true,
+      sessions: [historySession("existing", { startedAt: local(20) })],
+    });
+    render(<HistoryScreen />);
+
+    expect(
+      screen.getByRole("region", { name: "Practice overview" }),
+    ).toBeVisible();
+    expect(screen.getByRole("article")).toBeVisible();
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
   });
 
   it("renders exactly four truthful summaries, seven activity days, and daily totals", () => {

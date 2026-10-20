@@ -3,15 +3,12 @@
 import dynamic from "next/dynamic";
 
 import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+import { PatternBrowserSkeleton } from "@/components/patterns/pattern-browser-skeleton";
 
 const PatternBrowser = dynamic(
   () => import("./pattern-browser").then((module) => module.PatternBrowser),
   {
-    loading: () => (
-      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
-        Opening the groove library
-      </main>
-    ),
+    loading: PatternBrowserSkeleton,
     ssr: false,
   },
 );

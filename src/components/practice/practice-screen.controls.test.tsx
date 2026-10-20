@@ -102,10 +102,11 @@ describe("practice screen — controls", () => {
     );
   });
 
-  it("disables persisted toggles until practice stores hydrate", async () => {
+  it("keeps persisted controls disabled if stores refresh during a session", async () => {
     const user = userEvent.setup();
     usePracticeStore.setState({ hasHydrated: false });
     useGuidedPracticeStore.setState({ isHydrated: false });
+    useAudioStore.setState({ status: "paused" });
     render(<PracticeScreen />);
     await user.click(screen.getByRole("button", { name: "Controls" }));
     await user.click(screen.getByRole("button", { name: "Advanced" }));

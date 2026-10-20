@@ -523,6 +523,40 @@ h6 {
   border: 0;
 }
 
+.skeleton {
+  animation: skeleton-pulse 1.8s ease-in-out infinite;
+}
+
+.skeleton-step-row {
+  mask-image: repeating-linear-gradient(
+    to right,
+    #000 0,
+    #000 calc(12.5% - 0.25rem),
+    transparent calc(12.5% - 0.25rem),
+    transparent 12.5%
+  );
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+html[data-reduce-motion="true"] .skeleton {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

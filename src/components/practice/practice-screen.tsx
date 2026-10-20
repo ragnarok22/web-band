@@ -15,6 +15,7 @@ import { PracticeHeader } from "@/components/practice/practice-header";
 import { PracticeNotices } from "@/components/practice/practice-notices";
 import { PracticePresetBar } from "@/components/practice/practice-preset-bar";
 import { PracticeSettings } from "@/components/practice/practice-settings";
+import { PracticeSkeleton } from "@/components/practice/practice-skeleton";
 import { ShortcutsDialog } from "@/components/practice/shortcuts-dialog";
 import { usePracticeController } from "@/hooks/use-practice-controller";
 import { audioStatusCopy } from "@/lib/audio-status";
@@ -32,6 +33,12 @@ export function PracticeScreen() {
   const visualSubdivisionDetail = useAppearanceStore(
     (state) => state.visualSubdivisionDetail,
   );
+
+  // Keep the controller mounted for lifecycle cleanup, and never hide an active
+  // transport or an audio error behind initial-setup placeholders.
+  if (!practice.isReady && !practice.active && practice.status !== "error") {
+    return <PracticeSkeleton />;
+  }
 
   const content = practice.isFocusMode ? (
     <PracticeFocusSession

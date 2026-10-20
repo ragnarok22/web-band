@@ -3,15 +3,12 @@
 import dynamic from "next/dynamic";
 
 import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+import { PracticeSkeleton } from "@/components/practice/practice-skeleton";
 
 const PracticeScreen = dynamic(
   () => import("./practice-screen").then((module) => module.PracticeScreen),
   {
-    loading: () => (
-      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
-        Preparing the practice room
-      </main>
-    ),
+    loading: PracticeSkeleton,
     ssr: false,
   },
 );

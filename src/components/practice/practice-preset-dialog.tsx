@@ -4,6 +4,7 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { useId, useState } from "react";
 
 import { PracticePresetCard } from "@/components/practice/practice-preset-card";
+import { PracticePresetSkeleton } from "@/components/practice/practice-preset-skeleton";
 import { Modal } from "@/components/shared/modal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -138,9 +139,7 @@ export function PracticePresetDialog({
             ) : null}
 
             {!isHydrated ? (
-              <p className="text-muted-foreground py-12 text-center text-sm font-bold">
-                Loading presets…
-              </p>
+              <PracticePresetSkeleton />
             ) : visiblePresets.length > 0 ? (
               <ul
                 aria-label={`${filterLabels[filter]} presets`}

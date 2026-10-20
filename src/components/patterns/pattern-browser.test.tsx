@@ -227,8 +227,15 @@ describe("pattern browser", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "Loading your groove library",
     );
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
     expect(screen.queryByRole("link", { name: "Create pattern" })).toBeNull();
     expect(screen.queryByRole("button", { name: /preview/i })).toBeNull();
+
+    act(() => usePatternStore.setState({ isHydrated: true }));
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(screen.getByRole("heading", { name: "Basic Rock" })).toBeVisible();
+    expect(engine.play).not.toHaveBeenCalled();
   });
 
   it("surfaces pattern preview failures", async () => {

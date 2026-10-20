@@ -3,15 +3,12 @@
 import dynamic from "next/dynamic";
 
 import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+import { SettingsSkeleton } from "@/components/settings/settings-skeleton";
 
 const SettingsScreen = dynamic(
   () => import("./settings-screen").then((module) => module.SettingsScreen),
   {
-    loading: () => (
-      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
-        Opening settings
-      </main>
-    ),
+    loading: SettingsSkeleton,
     ssr: false,
   },
 );

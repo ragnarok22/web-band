@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { disposeAudioEngine, getAudioEngine } from "@/audio/audio-engine";
 import { PatternCard } from "@/components/patterns/pattern-card";
+import { PatternBrowserSkeleton } from "@/components/patterns/pattern-browser-skeleton";
 import { PatternFiltersPanel } from "@/components/patterns/pattern-filters-panel";
 import { PatternSharingControl } from "@/components/patterns/pattern-sharing-control";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export function PatternBrowser() {
     nextFocusIndex.current = null;
   }, [visibleCount]);
 
-  if (!isHydrated) return <PatternBrowserLoading />;
+  if (!isHydrated) return <PatternBrowserSkeleton />;
 
   function updateFilter<Key extends keyof PatternFilters>(
     key: Key,
@@ -350,15 +351,5 @@ function PatternGrid({
         />
       ))}
     </section>
-  );
-}
-
-function PatternBrowserLoading() {
-  return (
-    <main className="text-muted-foreground flex min-h-screen items-center justify-center px-5 text-center text-sm font-extrabold tracking-wider uppercase">
-      <p aria-live="polite" role="status">
-        Loading your groove library
-      </p>
-    </main>
   );
 }

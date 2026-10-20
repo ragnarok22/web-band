@@ -43,6 +43,23 @@ describe("drum pattern editor", () => {
     });
   });
 
+  it("shows a non-interactive skeleton until the saved library hydrates", () => {
+    usePatternStore.setState({ isHydrated: false });
+    render(<DrumPatternEditor />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Setting up the pattern workshop",
+    );
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Pattern name" })).toBeNull();
+
+    act(() => usePatternStore.setState({ isHydrated: true }));
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Pattern name" })).toBeVisible();
+    expect(engine.play).not.toHaveBeenCalled();
+  });
+
   it("validates the draft and saves a new pattern without losing it", async () => {
     const user = userEvent.setup();
     const create = vi.fn(async (pattern) => pattern);

@@ -3,15 +3,12 @@
 import dynamic from "next/dynamic";
 
 import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+import { HistorySkeleton } from "@/components/history/history-skeleton";
 
 const HistoryScreen = dynamic(
   () => import("./history-screen").then((module) => module.HistoryScreen),
   {
-    loading: () => (
-      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-bold tracking-wider uppercase">
-        Opening your practice journal
-      </main>
-    ),
+    loading: HistorySkeleton,
     ssr: false,
   },
 );

@@ -60,12 +60,13 @@ describe("practice screen", () => {
     useGuidedPracticeStore.setState({ isHydrated: false });
     usePatternStore.setState({ isHydrated: false });
     render(<PracticeScreen />);
-    expect(
-      screen.getByText("Loading your saved practice setup…"),
-    ).toBeVisible();
-    const play = screen.getByRole("button", { name: "Play" });
-    expect(play).toBeDisabled();
-    await user.click(play);
+    expect(screen.getByRole("status", { name: "" })).toHaveTextContent(
+      "Loading your saved practice setup…",
+    );
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(screen.queryByRole("button", { name: "Play" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Basic Rock" })).toBeNull();
     fireEvent.keyDown(window, { code: "Space", key: " " });
     expect(engine.play).not.toHaveBeenCalled();
     act(() => {
@@ -74,6 +75,40 @@ describe("practice screen", () => {
       usePatternStore.setState({ isHydrated: true });
     });
     expect(screen.getByRole("button", { name: "Play" })).toBeEnabled();
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(engine.play).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Play" }));
+    expect(engine.play).toHaveBeenCalledOnce();
+  });
+
+  it.each(["initializing", "playing", "paused", "suspended"] as const)(
+    "keeps Stop available during %s if saved setup is refreshing",
+    async (status) => {
+      const user = userEvent.setup();
+      usePracticeStore.setState({ hasHydrated: false });
+      useAudioStore.setState({ status });
+      render(<PracticeScreen />);
+
+      expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+      const stop = screen.getByRole("button", { name: "Stop playback" });
+      expect(stop).toBeEnabled();
+      await user.click(stop);
+      expect(engine.stop).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("does not hide an audio error behind setup placeholders", () => {
+    usePracticeStore.setState({ hasHydrated: false });
+    useAudioStore.setState({
+      status: "error",
+      errorMessage: "Audio permission denied. Try Play again.",
+    });
+    render(<PracticeScreen />);
+
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Audio permission denied",
+    );
   });
 
   it("passes the current guided-practice snapshot to the audio engine", async () => {

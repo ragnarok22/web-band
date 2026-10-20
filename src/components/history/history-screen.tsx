@@ -15,6 +15,7 @@ import { HistoryActivityChart } from "@/components/history/history-activity-char
 import { HistoryConfirmationDialog } from "@/components/history/history-confirmation-dialog";
 import { HistoryRecentSessions } from "@/components/history/history-recent-sessions";
 import { HistorySummary } from "@/components/history/history-summary";
+import { HistorySkeleton } from "@/components/history/history-skeleton";
 import {
   defaultHistoryFilters,
   getHistoryActivity,
@@ -61,7 +62,6 @@ function useHistoryDate(): Date {
 export function HistoryScreen() {
   const sessions = usePracticeHistoryStore((state) => state.sessions);
   const isHydrated = usePracticeHistoryStore((state) => state.isHydrated);
-  const isLoading = usePracticeHistoryStore((state) => state.isLoading);
   const errorMessage = usePracticeHistoryStore((state) => state.errorMessage);
   const [confirmation, setConfirmation] = useState<
     PracticeSession | "all" | null
@@ -92,15 +92,7 @@ export function HistoryScreen() {
     });
   }
 
-  if (!isHydrated || isLoading) {
-    return (
-      <main className="text-muted-foreground flex min-h-[calc(100dvh-4rem)] items-center justify-center px-5 text-sm">
-        <p aria-live="polite" role="status">
-          Opening your practice journal
-        </p>
-      </main>
-    );
-  }
+  if (!isHydrated) return <HistorySkeleton />;
   return (
     <main className="mx-auto min-h-[calc(100dvh-4rem)] w-full max-w-[100rem] px-3 py-6 sm:px-6 lg:px-8">
       <header className="mb-6 flex items-start justify-between gap-3">

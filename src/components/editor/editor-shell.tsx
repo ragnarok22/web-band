@@ -3,16 +3,13 @@
 import dynamic from "next/dynamic";
 
 import { SectionErrorBoundary } from "@/components/errors/section-error-boundary";
+import { EditorSkeleton } from "@/components/editor/editor-skeleton";
 
 const DrumPatternEditor = dynamic(
   () =>
     import("./drum-pattern-editor").then((module) => module.DrumPatternEditor),
   {
-    loading: () => (
-      <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-extrabold tracking-wider uppercase">
-        Opening the pattern workshop
-      </main>
-    ),
+    loading: EditorSkeleton,
     ssr: false,
   },
 );

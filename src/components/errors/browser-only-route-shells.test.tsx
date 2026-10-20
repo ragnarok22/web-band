@@ -1,14 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const rendering = vi.hoisted(() => ({ loading: false }));
 const dynamic = vi.hoisted(() =>
-  vi.fn((loader: unknown, options: { ssr: boolean }) => {
-    void loader;
-    void options;
-    return function BrokenScreen() {
-      throw new Error("Dynamic screen failed");
-    };
-  }),
+  vi.fn(
+    (
+      loader: unknown,
+      options: { ssr: boolean; loading: () => React.ReactNode },
+    ) => {
+      void loader;
+      return function BrokenScreen() {
+        if (rendering.loading) return options.loading();
+        throw new Error("Dynamic screen failed");
+      };
+    },
+  ),
 );
 
 vi.mock("next/dynamic", () => ({ default: dynamic }));
@@ -29,6 +35,7 @@ const shells = [
 
 describe("browser-only route shells", () => {
   beforeEach(() => {
+    rendering.loading = false;
     vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
@@ -55,4 +62,17 @@ describe("browser-only route shells", () => {
     expect(screen.getByRole("heading", { name: heading })).toBeVisible();
     expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
   });
+
+  it.each(shells)(
+    "renders a page skeleton while %s is loading",
+    (_heading, Shell) => {
+      rendering.loading = true;
+      const { container } = render(<Shell />);
+
+      expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+      expect(screen.getAllByRole("status")).toHaveLength(1);
+      expect(container.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+      expect(screen.queryByRole("button")).toBeNull();
+    },
+  );
 });

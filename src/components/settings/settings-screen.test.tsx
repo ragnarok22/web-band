@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -113,27 +114,29 @@ describe("settings screen", () => {
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
-  it("disables persisted toggles until their stores hydrate", () => {
+  it("shows skeletons instead of default values until preferences hydrate", () => {
     useAppearanceStore.setState({ hasHydrated: false });
     useHistorySettingsStore.setState({ hasHydrated: false });
     usePracticeStore.setState({ hasHydrated: false });
     render(<SettingsScreen actions={actions()} />);
 
+    expect(screen.getByRole("status")).toHaveTextContent("Opening settings");
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+    expect(document.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+    expect(screen.queryByRole("switch", { name: "Reduce motion" })).toBeNull();
     expect(
-      screen.getByRole("switch", { name: "Reduce motion" }),
-    ).toHaveAttribute("aria-disabled", "true");
-    expect(
-      screen.getByRole("switch", { name: "Save practice history" }),
-    ).toHaveAttribute("aria-disabled", "true");
-    expect(
-      screen.getByRole("spinbutton", { name: "Minimum session duration" }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("slider", { name: "Master volume" }),
-    ).toBeDisabled();
-    expect(
-      screen.getByRole("combobox", { name: "Default count-in" }),
-    ).toBeDisabled();
+      screen.queryByRole("button", { name: "Delete local data" }),
+    ).toBeNull();
+
+    act(() => {
+      useAppearanceStore.setState({ hasHydrated: true });
+      useHistorySettingsStore.setState({ hasHydrated: true });
+    });
+    expect(screen.getByRole("main")).toHaveAttribute("aria-busy", "true");
+
+    act(() => usePracticeStore.setState({ hasHydrated: true }));
+    expect(document.querySelector('[data-slot="skeleton"]')).toBeNull();
+    expect(screen.getByRole("combobox", { name: "Color theme" })).toBeVisible();
   });
 
   it("persists a global sound character", async () => {

@@ -9,6 +9,7 @@ import { useState } from "react";
 import { ConfirmationDialog } from "@/components/shared/confirmation-dialog";
 import { DrumPatternGrid } from "@/components/editor/drum-pattern-grid";
 import { EditorHeader } from "@/components/editor/editor-header";
+import { EditorSkeleton } from "@/components/editor/editor-skeleton";
 import { PatternEditorFields } from "@/components/editor/pattern-editor-fields";
 import { builtInPatterns } from "@/data/patterns";
 import { useEditorPlayback } from "@/hooks/use-editor-playback";
@@ -37,7 +38,7 @@ export function DrumPatternEditor() {
   const patternQuery = searchParams.get("pattern");
   const duplicateQuery = searchParams.get("duplicate");
 
-  if (!isHydrated) return <EditorLoading />;
+  if (!isHydrated) return <EditorSkeleton />;
   if (patternQuery && duplicateQuery) {
     return (
       <EditorMissing
@@ -304,14 +305,6 @@ function PatternEditorSession({
           onConfirm={removeSavedPattern}
         />
       ) : null}
-    </main>
-  );
-}
-
-function EditorLoading() {
-  return (
-    <main className="text-muted-foreground flex min-h-screen items-center justify-center text-sm font-extrabold tracking-wider uppercase">
-      Setting up the pattern workshop
     </main>
   );
 }
