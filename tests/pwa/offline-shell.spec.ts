@@ -55,8 +55,16 @@ test("loads every local-first route offline after the first visit", async ({
 
   await page.goto("/about", { waitUntil: "domcontentloaded" });
   await expect(
-    page.getByRole("heading", { name: "A drum room without the room." }),
+    page.getByRole("heading", { name: "Practice guitar. Find your rhythm." }),
   ).toBeVisible();
+  const details = page.getByRole("button", { name: "How Web Band works" });
+  await details.click();
+  await expect(details).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.getByRole("heading", { name: "Accurate Musical Timing" }),
+  ).toBeVisible();
+  await details.click();
+  await expect(details).toHaveAttribute("aria-expanded", "false");
 
   await page.goto("/history", { waitUntil: "domcontentloaded" });
   await expect(

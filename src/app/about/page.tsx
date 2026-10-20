@@ -5,7 +5,7 @@ import { AboutScreen } from "@/components/about/about-screen";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Learn how Web Band turns browser synthesis and precise musical timing into a private, local-first practice room.",
+    "Meet your browser-based rhythm practice companion for guitarists: drum grooves, strumming, chord progressions, tempo training, and metronome practice.",
 };
 
 export default function AboutPage() {

@@ -9,7 +9,7 @@ const routes = [
   { heading: "Shape your groove", path: "/editor" },
   { heading: "Practice history", path: "/history" },
   { heading: "Settings", path: "/settings" },
-  { heading: "A drum room without the room.", path: "/about" },
+  { heading: "Practice guitar. Find your rhythm.", path: "/about" },
 ] as const;
 const themes = ["dark", "light"] as const;
 
@@ -77,12 +77,14 @@ async function expectNamedRouteControls(page: Page, path: string) {
     ).toBeVisible();
   } else {
     await expect(
-      page.getByRole("img", {
-        name: "A sixteen-step rhythm with accented beats",
-      }),
+      page.getByRole("link", { name: "Start Practicing" }).first(),
     ).toBeVisible();
+    const details = page.getByRole("button", { name: "How Web Band works" });
+    await expect(details).toHaveAttribute("aria-expanded", "false");
+    await details.click();
+    await expect(details).toHaveAttribute("aria-expanded", "true");
     await expect(
-      page.getByRole("link", { name: "Start practicing" }),
+      page.getByRole("heading", { name: "Accurate Musical Timing" }),
     ).toBeVisible();
   }
 }

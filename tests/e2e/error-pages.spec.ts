@@ -81,7 +81,9 @@ for (const recovery of ["Try again", "Back to practice"] as const) {
       ).toBeVisible();
     } else {
       await expect(
-        page.getByRole("heading", { name: "A drum room without the room." }),
+        page.getByRole("heading", {
+          name: "Practice guitar. Find your rhythm.",
+        }),
       ).toBeVisible();
     }
     expect(
