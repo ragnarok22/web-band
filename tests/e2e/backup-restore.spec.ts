@@ -204,7 +204,7 @@ test("exports, clears, and restores a custom pattern backup", async ({
   await navigate(page, "Patterns");
   await page.getByRole("searchbox").fill(patternName);
   await expect(
-    page.getByRole("heading", { name: "No grooves match" }),
+    page.getByRole("heading", { name: "No grooves found." }),
   ).toBeVisible();
 
   await navigate(page, "Settings");

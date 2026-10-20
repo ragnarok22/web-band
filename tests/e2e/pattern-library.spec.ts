@@ -16,13 +16,16 @@ test("filters patterns and persists a favorite", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Find your pocket" }),
   ).toBeVisible();
-  await expect(page.getByText("44 of 44 patterns")).toBeVisible();
+  await expect(page.getByText("44 patterns found")).toBeVisible();
+  await expect(page.getByText("Showing 12 of 44 patterns")).toBeVisible();
 
   const showFilters = page.getByRole("button", { name: "Show filters" });
   if (await showFilters.isVisible()) await showFilters.click();
   await page.getByRole("combobox", { name: "Genre" }).click();
   await page.getByRole("option", { name: "Reggae", exact: true }).click();
-  await expect(page.getByText("4 of 44 patterns")).toBeVisible();
+  await expect(
+    page.getByText("4 patterns found", { exact: true }),
+  ).toBeVisible();
   const favoriteButton = page.getByRole("button", {
     name: "One Drop favorite",
   });
@@ -38,7 +41,7 @@ test("filters patterns and persists a favorite", async ({ page }) => {
   expect(browserErrors).toEqual([]);
 });
 
-test("swipes through patterns without document overflow at 320px", async ({
+test("browses every pattern in batches without overflow at 320px", async ({
   page,
 }) => {
   const browserErrors = trackBrowserErrors(page);
@@ -49,16 +52,24 @@ test("swipes through patterns without document overflow at 320px", async ({
   ).toBeVisible();
 
   const patterns = page.getByRole("region", { name: "Patterns" });
-  await expect(patterns.getByRole("article")).toHaveCount(44);
+  await expect(patterns.getByRole("article")).toHaveCount(12);
   const rail = await patterns.evaluate((element) => ({
     clientWidth: element.clientWidth,
     scrollWidth: element.scrollWidth,
   }));
-  expect(rail.scrollWidth).toBeGreaterThan(rail.clientWidth);
-  await patterns.evaluate((element) => element.scrollTo({ left: 300 }));
-  await expect
-    .poll(() => patterns.evaluate((element) => element.scrollLeft))
-    .toBeGreaterThan(0);
+  expect(rail.scrollWidth).toBeLessThanOrEqual(rail.clientWidth);
+  for (const count of [24, 36, 44]) {
+    const firstNewIndex = await patterns.getByRole("article").count();
+    await page.getByRole("button", { name: "Load more" }).click();
+    await expect(patterns.getByRole("article")).toHaveCount(count);
+    await expect(
+      patterns.getByRole("article").nth(firstNewIndex),
+    ).toBeFocused();
+  }
+  const names = await patterns.getByRole("heading").allTextContents();
+  expect(new Set(names).size).toBe(44);
+  await expect(page.getByText("Showing 44 of 44 patterns")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0);
 
   const dimensions = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,
@@ -66,6 +77,80 @@ test("swipes through patterns without document overflow at 320px", async ({
   }));
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
   expect(browserErrors).toEqual([]);
+});
+
+test("previews one groove at a time and stops before entering practice", async ({
+  page,
+}) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.goto("/patterns");
+  const first = page.getByRole("article", { name: "Basic Rock", exact: true });
+  await first.getByRole("button", { name: "Basic Rock preview" }).click();
+  await expect(
+    first.getByRole("button", { name: "Basic Rock preview" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(first.getByText("Stop preview", { exact: true })).toBeVisible();
+  const second = page.getByRole("article", { name: "Basic Pop", exact: true });
+  await second.getByRole("button", { name: "Basic Pop preview" }).click();
+  await expect(
+    second.getByRole("button", { name: "Basic Pop preview" }),
+  ).toHaveAttribute("aria-pressed", "true", { timeout: 10_000 });
+  await expect(
+    first.getByRole("button", { name: "Basic Rock preview" }),
+  ).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    page.getByRole("button", { name: /preview$/, pressed: true }),
+  ).toHaveCount(1);
+  await second.getByRole("button", { name: "Basic Pop preview" }).click();
+  await expect(
+    page.getByRole("button", { name: /preview$/, pressed: true }),
+  ).toHaveCount(0);
+  await second.getByRole("button", { name: "Practice", exact: true }).click();
+  await expect(page).toHaveURL(/\/practice$/);
+  await expect(page.getByRole("heading", { name: "Basic Pop" })).toBeVisible();
+  await expect(page.getByTestId("transport-status")).toHaveText("Ready");
+  expect(browserErrors).toEqual([]);
+});
+
+test("combines quick filters, advanced filters, sorting, and reset across the whole library", async ({
+  page,
+}) => {
+  await page.goto("/patterns");
+  await page.getByRole("button", { name: "Load more" }).click();
+  await page.getByRole("button", { name: "Show filters" }).click();
+  await page.getByRole("combobox", { name: "Sort order" }).click();
+  await page.getByRole("option", { name: "Default BPM", exact: true }).click();
+  await expect(page.getByRole("article")).toHaveCount(12);
+  await expect(
+    page
+      .getByRole("article")
+      .first()
+      .getByRole("button", { name: "Default tempo: 58 BPM" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Beginner", exact: true }).click();
+  await page.getByRole("combobox", { name: "Genre" }).click();
+  await page.getByRole("option", { name: "Reggae", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "One Drop", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("group", { name: "Quick filters" })
+      .getByRole("button", { pressed: true }),
+  ).toHaveCount(1);
+  await page.getByRole("searchbox").fill("no matching groove");
+  await expect(
+    page.getByRole("heading", { name: "No grooves found." }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Reset filters", exact: true })
+    .last()
+    .click();
+  await expect(page.getByText("Showing 12 of 44 patterns")).toBeVisible();
+  await page.getByRole("button", { name: "Favorites", exact: true }).click();
+  await expect(
+    page.getByText(/Save patterns with the heart icon/),
+  ).toBeVisible();
 });
 
 test("opens a library pattern in practice and restores it after reload", async ({
@@ -92,6 +177,52 @@ test("opens a library pattern in practice and restores it after reload", async (
     timeout: 15_000,
   });
   expect(browserErrors).toEqual([]);
+});
+
+test("opens card actions, details, and terminology help using the keyboard", async ({
+  page,
+}) => {
+  await page.goto("/patterns");
+  await page.getByRole("searchbox").fill("Basic Rock");
+  const card = page.getByRole("article", { name: "Basic Rock", exact: true });
+  const more = card.getByRole("button", {
+    name: "More actions for Basic Rock",
+  });
+  await more.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("menuitem", { name: "Duplicate Basic Rock" }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(more).toBeFocused();
+  const details = card.getByRole("button", { name: "Basic Rock Details" });
+  await details.focus();
+  await page.keyboard.press("Enter");
+  await expect(details).toHaveAttribute("aria-expanded", "true");
+  await expect(card.getByText("70-130 BPM")).toBeVisible();
+  await card.getByRole("button", { name: "Default tempo: 90 BPM" }).focus();
+  await expect(page.getByRole("tooltip")).toContainText(
+    "BPM means beats per minute.",
+  );
+  await expect(
+    card.getByRole("button", { name: "Default tempo: 90 BPM" }),
+  ).toHaveAccessibleDescription(/BPM means beats per minute/);
+});
+
+test("opens terminology help with a touch interaction", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, "Touch interaction is verified in mobile Chromium.");
+  await page.goto("/patterns");
+  await page.getByRole("searchbox").fill("Basic Rock");
+  const tempo = page.getByRole("button", { name: "Default tempo: 90 BPM" });
+  await tempo.tap();
+  await expect(page.getByRole("tooltip")).toContainText(
+    "BPM means beats per minute.",
+  );
+  await tempo.tap();
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
 });
 
 test("navigates patterns by keyboard and commits active changes on a boundary", async ({

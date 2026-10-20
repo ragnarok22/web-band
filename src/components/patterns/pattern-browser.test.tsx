@@ -3,14 +3,27 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PatternBrowser } from "@/components/patterns/pattern-browser";
+import { disposeAudioEngine } from "@/audio/audio-engine";
+import { builtInPatterns } from "@/data/patterns";
+import {
+  defaultPatternFilters,
+  filterAndSortPatterns,
+} from "@/lib/pattern-filters";
 import { useAudioStore } from "@/stores/audio-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import type { CustomDrumPattern } from "@/types/persistence";
+import type { DrumPattern } from "@/types/pattern";
 
 const router = vi.hoisted(() => ({ push: vi.fn() }));
 const engine = vi.hoisted(() => ({
-  changePattern: vi.fn(() => false),
+  changePattern: vi.fn<
+    (
+      pattern: DrumPattern,
+      onChange: (pattern: DrumPattern) => void,
+      mode: string,
+    ) => boolean
+  >(() => false),
   play: vi.fn(() => Promise.resolve()),
   stop: vi.fn(),
 }));
@@ -52,6 +65,7 @@ function customPattern(): CustomDrumPattern {
 describe("pattern browser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    engine.changePattern.mockReturnValue(false);
     useAudioStore.setState({ errorMessage: null, status: "not-initialized" });
     usePracticeStore.setState({
       bpm: 90,
@@ -89,9 +103,10 @@ describe("pattern browser", () => {
     const user = userEvent.setup();
     render(<PatternBrowser />);
 
+    await user.click(screen.getByRole("button", { name: "Show filters" }));
     await user.click(screen.getByRole("combobox", { name: "Genre" }));
     await user.click(await screen.findByRole("option", { name: "Reggae" }));
-    expect(screen.getByText("4 of 44 patterns")).toBeInTheDocument();
+    expect(screen.getByText("4 patterns found")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "One Drop favorite" }));
     expect(
       screen.getByRole("button", { name: "One Drop favorite" }),
@@ -141,21 +156,26 @@ describe("pattern browser", () => {
     await user.click(favoriteButton);
     expect(favoriteButton).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "One Drop favorite" }),
+      screen.getByRole("button", { name: "Basic Pop favorite" }),
     ).toBeDisabled();
 
     await act(async () => finishFavorite());
     await waitFor(() => expect(favoriteButton).toBeEnabled());
   });
 
-  it("shows the recommended BPM range on pattern cards", () => {
+  it("keeps technical metadata behind Details", async () => {
+    const user = userEvent.setup();
     render(<PatternBrowser />);
     const card = screen
       .getByRole("heading", { name: "Basic Rock" })
       .closest("article");
     expect(card).not.toBeNull();
 
-    expect(within(card!).getByText("Recommended")).toBeInTheDocument();
+    expect(within(card!).queryByText("Recommended")).not.toBeInTheDocument();
+    await user.click(
+      within(card!).getByRole("button", { name: "Basic Rock Details" }),
+    );
+    expect(within(card!).getByText("Recommended")).toBeVisible();
     expect(within(card!).getByText("70-130 BPM")).toBeInTheDocument();
   });
 
@@ -163,6 +183,7 @@ describe("pattern browser", () => {
     const user = userEvent.setup();
     render(<PatternBrowser />);
 
+    await user.type(screen.getByRole("searchbox"), "Shuffle Blues");
     await user.click(
       screen.getByRole("button", { name: "Shuffle Blues preview" }),
     );
@@ -197,7 +218,8 @@ describe("pattern browser", () => {
     );
   });
 
-  it("links create, built-in duplicate, and custom edit actions", () => {
+  it("links create, built-in duplicate, and custom edit actions", async () => {
+    const user = userEvent.setup();
     usePatternStore.setState({ customPatterns: [customPattern()] });
 
     render(<PatternBrowser />);
@@ -205,19 +227,22 @@ describe("pattern browser", () => {
     expect(
       screen.getByRole("link", { name: "Create pattern" }),
     ).toHaveAttribute("href", "/editor");
+    screen.getByRole("button", { name: "More actions for Basic Rock" }).focus();
+    await user.keyboard("{ArrowDown}");
     expect(
-      screen.getByRole("link", { name: "Duplicate Basic Rock" }),
+      screen.getByRole("menuitem", { name: "Duplicate Basic Rock" }),
     ).toHaveAttribute("href", "/editor?duplicate=basic-rock");
+    await user.keyboard("{Escape}");
+    await user.click(screen.getByRole("button", { name: "My Patterns" }));
+    screen.getByRole("button", { name: "More actions for My Pattern" }).focus();
+    await user.keyboard("{ArrowDown}");
     expect(
-      screen.getByRole("link", { name: "Edit My Pattern" }),
+      screen.getByRole("menuitem", { name: "Edit My Pattern" }),
     ).toHaveAttribute("href", "/editor?pattern=my-pattern");
     expect(screen.getByText("Your pattern")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "My Pattern" })).toHaveClass(
       "break-words",
     );
-    expect(
-      screen.getByRole("heading", { name: "My Pattern" }).closest("article"),
-    ).toHaveClass("[content-visibility:auto]");
   });
 
   it("exports and previews imports for shared custom patterns", async () => {
@@ -244,8 +269,11 @@ describe("pattern browser", () => {
     expect(
       screen.queryByRole("button", { name: "Export Basic Rock pattern" }),
     ).toBeNull();
+    await user.click(screen.getByRole("button", { name: "My Patterns" }));
+    screen.getByRole("button", { name: "More actions for My Pattern" }).focus();
+    await user.keyboard("{ArrowDown}");
     await user.click(
-      screen.getByRole("button", { name: "Export My Pattern pattern" }),
+      screen.getByRole("menuitem", { name: "Export My Pattern pattern" }),
     );
     expect(patternSharing.downloadPatternShareEnvelope).toHaveBeenCalledWith(
       expect.objectContaining({ data: { patterns: [pattern] } }),
@@ -263,5 +291,185 @@ describe("pattern browser", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "Imported 1 pattern.",
     );
+  });
+
+  it("exports the complete custom collection from the header More menu", async () => {
+    const user = userEvent.setup();
+    const pattern = customPattern();
+    usePatternStore.setState({ customPatterns: [pattern] });
+    render(<PatternBrowser />);
+    screen.getByRole("button", { name: "More library actions" }).focus();
+    await user.keyboard("{ArrowDown}");
+    expect(
+      screen.getByRole("menuitem", { name: "Import patterns" }),
+    ).toBeVisible();
+    await user.click(
+      screen.getByRole("menuitem", { name: "Export my patterns" }),
+    );
+    expect(patternSharing.downloadPatternShareEnvelope).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { patterns: [pattern] } }),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Pattern export download started for 1 pattern.",
+    );
+  });
+
+  it("loads all built-in patterns in batches without duplicates and focuses new results", async () => {
+    const user = userEvent.setup();
+    render(<PatternBrowser />);
+    expect(screen.getAllByRole("article")).toHaveLength(12);
+    expect(screen.getByText("Showing 12 of 44 patterns")).toBeInTheDocument();
+    for (const count of [24, 36, 44]) {
+      const firstNewIndex = screen.getAllByRole("article").length;
+      await user.click(screen.getByRole("button", { name: "Load more" }));
+      expect(screen.getAllByRole("article")).toHaveLength(count);
+      expect(screen.getAllByRole("article")[firstNewIndex]).toHaveFocus();
+    }
+    const names = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((heading) => heading.textContent);
+    expect(new Set(names).size).toBe(44);
+    expect(names).toEqual(
+      [...builtInPatterns]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(({ name }) => name),
+    );
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
+  it("filters and sorts the full collection before limiting results, resetting each batch", async () => {
+    const user = userEvent.setup();
+    render(<PatternBrowser />);
+    await user.click(screen.getByRole("button", { name: "Load more" }));
+    await user.click(screen.getByRole("button", { name: "Show filters" }));
+    await user.click(screen.getByRole("combobox", { name: "Sort order" }));
+    await user.click(
+      await screen.findByRole("option", { name: "Default BPM" }),
+    );
+    expect(screen.getAllByRole("article")).toHaveLength(12);
+    expect(
+      screen
+        .getAllByRole("heading", { level: 2 })
+        .map((heading) => heading.textContent),
+    ).toEqual(
+      filterAndSortPatterns(
+        builtInPatterns,
+        defaultPatternFilters,
+        "bpm",
+        [],
+        [],
+      )
+        .slice(0, 12)
+        .map(({ name }) => name),
+    );
+    await user.click(screen.getByRole("button", { name: "Load more" }));
+    await user.type(screen.getByRole("searchbox"), "Shuffle Blues");
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    await user.click(screen.getByRole("button", { name: "Reset filters" }));
+    expect(screen.getAllByRole("article")).toHaveLength(12);
+    expect(
+      screen.getByRole("combobox", { name: "Sort order" }),
+    ).toHaveTextContent("Name");
+  });
+
+  it("combines exclusive quick filters with search and advanced filters", async () => {
+    const user = userEvent.setup();
+    usePatternStore.setState({
+      customPatterns: [customPattern()],
+      favoritePatternIds: ["one-drop", "my-pattern"],
+    });
+    render(<PatternBrowser />);
+    for (const difficulty of ["Beginner", "Intermediate", "Advanced"]) {
+      await user.click(screen.getByRole("button", { name: difficulty }));
+      const expected = builtInPatterns.filter(
+        (pattern) => pattern.difficulty === difficulty.toLowerCase(),
+      );
+      expect(screen.getAllByRole("article").length).toBe(
+        Math.min(12, expected.length + (difficulty === "Beginner" ? 1 : 0)),
+      );
+      expect(
+        within(
+          screen.getByRole("group", { name: "Quick filters" }),
+        ).getAllByRole("button", { pressed: true }),
+      ).toHaveLength(1);
+    }
+    await user.click(screen.getByRole("button", { name: "Favorites" }));
+    expect(screen.getAllByRole("article")).toHaveLength(2);
+    await user.click(screen.getByRole("button", { name: "Show filters" }));
+    await user.click(screen.getByRole("combobox", { name: "Genre" }));
+    await user.click(await screen.findByRole("option", { name: "Reggae" }));
+    expect(screen.getAllByRole("article")).toHaveLength(1);
+    expect(screen.getByRole("heading", { name: "One Drop" })).toBeVisible();
+    await user.type(screen.getByRole("searchbox"), "impossible groove");
+    expect(
+      screen.getByRole("heading", { name: "No grooves found." }),
+    ).toBeVisible();
+    expect(screen.getByText(/Save patterns with the heart icon/)).toBeVisible();
+    await user.click(
+      screen.getAllByRole("button", { name: "Reset filters" }).at(-1)!,
+    );
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(screen.getByRole("searchbox")).toHaveFocus();
+  });
+
+  it("sorts recently used patterns and applies the selected pattern's practice defaults", async () => {
+    const user = userEvent.setup();
+    const markRecent = vi.fn();
+    usePatternStore.setState({
+      recentPatternIds: ["shuffle-blues", "one-drop"],
+      markRecent,
+    });
+    render(<PatternBrowser />);
+    await user.click(screen.getByRole("button", { name: "Show filters" }));
+    await user.click(screen.getByRole("combobox", { name: "Sort order" }));
+    await user.click(
+      await screen.findByRole("option", { name: "Recently used" }),
+    );
+    const card = screen.getAllByRole("article")[0];
+    expect(card).toHaveAccessibleName("Shuffle Blues");
+    await user.click(within(card).getByRole("button", { name: "Practice" }));
+    expect(usePracticeStore.getState()).toMatchObject({
+      selectedPatternId: "shuffle-blues",
+      swing: 0.34,
+    });
+    expect(usePracticeStore.getState().bpm).toBe(
+      builtInPatterns.find(({ id }) => id === "shuffle-blues")!.defaultBpm,
+    );
+    expect(markRecent).toHaveBeenCalledWith("shuffle-blues");
+    expect(disposeAudioEngine).toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledWith("/practice");
+  });
+
+  it("keeps one active preview while switching on the existing measure boundary and cleans up on exit", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<PatternBrowser />);
+    await user.click(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    );
+    act(() => useAudioStore.setState({ status: "playing" }));
+    const basicPop = builtInPatterns.find(({ id }) => id === "basic-pop")!;
+    engine.changePattern.mockImplementationOnce((_pattern, onChange) => {
+      onChange(basicPop);
+      return true;
+    });
+    await user.click(screen.getByRole("button", { name: "Basic Pop preview" }));
+    expect(engine.play).toHaveBeenCalledOnce();
+    expect(engine.changePattern).toHaveBeenLastCalledWith(
+      basicPop,
+      expect.any(Function),
+      "measure",
+    );
+    expect(
+      screen.getByRole("button", { name: "Basic Rock preview" }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(
+      screen.getByRole("button", { name: "Basic Pop preview" }),
+    ).toHaveTextContent("Stop preview");
+    unmount();
+    expect(disposeAudioEngine).toHaveBeenCalled();
   });
 });

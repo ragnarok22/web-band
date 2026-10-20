@@ -5,10 +5,12 @@ import type {
 } from "@/types/pattern";
 
 export type PatternSort = "name" | "bpm" | "recent" | "favorites";
+export type PatternQuickFilter =
+  "all" | PatternDifficulty | "favorites" | "custom";
 
 export interface PatternFilters {
   category: PatternCategory | "all";
-  difficulty: PatternDifficulty | "all";
+  quickFilter: PatternQuickFilter;
   search: string;
   subdivision: 8 | 16 | "all";
   timeSignature: string | "all";
@@ -16,7 +18,7 @@ export interface PatternFilters {
 
 export const defaultPatternFilters: PatternFilters = {
   category: "all",
-  difficulty: "all",
+  quickFilter: "all",
   search: "",
   subdivision: "all",
   timeSignature: "all",
@@ -44,12 +46,19 @@ export function filterAndSortPatterns(
       const matchesSearch =
         query === "" ||
         pattern.name.toLocaleLowerCase().includes(query) ||
+        formatPatternCategory(pattern.category)
+          .toLocaleLowerCase()
+          .includes(query) ||
         pattern.description.toLocaleLowerCase().includes(query);
       const matchesCategory =
         filters.category === "all" || pattern.category === filters.category;
-      const matchesDifficulty =
-        filters.difficulty === "all" ||
-        pattern.difficulty === filters.difficulty;
+      const matchesQuickFilter =
+        filters.quickFilter === "all" ||
+        (filters.quickFilter === "favorites"
+          ? favorites.has(pattern.id)
+          : filters.quickFilter === "custom"
+            ? !pattern.isBuiltIn
+            : pattern.difficulty === filters.quickFilter);
       const matchesSubdivision =
         filters.subdivision === "all" ||
         pattern.subdivision === filters.subdivision;
@@ -60,7 +69,7 @@ export function filterAndSortPatterns(
       return (
         matchesSearch &&
         matchesCategory &&
-        matchesDifficulty &&
+        matchesQuickFilter &&
         matchesSubdivision &&
         matchesTimeSignature
       );

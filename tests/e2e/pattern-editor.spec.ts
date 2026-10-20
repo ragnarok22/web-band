@@ -37,7 +37,10 @@ test("creates, opens, and persists a custom drum pattern", async ({ page }) => {
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: "Sunset Pocket" }) });
   await expect(card.getByText("Your pattern")).toBeVisible();
-  await card.getByRole("link", { name: "Edit Sunset Pocket" }).click();
+  await card
+    .getByRole("button", { name: "More actions for Sunset Pocket" })
+    .click();
+  await page.getByRole("menuitem", { name: "Edit Sunset Pocket" }).click();
 
   await expect(page.getByRole("textbox", { name: "Pattern name" })).toHaveValue(
     "Sunset Pocket",

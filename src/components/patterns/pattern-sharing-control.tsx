@@ -1,10 +1,16 @@
 "use client";
 import { Button } from "@/components/ui/button";
 
-import { Download, FileUp } from "lucide-react";
+import { ChevronDown, Download, FileUp } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { PatternShareDialog } from "@/components/patterns/pattern-share-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { createPatternShareEnvelope } from "@/lib/pattern-sharing";
 import {
   downloadPatternShareEnvelope,
@@ -84,41 +90,52 @@ export function PatternSharingControl() {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
-        {customPatterns.length > 0 ? (
-          <Button
-            variant="outline"
-            className="border-border bg-surface text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
-            disabled={isPending}
-            onClick={exportPatterns}
-            type="button"
-          >
-            <Download aria-hidden="true" className="size-4" />
-            Export my patterns
-          </Button>
-        ) : null}
-        <Button
-          variant="outline"
-          className="border-border bg-surface text-muted-strong hover:border-border-strong hover:text-foreground flex min-h-12 items-center gap-2 rounded-xl border px-4 text-sm font-extrabold"
+      <DropdownMenu>
+        <DropdownMenuTrigger
           disabled={isPending}
-          onClick={() => fileInputRef.current?.click()}
           ref={importButtonRef}
-          type="button"
+          render={
+            <Button
+              aria-label="More library actions"
+              className="min-h-11 gap-2 rounded-xl px-3 text-sm font-bold"
+              variant="outline"
+            />
+          }
         >
-          <FileUp aria-hidden="true" className="size-4" />
-          Import patterns
-        </Button>
-        <input
-          accept="application/json,.json"
-          aria-label="Choose shared pattern file"
-          className="sr-only"
-          disabled={isPending}
-          name="shared-pattern-file"
-          onChange={(event) => void chooseFile(event.target.files?.[0])}
-          ref={fileInputRef}
-          type="file"
-        />
-      </div>
+          More <ChevronDown aria-hidden="true" className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem
+            className="min-h-11 gap-2 px-3"
+            disabled={isPending}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <FileUp aria-hidden="true" className="size-4" />
+            Import patterns
+          </DropdownMenuItem>
+          {customPatterns.length > 0 ? (
+            <DropdownMenuItem
+              className="min-h-11 gap-2 px-3"
+              disabled={isPending}
+              onClick={exportPatterns}
+            >
+              <Download aria-hidden="true" className="size-4" />
+              Export my patterns
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <input
+        accept="application/json,.json"
+        aria-label="Choose shared pattern file"
+        className="sr-only"
+        disabled={isPending}
+        name="shared-pattern-file"
+        onChange={(event) => void chooseFile(event.target.files?.[0])}
+        ref={fileInputRef}
+        tabIndex={-1}
+        type="file"
+      />
       {errorMessage && !preview ? (
         <p className="text-danger mt-2 max-w-md text-sm" role="alert">
           {errorMessage}

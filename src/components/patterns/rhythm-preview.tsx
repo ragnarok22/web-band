@@ -17,17 +17,17 @@ export function RhythmPreview({ pattern }: RhythmPreviewProps) {
   return (
     <div
       aria-label={`${pattern.name} rhythm preview`}
-      className="space-y-1.5"
+      className="space-y-1"
       role="img"
     >
       {rows.map((row) => (
         <div className="flex items-center gap-2" key={row.label}>
-          <span className="text-muted-foreground w-12 text-[0.62rem] font-bold tracking-wide uppercase">
+          <span className="text-muted-foreground w-14 shrink-0 text-[0.625rem] font-medium">
             {row.label}
           </span>
           <span
             aria-hidden="true"
-            className="grid flex-1 gap-1"
+            className="grid min-w-0 flex-1 gap-0.5"
             style={{
               gridTemplateColumns: `repeat(${stepCount}, minmax(0, 1fr))`,
             }}
@@ -40,7 +40,7 @@ export function RhythmPreview({ pattern }: RhythmPreviewProps) {
               );
               return (
                 <span
-                  className={`h-2 rounded-[0.15rem] ${hit ? (hit.velocity >= 0.8 ? "bg-primary" : "bg-primary/45") : "bg-surface-hover"}`}
+                  className={`h-1.5 rounded-[0.125rem] ${hit ? (hit.velocity >= 0.8 ? "bg-primary" : "bg-primary/45") : "bg-surface-hover"}`}
                   key={step}
                 />
               );

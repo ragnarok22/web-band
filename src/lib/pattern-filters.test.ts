@@ -12,7 +12,7 @@ describe("pattern filters", () => {
       builtInPatterns,
       {
         category: "funk",
-        difficulty: "advanced",
+        quickFilter: "advanced",
         search: "syncopated",
         subdivision: 16,
         timeSignature: "4/4",
@@ -23,6 +23,52 @@ describe("pattern filters", () => {
     );
 
     expect(result.map((pattern) => pattern.id)).toEqual(["syncopated-funk"]);
+  });
+
+  it("matches genre names even when not mentioned in the name or description", () => {
+    const pattern = {
+      ...builtInPatterns[0],
+      name: "Pocket",
+      description: "A steady rhythm.",
+      category: "funk" as const,
+    };
+    expect(
+      filterAndSortPatterns(
+        [pattern],
+        { ...defaultPatternFilters, search: "funk" },
+        "name",
+        [],
+        [],
+      ),
+    ).toEqual([pattern]);
+  });
+
+  it("uses ownership rather than genre for My Patterns and favorite IDs for Favorites", () => {
+    const custom = {
+      ...builtInPatterns[0],
+      id: "my-rock",
+      category: "rock" as const,
+      isBuiltIn: false,
+    };
+    const patterns = [...builtInPatterns, custom];
+    expect(
+      filterAndSortPatterns(
+        patterns,
+        { ...defaultPatternFilters, quickFilter: "custom" },
+        "name",
+        [],
+        [],
+      ),
+    ).toEqual([custom]);
+    expect(
+      filterAndSortPatterns(
+        patterns,
+        { ...defaultPatternFilters, quickFilter: "favorites" },
+        "name",
+        [custom.id],
+        [],
+      ),
+    ).toEqual([custom]);
   });
 
   it("sorts favorites and recently used patterns first", () => {

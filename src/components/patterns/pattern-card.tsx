@@ -1,19 +1,28 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 
-import { Copy, Heart, Pencil, Play, Square, Target } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, ChevronDown, Heart, Play, Square } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
 
+import { PatternActionsMenu } from "@/components/patterns/pattern-actions-menu";
 import { RhythmPreview } from "@/components/patterns/rhythm-preview";
-import { PatternExportButton } from "@/components/patterns/pattern-export-button";
-import { isCustomDrumPattern } from "@/lib/persistence-validation";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   formatPatternCategory,
   getTimeSignatureLabel,
 } from "@/lib/pattern-filters";
-import type { DrumPattern } from "@/types/pattern";
+import type { DrumPattern, PatternDifficulty } from "@/types/pattern";
 
 interface PatternCardProps {
   favoriteDisabled?: boolean;
@@ -25,6 +34,12 @@ interface PatternCardProps {
   pattern: DrumPattern;
 }
 
+const difficultyStyles: Record<PatternDifficulty, string> = {
+  beginner: "border-success/20 bg-success/8 text-foreground",
+  intermediate: "border-primary/20 bg-primary/8 text-foreground",
+  advanced: "border-border-strong bg-surface-elevated text-foreground",
+};
+
 export function PatternCard({
   favoriteDisabled = false,
   isFavorite,
@@ -34,134 +49,195 @@ export function PatternCard({
   onPreview,
   pattern,
 }: PatternCardProps) {
+  const titleId = useId();
+
   return (
     <Card
       as="article"
-      className="group h-full min-w-0 gap-0 p-4 transition-colors [contain-intrinsic-size:auto_28rem] [content-visibility:auto] sm:p-5"
+      aria-labelledby={titleId}
+      className={`min-w-0 gap-0 p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 ${isPreviewing ? "ring-primary/60 ring-2" : "hover:ring-border-strong"}`}
+      tabIndex={-1}
     >
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-[0.65rem] font-extrabold tracking-[0.12em] uppercase">
-            <Badge
-              variant="outline"
-              className="border-primary/25 bg-primary/10 text-primary"
-            >
-              {formatPatternCategory(pattern.category)}
-            </Badge>
-            <span className="text-muted-foreground">{pattern.difficulty}</span>
-            {!pattern.isBuiltIn ? (
-              <span className="border-success/30 bg-success/10 text-success rounded-md border px-2 py-1">
-                Your pattern
-              </span>
-            ) : null}
-          </div>
-          <h2 className="text-foreground text-xl font-black tracking-[-0.03em] [overflow-wrap:anywhere] break-words">
-            {pattern.name}
-          </h2>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          {isCustomDrumPattern(pattern) ? (
-            <PatternExportButton pattern={pattern} />
+      <div className="flex items-center justify-between gap-1">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-primary text-[0.65rem] font-extrabold tracking-[0.1em] uppercase">
+            {formatPatternCategory(pattern.category)}
+          </span>
+          <Badge
+            className={`text-[0.65rem] capitalize ${difficultyStyles[pattern.difficulty]}`}
+            variant="outline"
+          >
+            {pattern.difficulty}
+          </Badge>
+          {!pattern.isBuiltIn ? (
+            <span className="text-muted-foreground text-[0.65rem]">
+              Your pattern
+            </span>
           ) : null}
+        </div>
+        <div className="-mr-2 flex shrink-0">
           <Button
-            variant="ghost"
-            size="icon"
             aria-label={`${pattern.name} favorite`}
             aria-pressed={isFavorite}
-            className={`flex size-11 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait disabled:opacity-50 ${isFavorite ? "border-secondary-accent/40 bg-secondary-accent/12 text-secondary-accent" : "border-border text-muted-foreground hover:border-border-strong hover:bg-surface-hover hover:text-foreground"}`}
+            className={`size-11 shrink-0 rounded-lg ${isFavorite ? "text-secondary-accent bg-secondary-accent/10" : "text-muted-foreground"}`}
             disabled={favoriteDisabled}
             onClick={onFavorite}
+            size="icon"
             type="button"
+            variant="ghost"
           >
             <Heart
               aria-hidden="true"
-              className={`size-5 ${isFavorite ? "fill-current" : ""}`}
+              className={`size-4 ${isFavorite ? "fill-current" : ""}`}
             />
           </Button>
+          <PatternActionsMenu pattern={pattern} />
         </div>
       </div>
 
-      <p className="text-muted-foreground min-h-12 text-sm leading-6 [overflow-wrap:anywhere] break-words">
+      <h2
+        className="text-foreground mt-1 text-xl font-black tracking-[-0.03em] [overflow-wrap:anywhere] break-words"
+        id={titleId}
+      >
+        {pattern.name}
+      </h2>
+      <p className="text-muted-foreground mt-1 line-clamp-2 min-h-10 text-sm leading-5 [overflow-wrap:anywhere] break-words">
         {pattern.description}
       </p>
 
-      <dl className="my-4 grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
-        <div>
-          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
-            Meter
-          </dt>
-          <dd className="text-foreground mt-1 font-extrabold tabular-nums">
+      <Collapsible className="my-1">
+        <div className="flex flex-wrap items-center gap-x-3">
+          <PatternTerm
+            label={`Time signature: ${getTimeSignatureLabel(pattern)}`}
+            explanation="Time signature groups beats into each measure. 4/4 has four quarter-note beats."
+          >
             {getTimeSignatureLabel(pattern)}
-          </dd>
+          </PatternTerm>
+          <PatternTerm
+            label={`Default tempo: ${pattern.defaultBpm} BPM`}
+            explanation="BPM means beats per minute. A higher number means a faster rhythm."
+          >
+            {pattern.defaultBpm}{" "}
+            <span className="text-muted-foreground text-[0.65rem] font-medium">
+              BPM
+            </span>
+          </PatternTerm>
+          <CollapsibleTrigger
+            aria-label={`${pattern.name} Details`}
+            render={
+              <Button
+                className="text-muted-foreground ml-auto min-h-11 gap-1 px-2 text-xs data-panel-open:[&_svg]:rotate-180"
+                variant="ghost"
+              />
+            }
+          >
+            <span className="sr-only">{pattern.name} </span>Details
+            <ChevronDown aria-hidden="true" className="size-3" />
+          </CollapsibleTrigger>
         </div>
-        <div>
-          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
-            Default
-          </dt>
-          <dd className="text-foreground mt-1 font-extrabold tabular-nums">
-            {pattern.defaultBpm} BPM
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
-            Recommended
-          </dt>
-          <dd className="text-foreground mt-1 font-extrabold tabular-nums">
-            {pattern.recommendedBpmRange.min}-{pattern.recommendedBpmRange.max}{" "}
-            BPM
-          </dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground text-[0.62rem] font-bold tracking-wider uppercase">
-            Grid
-          </dt>
-          <dd className="text-foreground mt-1 font-extrabold tabular-nums">
-            {pattern.subdivision}ths
-          </dd>
-        </div>
-      </dl>
+        <CollapsibleContent>
+          <dl className="border-border mb-3 grid grid-cols-2 gap-3 border-t pt-3 text-xs">
+            <div>
+              <dt className="text-muted-foreground">Recommended</dt>
+              <dd className="mt-1 font-semibold tabular-nums">
+                {pattern.recommendedBpmRange.min}-
+                {pattern.recommendedBpmRange.max} BPM
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Subdivision / grid</dt>
+              <dd>
+                <PatternTerm
+                  label={`Subdivision: ${pattern.subdivision === 8 ? "Eighth notes" : "Sixteenth notes"}`}
+                  explanation="Subdivision splits each beat into smaller steps. Eighth notes give two steps per quarter-note beat; sixteenth notes give four."
+                >
+                  {pattern.subdivision === 8
+                    ? "Eighth notes"
+                    : "Sixteenth notes"}
+                </PatternTerm>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Length</dt>
+              <dd className="mt-1 font-semibold">
+                {pattern.bars} {pattern.bars === 1 ? "measure" : "measures"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Source</dt>
+              <dd className="mt-1 font-semibold">
+                {pattern.isBuiltIn ? "Built-in pattern" : "Your pattern"}
+              </dd>
+            </div>
+            {pattern.swing ? (
+              <div>
+                <dt className="text-muted-foreground">Swing</dt>
+                <dd className="mt-1 font-semibold">
+                  {Math.round(pattern.swing * 100)}%
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+        </CollapsibleContent>
+      </Collapsible>
 
-      <div className="border-border bg-background/45 mb-5 rounded-xl border p-3">
+      <div className="mt-auto pt-1">
         <RhythmPreview pattern={pattern} />
       </div>
-
-      <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-3">
-        <Link
-          aria-label={`${pattern.isBuiltIn ? "Duplicate" : "Edit"} ${pattern.name}`}
-          className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-extrabold transition-colors"
-          href={`/editor?${pattern.isBuiltIn ? "duplicate" : "pattern"}=${encodeURIComponent(pattern.id)}`}
-        >
-          {pattern.isBuiltIn ? (
-            <Copy aria-hidden="true" className="size-4" />
-          ) : (
-            <Pencil aria-hidden="true" className="size-4" />
-          )}
-          {pattern.isBuiltIn ? "Duplicate" : "Edit"}
-        </Link>
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <Button
-          variant="outline"
           aria-label={`${pattern.name} preview`}
           aria-pressed={isPreviewing}
-          className="border-border bg-surface-elevated text-muted-strong hover:border-border-strong hover:bg-surface-hover hover:text-foreground flex min-h-11 items-center justify-center gap-2 rounded-xl border text-sm font-extrabold transition-colors"
+          className="min-h-11 gap-2 rounded-xl text-sm font-bold"
           onClick={onPreview}
           type="button"
+          variant="outline"
         >
           {isPreviewing ? (
-            <Square aria-hidden="true" className="size-4 fill-current" />
+            <Square aria-hidden="true" className="size-3.5 fill-current" />
           ) : (
-            <Play aria-hidden="true" className="size-4 fill-current" />
+            <Play aria-hidden="true" className="size-3.5 fill-current" />
           )}
-          {isPreviewing ? "Stop" : "Preview"}
+          {isPreviewing ? "Stop preview" : "Preview"}
         </Button>
         <Button
-          className="bg-primary text-accent-ink hover:bg-accent-strong col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl text-sm font-extrabold transition-colors sm:col-span-1"
+          className="bg-primary text-accent-ink hover:bg-accent-strong min-h-11 gap-2 rounded-xl text-sm font-extrabold"
           onClick={onOpen}
           type="button"
         >
-          <Target aria-hidden="true" className="size-4" />
-          Practice
+          Practice <ArrowRight aria-hidden="true" className="size-4" />
         </Button>
       </div>
     </Card>
+  );
+}
+
+function PatternTerm({
+  children,
+  explanation,
+  label,
+}: {
+  children: ReactNode;
+  explanation: string;
+  label: string;
+}) {
+  const tooltipId = useId();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Tooltip open={isOpen} onOpenChange={setIsOpen}>
+      <TooltipTrigger
+        aria-label={label}
+        aria-describedby={isOpen ? tooltipId : undefined}
+        closeOnClick={false}
+        className="text-foreground decoration-border-strong min-h-11 min-w-11 rounded-md text-left text-sm font-bold tabular-nums underline decoration-dotted underline-offset-4"
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent id={tooltipId} role="tooltip">
+        {explanation}
+      </TooltipContent>
+    </Tooltip>
   );
 }

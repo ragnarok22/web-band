@@ -1,11 +1,10 @@
 "use client";
 
-import { FilterX, Search, SlidersHorizontal, X } from "lucide-react";
-import { useId, useRef } from "react";
+import { ChevronDown, Heart, Search, SlidersHorizontal, X } from "lucide-react";
+import { useId, type RefObject } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
   InputGroup,
   InputGroupAddon,
@@ -24,9 +23,19 @@ import {
 import {
   defaultPatternFilters,
   type PatternFilters,
+  type PatternQuickFilter,
   type PatternSort,
 } from "@/lib/pattern-filters";
-import type { PatternCategory, PatternDifficulty } from "@/types/pattern";
+import type { PatternCategory } from "@/types/pattern";
+
+const quickFilters: Array<{ label: string; value: PatternQuickFilter }> = [
+  { label: "All", value: "all" },
+  { label: "Beginner", value: "beginner" },
+  { label: "Intermediate", value: "intermediate" },
+  { label: "Advanced", value: "advanced" },
+  { label: "Favorites", value: "favorites" },
+  { label: "My Patterns", value: "custom" },
+];
 
 const categories: Array<PatternCategory | "all"> = [
   "all",
@@ -48,6 +57,7 @@ function formatOption(value: string): string {
 }
 
 interface PatternFiltersPanelProps {
+  searchInputRef: RefObject<HTMLInputElement | null>;
   filters: PatternFilters;
   isOpen: boolean;
   onClear: () => void;
@@ -61,6 +71,7 @@ interface PatternFiltersPanelProps {
 }
 
 export function PatternFiltersPanel({
+  searchInputRef,
   filters,
   isOpen,
   onClear,
@@ -70,29 +81,33 @@ export function PatternFiltersPanel({
   sort,
 }: PatternFiltersPanelProps) {
   const id = useId();
-  const searchRef = useRef<HTMLInputElement>(null);
-  const activeFilterCount = (
-    Object.keys(filters) as Array<keyof PatternFilters>
-  ).filter((key) => filters[key] !== defaultPatternFilters[key]).length;
-  const hasChanges = activeFilterCount > 0 || sort !== "name";
+  const hasChanges =
+    (Object.keys(filters) as Array<keyof PatternFilters>).some(
+      (key) => filters[key] !== defaultPatternFilters[key],
+    ) || sort !== "name";
+  const activeFilterCount = [
+    filters.category !== "all",
+    filters.timeSignature !== "all",
+    filters.subdivision !== "all",
+    sort !== "name",
+  ].filter(Boolean).length;
 
   return (
-    <Card
-      role="region"
+    <section
       aria-label="Pattern filters"
-      className="mb-6 gap-4 overflow-visible p-4 sm:p-5"
+      className="border-border mb-5 border-b pb-4"
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <InputGroup className="bg-surface-elevated dark:bg-surface-elevated h-11 flex-1">
+      <div className="min-w-0">
+        <InputGroup className="bg-surface-elevated dark:bg-surface-elevated h-12">
           <InputGroupAddon className="pl-3">
             <Search aria-hidden="true" className="size-4" />
           </InputGroupAddon>
           <InputGroupInput
             aria-label="Search patterns"
-            className="h-11 [&::-webkit-search-cancel-button]:appearance-none"
+            className="h-12 text-base [&::-webkit-search-cancel-button]:appearance-none"
             onChange={(event) => onFilterChange("search", event.target.value)}
-            placeholder="Search patterns"
-            ref={searchRef}
+            placeholder="Search grooves by name or style..."
+            ref={searchInputRef}
             type="search"
             value={filters.search}
           />
@@ -103,7 +118,7 @@ export function PatternFiltersPanel({
                 className="size-11"
                 onClick={() => {
                   onFilterChange("search", "");
-                  searchRef.current?.focus();
+                  searchInputRef.current?.focus();
                 }}
                 size="icon-sm"
               >
@@ -112,49 +127,73 @@ export function PatternFiltersPanel({
             </InputGroupAddon>
           ) : null}
         </InputGroup>
+      </div>
 
-        <Button
-          aria-controls={`${id}-controls`}
-          aria-expanded={isOpen}
-          aria-label={isOpen ? "Hide filters" : "Show filters"}
-          className="data-active:border-primary/50 data-active:text-primary h-11 min-w-11 gap-2 px-3 sm:hidden"
-          data-active={activeFilterCount > 0 || undefined}
-          onClick={onToggle}
-          type="button"
-          variant="outline"
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div
+          aria-label="Quick filters"
+          className="flex flex-wrap gap-1"
+          role="group"
         >
-          <SlidersHorizontal aria-hidden="true" className="size-4" />
-          {activeFilterCount > 0 ? (
-            <Badge
-              className="bg-primary/15 text-primary px-1.5"
-              variant="secondary"
+          {quickFilters.map(({ label, value }) => (
+            <Button
+              aria-pressed={filters.quickFilter === value}
+              className="text-muted-strong hover:bg-surface-hover aria-pressed:border-primary/30 aria-pressed:bg-primary/10 aria-pressed:text-primary min-h-11 min-w-11 rounded-full border border-transparent px-3 text-xs font-bold"
+              key={value}
+              onClick={() => onFilterChange("quickFilter", value)}
+              type="button"
+              variant="ghost"
             >
-              {activeFilterCount}
-            </Badge>
-          ) : null}
-        </Button>
-
-        <div className="hidden items-center gap-3 sm:flex">
-          {activeFilterCount > 0 ? (
-            <Badge className="bg-primary/10 text-primary" variant="secondary">
-              {activeFilterCount} active
-            </Badge>
+              {value === "favorites" ? (
+                <Heart aria-hidden="true" className="size-3.5" />
+              ) : null}
+              {label}
+            </Button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
+          {hasChanges ? (
+            <Button
+              className="text-muted-foreground min-h-11 px-3 text-xs font-bold"
+              onClick={onClear}
+              type="button"
+              variant="ghost"
+            >
+              Reset filters
+            </Button>
           ) : null}
           <Button
-            className="text-muted-strong h-11 gap-2 px-3 text-xs font-bold"
-            disabled={!hasChanges}
-            onClick={onClear}
+            aria-controls={`${id}-controls`}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? "Hide filters" : "Show filters"}
+            className="data-active:border-primary/50 data-active:text-primary h-11 gap-2 px-3 text-xs font-bold"
+            data-active={activeFilterCount > 0 || undefined}
+            onClick={onToggle}
             type="button"
-            variant="ghost"
+            variant="outline"
           >
-            <FilterX aria-hidden="true" className="size-4" />
-            Clear filters
+            <SlidersHorizontal aria-hidden="true" className="size-4" />
+            Filters
+            {activeFilterCount > 0 ? (
+              <Badge
+                className="bg-primary/15 text-primary px-1.5"
+                variant="secondary"
+              >
+                <span className="sr-only">Active filters: </span>
+                {activeFilterCount}
+              </Badge>
+            ) : null}
+            <ChevronDown
+              aria-hidden="true"
+              className={`size-3.5 ${isOpen ? "rotate-180" : ""}`}
+            />
           </Button>
         </div>
       </div>
 
       <div
-        className={`${isOpen ? "grid" : "hidden"} grid-cols-2 gap-3 sm:grid lg:grid-cols-5`}
+        className="bg-surface border-border mt-3 grid grid-cols-1 gap-3 rounded-xl border p-3 min-[400px]:grid-cols-2 lg:grid-cols-4"
+        hidden={!isOpen}
         id={`${id}-controls`}
       >
         <FilterSelect
@@ -174,20 +213,7 @@ export function PatternFiltersPanel({
           value={filters.category}
         />
         <FilterSelect
-          label="Difficulty"
-          onChange={(value) =>
-            onFilterChange("difficulty", value as PatternDifficulty | "all")
-          }
-          options={["all", "beginner", "intermediate", "advanced"].map(
-            (value) => ({
-              label: value === "all" ? "All levels" : formatOption(value),
-              value,
-            }),
-          )}
-          value={filters.difficulty}
-        />
-        <FilterSelect
-          label="Meter"
+          label="Time signature"
           onChange={(value) => onFilterChange("timeSignature", value)}
           options={[
             "all",
@@ -205,7 +231,7 @@ export function PatternFiltersPanel({
           value={filters.timeSignature}
         />
         <FilterSelect
-          label="Grid"
+          label="Subdivision / grid"
           onChange={(value) =>
             onFilterChange(
               "subdivision",
@@ -220,9 +246,8 @@ export function PatternFiltersPanel({
           value={String(filters.subdivision)}
         />
         <FilterSelect
-          className="col-span-2 lg:col-span-1"
           defaultValue="name"
-          label="Sort"
+          label="Sort order"
           onChange={(value) => onSortChange(value as PatternSort)}
           options={[
             { label: "Name", value: "name" },
@@ -233,26 +258,7 @@ export function PatternFiltersPanel({
           value={sort}
         />
       </div>
-
-      {hasChanges ? (
-        <div className="border-border flex items-center justify-between gap-2 border-t pt-2 sm:hidden">
-          <p className="text-muted-foreground text-xs">
-            {activeFilterCount > 0
-              ? `${activeFilterCount} active ${activeFilterCount === 1 ? "filter" : "filters"}`
-              : "Custom sort order"}
-          </p>
-          <Button
-            className="text-muted-strong h-11 gap-2 text-xs font-bold"
-            onClick={onClear}
-            type="button"
-            variant="ghost"
-          >
-            <FilterX aria-hidden="true" className="size-4" />
-            Clear filters
-          </Button>
-        </div>
-      ) : null}
-    </Card>
+    </section>
   );
 }
 
@@ -297,7 +303,7 @@ function FilterSelect({
         >
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="max-h-[min(20rem,var(--available-height))]">
           <SelectGroup>
             {options.map((option) => (
               <SelectItem key={option.value} value={option.value}>

@@ -31,13 +31,17 @@ test("exports, removes, and imports a shared custom pattern", async ({
 
   await page.getByRole("link", { name: "Back to patterns" }).click();
   await expect(page).toHaveURL(/\/patterns$/);
+  await page.getByRole("button", { name: "My Patterns", exact: true }).click();
   const card = page
     .getByRole("article")
     .filter({ has: page.getByRole("heading", { name: patternName }) });
   await expect(card).toBeVisible();
-  const downloadPromise = page.waitForEvent("download");
   await card
-    .getByRole("button", { name: `Export ${patternName} pattern` })
+    .getByRole("button", { name: `More actions for ${patternName}` })
+    .click();
+  const downloadPromise = page.waitForEvent("download");
+  await page
+    .getByRole("menuitem", { name: `Export ${patternName} pattern` })
     .click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toBe(
@@ -46,7 +50,10 @@ test("exports, removes, and imports a shared custom pattern", async ({
   const patternFilePath = await download.path();
   expect(patternFilePath).not.toBeNull();
 
-  await card.getByRole("link", { name: `Edit ${patternName}` }).click();
+  await card
+    .getByRole("button", { name: `More actions for ${patternName}` })
+    .click();
+  await page.getByRole("menuitem", { name: `Edit ${patternName}` }).click();
   await page.getByRole("button", { name: "Delete pattern" }).click();
   const deleteDialog = page.getByRole("alertdialog", {
     name: `Delete ${patternName}?`,
@@ -55,7 +62,7 @@ test("exports, removes, and imports a shared custom pattern", async ({
   await expect(page).toHaveURL(/\/patterns$/);
   await page.getByRole("searchbox").fill(patternName);
   await expect(
-    page.getByRole("heading", { name: "No grooves match" }),
+    page.getByRole("heading", { name: "No grooves found." }),
   ).toBeVisible();
 
   await page
@@ -83,15 +90,17 @@ test("imports a committed song preset and opens it in practice", async ({
   const patternName = "Mana - En el muelle de San Blas";
 
   await page.goto("/patterns");
-  await page
-    .getByLabel("Choose shared pattern file")
-    .setInputFiles(
-      join(
-        process.cwd(),
-        "presets",
-        "web-band-pattern-mana-en-el-muelle-de-san-blas.json",
-      ),
-    );
+  await page.getByRole("button", { name: "More library actions" }).click();
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("menuitem", { name: "Import patterns" }).click();
+  const fileChooser = await fileChooserPromise;
+  await fileChooser.setFiles(
+    join(
+      process.cwd(),
+      "presets",
+      "web-band-pattern-mana-en-el-muelle-de-san-blas.json",
+    ),
+  );
 
   const importDialog = page.getByRole("dialog", {
     name: "Import this pattern?",

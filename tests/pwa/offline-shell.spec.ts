@@ -51,7 +51,7 @@ test("loads every local-first route offline after the first visit", async ({
   await expect(
     page.getByRole("heading", { name: "Find your pocket" }),
   ).toBeVisible();
-  await expect(page.getByText("44 of 44 patterns")).toBeVisible();
+  await expect(page.getByText("Showing 12 of 44 patterns")).toBeVisible();
 
   await page.goto("/about", { waitUntil: "domcontentloaded" });
   await expect(
