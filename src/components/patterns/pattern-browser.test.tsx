@@ -7,6 +7,7 @@ import { disposeAudioEngine } from "@/audio/audio-engine";
 import { builtInPatterns } from "@/data/patterns";
 import {
   defaultPatternFilters,
+  defaultPatternSort,
   filterAndSortPatterns,
 } from "@/lib/pattern-filters";
 import { useAudioStore } from "@/stores/audio-store";
@@ -126,7 +127,7 @@ describe("pattern browser", () => {
       expect.objectContaining({ bpm: 90, masterVolume: 0.8 }),
     );
     const stopPreviewButton = screen.getByRole("button", {
-      name: "Basic Rock preview",
+      name: "Stop Basic Rock preview",
     });
     expect(stopPreviewButton).toHaveAttribute("aria-pressed", "true");
 
@@ -177,6 +178,14 @@ describe("pattern browser", () => {
     );
     expect(within(card!).getByText("Recommended")).toBeVisible();
     expect(within(card!).getByText("70-130 BPM")).toBeInTheDocument();
+    expect(
+      within(card!).getByRole("heading", { name: "About this groove" }),
+    ).toBeVisible();
+    expect(
+      within(card!).getAllByText(
+        builtInPatterns.find(({ id }) => id === "basic-rock")!.description,
+      ),
+    ).toHaveLength(2);
   });
 
   it("previews a pattern with its declared swing", async () => {
@@ -319,6 +328,14 @@ describe("pattern browser", () => {
     render(<PatternBrowser />);
     expect(screen.getAllByRole("article")).toHaveLength(12);
     expect(screen.getByText("Showing 12 of 44 patterns")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("article")
+        .slice(0, 3)
+        .map(
+          (card) => within(card).getByRole("heading", { level: 2 }).textContent,
+        ),
+    ).toEqual(["Basic Rock", "Basic Pop", "Straight Blues"]);
     for (const count of [24, 36, 44]) {
       const firstNewIndex = screen.getAllByRole("article").length;
       await user.click(screen.getByRole("button", { name: "Load more" }));
@@ -330,9 +347,13 @@ describe("pattern browser", () => {
       .map((heading) => heading.textContent);
     expect(new Set(names).size).toBe(44);
     expect(names).toEqual(
-      [...builtInPatterns]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(({ name }) => name),
+      filterAndSortPatterns(
+        builtInPatterns,
+        defaultPatternFilters,
+        defaultPatternSort,
+        [],
+        [],
+      ).map(({ name }) => name),
     );
     expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
   });
@@ -369,7 +390,7 @@ describe("pattern browser", () => {
     expect(screen.getAllByRole("article")).toHaveLength(12);
     expect(
       screen.getByRole("combobox", { name: "Sort order" }),
-    ).toHaveTextContent("Name");
+    ).toHaveTextContent("Recommended");
   });
 
   it("combines exclusive quick filters with search and advanced filters", async () => {
@@ -467,8 +488,8 @@ describe("pattern browser", () => {
       screen.getByRole("button", { name: "Basic Rock preview" }),
     ).toHaveAttribute("aria-pressed", "false");
     expect(
-      screen.getByRole("button", { name: "Basic Pop preview" }),
-    ).toHaveTextContent("Stop preview");
+      screen.getByRole("button", { name: "Stop Basic Pop preview" }),
+    ).toHaveTextContent("Stop");
     unmount();
     expect(disposeAudioEngine).toHaveBeenCalled();
   });

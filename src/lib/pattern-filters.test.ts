@@ -7,6 +7,79 @@ import {
 } from "@/lib/pattern-filters";
 
 describe("pattern filters", () => {
+  it("recommends the existing rock, pop, and straight blues foundations first", () => {
+    const patterns = [...builtInPatterns].reverse();
+    const result = filterAndSortPatterns(
+      patterns,
+      defaultPatternFilters,
+      "recommended",
+      [],
+      [],
+    );
+    expect(result.slice(0, 3).map(({ id }) => id)).toEqual([
+      "basic-rock",
+      "basic-pop",
+      "straight-blues",
+    ]);
+    expect(new Set(result.map(({ id }) => id)).size).toBe(
+      builtInPatterns.length,
+    );
+    expect(patterns).toEqual([...builtInPatterns].reverse());
+    const remainingFoundations = result
+      .slice(3)
+      .filter(
+        (pattern) =>
+          pattern.difficulty === "beginner" &&
+          pattern.timeSignature.numerator === 4 &&
+          pattern.timeSignature.denominator === 4 &&
+          pattern.subdivision === 8 &&
+          pattern.bars === 1,
+      );
+    expect(result.slice(3, 3 + remainingFoundations.length)).toEqual(
+      remainingFoundations,
+    );
+  });
+
+  it("keeps recommendations compatible with filtering, custom patterns, and explicit alphabetical sorting", () => {
+    const custom = {
+      ...builtInPatterns[0],
+      id: "custom-foundation",
+      name: "A custom foundation",
+      isBuiltIn: false,
+    };
+    const patterns = [...builtInPatterns, custom];
+    const recommended = filterAndSortPatterns(
+      patterns,
+      { ...defaultPatternFilters, category: "blues" },
+      "recommended",
+      [],
+      [],
+    );
+    expect(recommended[0]?.id).toBe("straight-blues");
+    expect(recommended.every(({ category }) => category === "blues")).toBe(
+      true,
+    );
+    const alphabetical = filterAndSortPatterns(
+      patterns,
+      defaultPatternFilters,
+      "name",
+      [],
+      [],
+    );
+    expect(alphabetical).toEqual(
+      [...patterns].sort((a, b) => a.name.localeCompare(b.name)),
+    );
+    expect(
+      filterAndSortPatterns(
+        patterns,
+        defaultPatternFilters,
+        "recommended",
+        [],
+        [],
+      ),
+    ).toContain(custom);
+  });
+
   it("filters by search, category, difficulty, meter, and grid", () => {
     const result = filterAndSortPatterns(
       builtInPatterns,

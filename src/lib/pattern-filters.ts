@@ -4,7 +4,30 @@ import type {
   PatternDifficulty,
 } from "@/types/pattern";
 
-export type PatternSort = "name" | "bpm" | "recent" | "favorites";
+export type PatternSort =
+  "recommended" | "name" | "bpm" | "recent" | "favorites";
+export const defaultPatternSort: PatternSort = "recommended";
+
+// Editorial starting points, not a change to the patterns or stored preferences.
+const foundationRanks = new Map([
+  ["basic-rock", 0],
+  ["basic-pop", 1],
+  ["straight-blues", 2],
+]);
+
+function recommendationRank(pattern: DrumPattern): number {
+  const foundation = pattern.isBuiltIn
+    ? foundationRanks.get(pattern.id)
+    : undefined;
+  if (foundation !== undefined) return foundation;
+  if (pattern.difficulty !== "beginner")
+    return pattern.difficulty === "intermediate" ? 6 : 7;
+  const isCommonTime =
+    pattern.timeSignature.numerator === 4 &&
+    pattern.timeSignature.denominator === 4;
+  if (!isCommonTime) return 5;
+  return pattern.subdivision === 8 && pattern.bars === 1 ? 3 : 4;
+}
 export type PatternQuickFilter =
   "all" | PatternDifficulty | "favorites" | "custom";
 
@@ -75,6 +98,12 @@ export function filterAndSortPatterns(
       );
     })
     .sort((left, right) => {
+      if (sort === "recommended") {
+        return (
+          recommendationRank(left) - recommendationRank(right) ||
+          left.name.localeCompare(right.name)
+        );
+      }
       if (sort === "bpm") {
         return (
           left.defaultBpm - right.defaultBpm ||

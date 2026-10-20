@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { builtInPatterns } from "@/data/patterns";
 import {
   defaultPatternFilters,
+  defaultPatternSort,
   filterAndSortPatterns,
   type PatternFilters,
   type PatternSort,
@@ -21,6 +22,7 @@ import { useAudioStore } from "@/stores/audio-store";
 import { usePatternStore } from "@/stores/pattern-store";
 import { usePracticeStore } from "@/stores/practice-store";
 import type { DrumPattern } from "@/types/pattern";
+import type { AudioEngineStatus } from "@/types/audio";
 
 const PAGE_SIZE = 12;
 
@@ -43,7 +45,7 @@ export function PatternBrowser() {
   const toggleFavorite = usePatternStore((state) => state.toggleFavorite);
   const [filters, setFilters] = useState<PatternFilters>(defaultPatternFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [sort, setSort] = useState<PatternSort>("name");
+  const [sort, setSort] = useState<PatternSort>(defaultPatternSort);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const resultsRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +87,7 @@ export function PatternBrowser() {
 
   function resetFilters(): void {
     setFilters(defaultPatternFilters);
-    setSort("name");
+    setSort(defaultPatternSort);
     setVisibleCount(PAGE_SIZE);
     searchInputRef.current?.focus();
   }
@@ -218,6 +220,7 @@ export function PatternBrowser() {
           onPreview={(patternId) => void previewPattern(patternId)}
           patterns={visiblePatterns}
           previewPatternId={status === "stopped" ? null : previewPatternId}
+          previewStatus={status}
           resultsRef={resultsRef}
         />
       ) : (
@@ -304,6 +307,7 @@ function PatternBrowserHeader() {
 }
 
 interface PatternGridProps {
+  previewStatus: AudioEngineStatus;
   favoritePatternIdSet: ReadonlySet<string>;
   pendingFavoriteIds: ReadonlySet<string>;
   onFavorite: (patternId: string) => void;
@@ -322,6 +326,7 @@ function PatternGrid({
   onPreview,
   patterns,
   previewPatternId,
+  previewStatus,
   resultsRef,
 }: PatternGridProps) {
   return (
@@ -336,6 +341,7 @@ function PatternGrid({
           favoriteDisabled={pendingFavoriteIds.size > 0}
           isFavorite={favoritePatternIdSet.has(pattern.id)}
           isPreviewing={previewPatternId === pattern.id}
+          previewStatus={previewStatus}
           onFavorite={() => onFavorite(pattern.id)}
           onOpen={() => onOpen(pattern.id)}
           onPreview={() => onPreview(pattern.id)}

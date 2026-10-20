@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { PatternFiltersPanel } from "@/components/patterns/pattern-filters-panel";
 import {
   defaultPatternFilters,
+  defaultPatternSort,
   type PatternFilters,
   type PatternSort,
 } from "@/lib/pattern-filters";
@@ -13,7 +14,7 @@ import {
 function FiltersHarness() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [filters, setFilters] = useState<PatternFilters>(defaultPatternFilters);
-  const [sort, setSort] = useState<PatternSort>("name");
+  const [sort, setSort] = useState<PatternSort>(defaultPatternSort);
   const [isOpen, setOpen] = useState(false);
 
   return (
@@ -22,7 +23,7 @@ function FiltersHarness() {
       isOpen={isOpen}
       onClear={() => {
         setFilters(defaultPatternFilters);
-        setSort("name");
+        setSort(defaultPatternSort);
       }}
       onFilterChange={(key, value) =>
         setFilters((current) => ({ ...current, [key]: value }))
@@ -110,7 +111,7 @@ describe("pattern filters panel", () => {
     ).not.toHaveAttribute("data-active");
     expect(
       screen.getByRole("combobox", { name: "Sort order" }),
-    ).toHaveTextContent("Name");
+    ).toHaveTextContent("Recommended");
     expect(screen.queryByRole("button", { name: "Reset filters" })).toBeNull();
     expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
       "aria-pressed",

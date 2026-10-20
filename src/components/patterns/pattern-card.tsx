@@ -23,11 +23,13 @@ import {
   getTimeSignatureLabel,
 } from "@/lib/pattern-filters";
 import type { DrumPattern, PatternDifficulty } from "@/types/pattern";
+import type { AudioEngineStatus } from "@/types/audio";
 
 interface PatternCardProps {
   favoriteDisabled?: boolean;
   isFavorite: boolean;
   isPreviewing: boolean;
+  previewStatus?: AudioEngineStatus;
   onFavorite: () => void;
   onOpen: () => void;
   onPreview: () => void;
@@ -44,6 +46,7 @@ export function PatternCard({
   favoriteDisabled = false,
   isFavorite,
   isPreviewing,
+  previewStatus = "playing",
   onFavorite,
   onOpen,
   onPreview,
@@ -55,6 +58,7 @@ export function PatternCard({
     <Card
       as="article"
       aria-labelledby={titleId}
+      data-previewing={isPreviewing || undefined}
       className={`min-w-0 gap-0 p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 ${isPreviewing ? "ring-primary/60 ring-2" : "hover:ring-border-strong"}`}
       tabIndex={-1}
     >
@@ -126,67 +130,79 @@ export function PatternCard({
             aria-label={`${pattern.name} Details`}
             render={
               <Button
-                className="text-muted-foreground ml-auto min-h-11 gap-1 px-2 text-xs data-panel-open:[&_svg]:rotate-180"
-                variant="ghost"
+                className="text-muted-strong aria-expanded:border-primary/40 aria-expanded:bg-primary/8 aria-expanded:text-primary ml-auto min-h-11 gap-1.5 rounded-lg px-3 text-sm font-semibold aria-expanded:[&_svg]:rotate-180"
+                variant="outline"
               />
             }
           >
             <span className="sr-only">{pattern.name} </span>Details
-            <ChevronDown aria-hidden="true" className="size-3" />
+            <ChevronDown aria-hidden="true" className="size-3.5" />
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <dl className="border-border mb-3 grid grid-cols-2 gap-3 border-t pt-3 text-xs">
-            <div>
-              <dt className="text-muted-foreground">Recommended</dt>
-              <dd className="mt-1 font-semibold tabular-nums">
-                {pattern.recommendedBpmRange.min}-
-                {pattern.recommendedBpmRange.max} BPM
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Subdivision / grid</dt>
-              <dd>
-                <PatternTerm
-                  label={`Subdivision: ${pattern.subdivision === 8 ? "Eighth notes" : "Sixteenth notes"}`}
-                  explanation="Subdivision splits each beat into smaller steps. Eighth notes give two steps per quarter-note beat; sixteenth notes give four."
-                >
-                  {pattern.subdivision === 8
-                    ? "Eighth notes"
-                    : "Sixteenth notes"}
-                </PatternTerm>
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Length</dt>
-              <dd className="mt-1 font-semibold">
-                {pattern.bars} {pattern.bars === 1 ? "measure" : "measures"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">Source</dt>
-              <dd className="mt-1 font-semibold">
-                {pattern.isBuiltIn ? "Built-in pattern" : "Your pattern"}
-              </dd>
-            </div>
-            {pattern.swing ? (
+          <div className="border-border mt-2 border-t pt-3">
+            <h3 className="text-foreground text-xs font-bold">
+              About this groove
+            </h3>
+            <p className="text-muted-foreground mt-1 mb-3 text-sm leading-5 wrap-anywhere">
+              {pattern.description}
+            </p>
+            <dl className="mb-3 grid grid-cols-2 gap-3 text-xs">
               <div>
-                <dt className="text-muted-foreground">Swing</dt>
-                <dd className="mt-1 font-semibold">
-                  {Math.round(pattern.swing * 100)}%
+                <dt className="text-muted-foreground">Recommended</dt>
+                <dd className="mt-1 font-semibold tabular-nums">
+                  {pattern.recommendedBpmRange.min}-
+                  {pattern.recommendedBpmRange.max} BPM
                 </dd>
               </div>
-            ) : null}
-          </dl>
+              <div>
+                <dt className="text-muted-foreground">Subdivision / grid</dt>
+                <dd>
+                  <PatternTerm
+                    label={`Subdivision: ${pattern.subdivision === 8 ? "Eighth notes" : "Sixteenth notes"}`}
+                    explanation="Subdivision splits each beat into smaller steps. Eighth notes give two steps per quarter-note beat; sixteenth notes give four."
+                  >
+                    {pattern.subdivision === 8
+                      ? "Eighth notes"
+                      : "Sixteenth notes"}
+                  </PatternTerm>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Length</dt>
+                <dd className="mt-1 font-semibold">
+                  {pattern.bars} {pattern.bars === 1 ? "measure" : "measures"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">Source</dt>
+                <dd className="mt-1 font-semibold">
+                  {pattern.isBuiltIn ? "Built-in pattern" : "Your pattern"}
+                </dd>
+              </div>
+              {pattern.swing ? (
+                <div>
+                  <dt className="text-muted-foreground">Swing</dt>
+                  <dd className="mt-1 font-semibold">
+                    {Math.round(pattern.swing * 100)}%
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          </div>
         </CollapsibleContent>
       </Collapsible>
 
       <div className="mt-auto pt-1">
-        <RhythmPreview pattern={pattern} />
+        <RhythmPreview
+          isPreviewing={isPreviewing}
+          pattern={pattern}
+          status={previewStatus}
+        />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button
-          aria-label={`${pattern.name} preview`}
+          aria-label={`${isPreviewing ? "Stop " : ""}${pattern.name} preview`}
           aria-pressed={isPreviewing}
           className="min-h-11 gap-2 rounded-xl text-sm font-bold"
           onClick={onPreview}
@@ -198,7 +214,7 @@ export function PatternCard({
           ) : (
             <Play aria-hidden="true" className="size-3.5 fill-current" />
           )}
-          {isPreviewing ? "Stop preview" : "Preview"}
+          {isPreviewing ? "Stop" : "Preview"}
         </Button>
         <Button
           className="bg-primary text-accent-ink hover:bg-accent-strong min-h-11 gap-2 rounded-xl text-sm font-extrabold"

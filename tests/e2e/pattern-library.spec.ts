@@ -79,6 +79,33 @@ test("browses every pattern in batches without overflow at 320px", async ({
   expect(browserErrors).toEqual([]);
 });
 
+test("starts with foundations and preserves explicit alphabetical and recommended sorting", async ({
+  page,
+}) => {
+  await page.goto("/patterns");
+  const headings = page
+    .getByRole("region", { name: "Patterns" })
+    .getByRole("heading", { level: 2 });
+  await expect(headings.nth(0)).toHaveText("Basic Rock");
+  await expect(headings.nth(1)).toHaveText("Basic Pop");
+  await expect(headings.nth(2)).toHaveText("Straight Blues");
+  await page.getByRole("button", { name: "Load more" }).click();
+  await page.getByRole("button", { name: "Show filters" }).click();
+  const sort = page.getByRole("combobox", { name: "Sort order" });
+  await expect(sort).toContainText("Recommended");
+  await sort.click();
+  await page.getByRole("option", { name: "Name", exact: true }).click();
+  await expect(headings.first()).toHaveText("6/8 Rock Ballad");
+  await expect(page.getByRole("article")).toHaveCount(12);
+  await page
+    .getByRole("button", { name: "Reset filters", exact: true })
+    .click();
+  await expect(sort).toContainText("Recommended");
+  await expect(headings.first()).toHaveText("Basic Rock");
+  await page.getByRole("searchbox").fill("blues");
+  await expect(headings.first()).toHaveText("Straight Blues");
+});
+
 test("previews one groove at a time and stops before entering practice", async ({
   page,
 }) => {
@@ -87,13 +114,17 @@ test("previews one groove at a time and stops before entering practice", async (
   const first = page.getByRole("article", { name: "Basic Rock", exact: true });
   await first.getByRole("button", { name: "Basic Rock preview" }).click();
   await expect(
-    first.getByRole("button", { name: "Basic Rock preview" }),
+    first.getByRole("button", { name: "Stop Basic Rock preview" }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(first.getByText("Stop preview", { exact: true })).toBeVisible();
+  await expect(first.getByText("Stop", { exact: true })).toBeVisible();
+  await expect(first).toHaveAttribute("data-previewing", "true");
+  await expect(
+    first.locator('[data-rhythm-cell][data-active="true"]'),
+  ).toHaveCount(3, { timeout: 10_000 });
   const second = page.getByRole("article", { name: "Basic Pop", exact: true });
   await second.getByRole("button", { name: "Basic Pop preview" }).click();
   await expect(
-    second.getByRole("button", { name: "Basic Pop preview" }),
+    second.getByRole("button", { name: "Stop Basic Pop preview" }),
   ).toHaveAttribute("aria-pressed", "true", { timeout: 10_000 });
   await expect(
     first.getByRole("button", { name: "Basic Rock preview" }),
@@ -101,9 +132,18 @@ test("previews one groove at a time and stops before entering practice", async (
   await expect(
     page.getByRole("button", { name: /preview$/, pressed: true }),
   ).toHaveCount(1);
-  await second.getByRole("button", { name: "Basic Pop preview" }).click();
+  await expect(
+    first.locator('[data-rhythm-cell][data-active="true"]'),
+  ).toHaveCount(0);
+  await expect(
+    second.locator('[data-rhythm-cell][data-active="true"]'),
+  ).toHaveCount(3);
+  await second.getByRole("button", { name: "Stop Basic Pop preview" }).click();
   await expect(
     page.getByRole("button", { name: /preview$/, pressed: true }),
+  ).toHaveCount(0);
+  await expect(
+    second.locator('[data-rhythm-cell][data-active="true"]'),
   ).toHaveCount(0);
   await second.getByRole("button", { name: "Practice", exact: true }).click();
   await expect(page).toHaveURL(/\/practice$/);

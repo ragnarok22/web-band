@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import {
   defaultPatternFilters,
+  defaultPatternSort,
   type PatternFilters,
   type PatternQuickFilter,
   type PatternSort,
@@ -84,12 +85,12 @@ export function PatternFiltersPanel({
   const hasChanges =
     (Object.keys(filters) as Array<keyof PatternFilters>).some(
       (key) => filters[key] !== defaultPatternFilters[key],
-    ) || sort !== "name";
+    ) || sort !== defaultPatternSort;
   const activeFilterCount = [
     filters.category !== "all",
     filters.timeSignature !== "all",
     filters.subdivision !== "all",
-    sort !== "name",
+    sort !== defaultPatternSort,
   ].filter(Boolean).length;
 
   return (
@@ -246,10 +247,11 @@ export function PatternFiltersPanel({
           value={String(filters.subdivision)}
         />
         <FilterSelect
-          defaultValue="name"
+          defaultValue={defaultPatternSort}
           label="Sort order"
           onChange={(value) => onSortChange(value as PatternSort)}
           options={[
+            { label: "Recommended", value: "recommended" },
             { label: "Name", value: "name" },
             { label: "Default BPM", value: "bpm" },
             { label: "Recently used", value: "recent" },
