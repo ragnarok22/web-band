@@ -60,6 +60,11 @@ const expectedPresets = [
     name: "Queen - We Will Rock You",
   },
   {
+    bpm: 124,
+    fileName: "web-band-pattern-soda-stereo-de-musica-ligera.json",
+    name: "Soda Stereo - De musica ligera",
+  },
+  {
     bpm: 117,
     fileName: "web-band-pattern-the-police-every-breath-you-take.json",
     name: "The Police - Every Breath You Take",
@@ -72,7 +77,7 @@ const expectedPresets = [
 ] as const;
 
 describe("committed song presets", () => {
-  it("contains twelve directly importable, uniquely identified patterns", () => {
+  it("contains the expected directly importable, uniquely identified patterns", () => {
     const presetsDirectory = join(process.cwd(), "presets");
     const files = readdirSync(presetsDirectory)
       .filter((fileName) => fileName.endsWith(".json"))
@@ -116,5 +121,46 @@ describe("committed song presets", () => {
       subdivision: 16,
       timeSignature: { denominator: 8, numerator: 6 },
     });
+  });
+
+  it("keeps De musica ligera as a straight two-bar rock practice groove", () => {
+    const fileName = "web-band-pattern-soda-stereo-de-musica-ligera.json";
+    const text = readFileSync(join(process.cwd(), "presets", fileName), "utf8");
+    const preview = parsePatternShareText(text, fileName);
+    const pattern = preview.envelope.data.patterns[0]!;
+
+    expect(pattern).toMatchObject({
+      bars: 2,
+      category: "rock",
+      defaultBpm: 124,
+      difficulty: "beginner",
+      subdivision: 16,
+      swing: 0,
+      timeSignature: { denominator: 4, numerator: 4 },
+    });
+    expect(
+      pattern.hits
+        .filter(({ instrument }) => instrument === "snare")
+        .map(({ step }) => step),
+    ).toEqual([4, 12, 20, 28]);
+    expect(
+      pattern.hits
+        .filter(({ instrument }) => instrument === "kick")
+        .map(({ step }) => step),
+    ).toEqual([0, 8, 10, 16, 24, 26]);
+    expect(
+      pattern.hits
+        .filter(({ instrument }) =>
+          ["closedHat", "openHat", "crash"].includes(instrument),
+        )
+        .map(({ step }) => step)
+        .sort((a, b) => a - b),
+    ).toEqual(Array.from({ length: 16 }, (_, index) => index * 2));
+    expect(pattern.hits).toContainEqual(
+      expect.objectContaining({ instrument: "openHat", step: 30 }),
+    );
+    expect(
+      pattern.hits.every(({ probability }) => (probability ?? 1) === 1),
+    ).toBe(true);
   });
 });

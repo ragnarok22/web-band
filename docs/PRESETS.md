@@ -33,6 +33,13 @@ Importing adds the groove to the local custom-pattern library. It does not autom
 | The Police        | Every Breath You Take      |         117 | 4/4   | 16ths |    2 |
 | Bon Jovi          | Livin' on a Prayer         |         123 | 4/4   | 16ths |    2 |
 | Journey           | Don't Stop Believin'       |         119 | 4/4   | 16ths |    2 |
+| Soda Stereo       | De musica ligera           |         124 | 4/4   | 16ths |    2 |
+
+### De musica ligera — Soda Stereo
+
+Import `presets/web-band-pattern-soda-stereo-de-musica-ligera.json` for a beginner-friendly, two-bar approximation of the main groove at 124 BPM. It uses straight eighth-note cymbals, snare backbeats on beats two and four, and kicks on beat one, beat three, and the upbeat of three. A crash starts the loop and an open hi-hat on the final upbeat leads back into it. The sixteenth-note grid leaves room for editing in extra hits.
+
+The suggested practice range is 90–140 BPM. This is a repeating accompaniment for practice, not the song's full intro, fills, section changes, or ending.
 
 ## File structure
 
