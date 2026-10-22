@@ -3,7 +3,7 @@
 ## Ground Truth
 
 - This is one private Next.js 16 App Router package, not a monorepo. `pnpm-workspace.yaml` only configures dependency build policy; run commands from the repository root.
-- Use Node.js 22.13+ or 24+ and the `package.json`-pinned pnpm 12.14.0. Keep TypeScript on version 6 until the ESLint toolchain supports version 7.
+- Use Node.js 24.22.1 (pinned in `.nvmrc`) or a newer 24.x release and the `package.json`-pinned pnpm 12.14.0. Keep TypeScript on version 6 until the ESLint toolchain supports version 7.
 - Treat `PLANING.md` as implementation history and a release checklist, not architectural ground truth; prefer scripts, config, and source when they conflict.
 - Keep the product client-only: no API routes, server actions, backend, auth, analytics, cloud persistence, recorded audio, or external audio assets. Drum sounds are synthesized in the browser.
 

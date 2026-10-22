@@ -7,7 +7,9 @@ or a separate backend. Practice data is stored in your browser.
 
 ## Requirements
 
-- **Node.js 22.13+ or 24+.** Check your version with `node --version`.
+- **Node.js 24.22.1 or newer 24.x**, pinned in [`.nvmrc`](../.nvmrc).
+  Check your version with `node --version`. If you use nvm, run `nvm install`
+  and `nvm use` from the repository root.
 - **pnpm 12.14.0**, pinned in [`package.json`](../package.json).
 - **Git** and access to this repository.
 - A current Chrome, Edge, Firefox, or Safari browser with Web Audio support.
